@@ -230,3 +230,23 @@ printf '%s' '{"ok":true,"data":[{"id":17,"name":"Follow up","account_id":3}]}'
   assert.equal(forwarded.trim(), "workflow list --limit 5 --all --json --quiet");
   await rm(directory, { recursive: true, force: true });
 });
+
+test("delegates snippet listing and renders reusable snippet data", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "hey-axi-"));
+  const fakeHey = join(directory, "hey");
+  await writeFile(fakeHey, `#!/bin/sh
+printf '%s\\n' "$*" > "$HEY_ARGS_FILE"
+printf '%s' '{"ok":true,"data":[{"id":51,"name":"Meeting follow-up","content":"Thanks for meeting."}]}'
+`);
+  await execFile(process.env.SHELL || "/bin/sh", ["-c", `chmod +x "$1"`, "sh", fakeHey]);
+  const argsFile = join(directory, "args");
+  const result = await new Promise((resolve) => execFile(process.execPath, ["src/hey-axi.js", "snippet", "list"], {
+    env: { ...process.env, HEY_BIN: fakeHey, HEY_ARGS_FILE: argsFile },
+  }, (error, stdout, stderr) => resolve({ error, stdout, stderr })));
+  assert.equal(result.error, null);
+  assert.match(result.stdout, /Meeting follow-up/);
+  assert.match(result.stdout, /Thanks for meeting/);
+  const forwarded = await import("node:fs/promises").then(({ readFile }) => readFile(argsFile, "utf8"));
+  assert.equal(forwarded.trim(), "snippet list --json --quiet");
+  await rm(directory, { recursive: true, force: true });
+});
