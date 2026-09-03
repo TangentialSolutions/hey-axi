@@ -25,6 +25,7 @@ function usage() {
     "  event list             List calendar events",
     "  todo list              List todos",
     "  contact list           List contacts",
+    "  journal list           List journal entries",
     "  search [query]        Search email threads and messages",
     "  thread read <id>      Read an email thread",
     "  attachment list <id>  List thread attachments",
@@ -93,6 +94,8 @@ if (commandName === "account list") {
 } else if (commandName === "todo list") {
   result = await runHey(command);
 } else if (commandName === "contact list") {
+  result = await runHey(command);
+} else if (commandName === "journal list") {
   result = await runHey(command);
 } else if (command[0] === "search") {
   result = await runHey(command);
