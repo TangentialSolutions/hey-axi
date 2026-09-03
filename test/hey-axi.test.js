@@ -116,3 +116,22 @@ printf '%s' '{"ok":true,"data":{"labels":[{"id":789,"name":"Travel"}],"next_page
   assert.equal(forwarded.trim(), "label view 789 --page cursor-1 --json --quiet");
   await rm(directory, { recursive: true, force: true });
 });
+
+test("delegates calendar listing without changing the upstream command", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "hey-axi-"));
+  const fakeHey = join(directory, "hey");
+  await writeFile(fakeHey, `#!/bin/sh
+printf '%s\\n' "$*" > "$HEY_ARGS_FILE"
+printf '%s' '{"ok":true,"data":[{"id":42,"name":"Personal"}]}'
+`);
+  await execFile(process.env.SHELL || "/bin/sh", ["-c", `chmod +x "$1"`, "sh", fakeHey]);
+  const argsFile = join(directory, "args");
+  const result = await new Promise((resolve) => execFile(process.execPath, ["src/hey-axi.js", "calendar", "list"], {
+    env: { ...process.env, HEY_BIN: fakeHey, HEY_ARGS_FILE: argsFile },
+  }, (error, stdout, stderr) => resolve({ error, stdout, stderr })));
+  assert.equal(result.error, null);
+  assert.match(result.stdout, /Personal/);
+  const forwarded = await import("node:fs/promises").then(({ readFile }) => readFile(argsFile, "utf8"));
+  assert.equal(forwarded.trim(), "calendar list --json --quiet");
+  await rm(directory, { recursive: true, force: true });
+});
