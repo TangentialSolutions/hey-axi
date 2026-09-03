@@ -25,6 +25,7 @@ function usage() {
     "  contact list           List contacts",
     "  search [query]        Search email threads and messages",
     "  thread read <id>      Read an email thread",
+    "  attachment list <id>  List thread attachments",
     "  commands              Show the upstream HEY command catalog",
     "",
     "flags:",
@@ -89,6 +90,8 @@ if (commandName === "account list") {
 } else if (command[0] === "search") {
   result = await runHey(command);
 } else if (commandName === "thread read") {
+  result = await runHey(command);
+} else if (commandName === "attachment list") {
   result = await runHey(command);
 } else if (commandName === "commands") {
   result = await runHey(["commands"]);
