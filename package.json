@@ -1,0 +1,16 @@
+{
+  "name": "hey-axi",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Agent-ergonomic AXI wrapper for the HEY CLI",
+  "type": "module",
+  "bin": {
+    "hey-axi": "src/hey-axi.js"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@toon-format/toon": "^4.1.1"
+  }
+}
