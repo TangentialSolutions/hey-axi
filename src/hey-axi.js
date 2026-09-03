@@ -17,6 +17,7 @@ function usage() {
     "  label list            List email labels",
     "  label view <id>       List threads with a label",
     "  collection list       List email collections",
+    "  collection view <id>  List threads in a collection",
     "  workflow list         List email workflows",
     "  workflow view <id>    View a workflow and its stages",
     "  snippet list          List reusable email snippets",
@@ -76,6 +77,8 @@ if (commandName === "account list") {
 } else if (commandName === "label view") {
   result = await runHey(command);
 } else if (commandName === "collection list") {
+  result = await runHey(command);
+} else if (commandName === "collection view") {
   result = await runHey(command);
 } else if (commandName === "workflow list") {
   result = await runHey(command);

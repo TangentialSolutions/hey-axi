@@ -250,6 +250,25 @@ printf '%s' '{"ok":true,"data":[{"id":20671,"name":"AWS Bounce"}]}'
   await rm(directory, { recursive: true, force: true });
 });
 
+test("delegates collection view and preserves the collection id and pagination flags", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "hey-axi-"));
+  const fakeHey = join(directory, "hey");
+  await writeFile(fakeHey, `#!/bin/sh
+printf '%s\\n' "$*" > "$HEY_ARGS_FILE"
+printf '%s' '{"ok":true,"data":[{"id":812,"topic_id":456,"subject":"Quarterly planning"}]}'
+`);
+  await execFile(process.env.SHELL || "/bin/sh", ["-c", `chmod +x "$1"`, "sh", fakeHey]);
+  const argsFile = join(directory, "args");
+  const result = await new Promise((resolve) => execFile(process.execPath, ["src/hey-axi.js", "collection", "view", "20671", "--page", "cursor-2", "--limit", "5"], {
+    env: { ...process.env, HEY_BIN: fakeHey, HEY_ARGS_FILE: argsFile },
+  }, (error, stdout, stderr) => resolve({ error, stdout, stderr })));
+  assert.equal(result.error, null);
+  assert.match(result.stdout, /Quarterly planning/);
+  const forwarded = await import("node:fs/promises").then(({ readFile }) => readFile(argsFile, "utf8"));
+  assert.equal(forwarded.trim(), "collection view 20671 --page cursor-2 --limit 5 --json --quiet");
+  await rm(directory, { recursive: true, force: true });
+});
+
 test("delegates workflow listing and preserves pagination flags", async () => {
   const directory = await mkdtemp(join(tmpdir(), "hey-axi-"));
   const fakeHey = join(directory, "hey");
