@@ -16,6 +16,7 @@ function usage() {
     "  box view <name|id>    List threads in a mailbox",
     "  bundle view <id>      List threads grouped in a bundle",
     "  bubble list            List bubbled-up and scheduled threads",
+    "  bulk-reply preview <id> Preview threads and recipients without sending",
     "  label list            List email labels",
     "  label view <id>       List threads with a label",
     "  collection list       List email collections",
@@ -84,6 +85,8 @@ if (commandName === "account list") {
 } else if (commandName === "bundle view") {
   result = await runHey(command);
 } else if (commandName === "bubble list") {
+  result = await runHey(command);
+} else if (commandName === "bulk-reply preview") {
   result = await runHey(command);
 } else if (commandName === "label list") {
   result = await runHey(command);
