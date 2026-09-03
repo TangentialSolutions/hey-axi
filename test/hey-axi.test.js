@@ -250,6 +250,25 @@ printf '%s' '{"ok":true,"data":[{"date":"2026-09-03","content":"Today notes"}]}'
   await rm(directory, { recursive: true, force: true });
 });
 
+test("delegates journal reads and preserves an optional date", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "hey-axi-"));
+  const fakeHey = join(directory, "hey");
+  await writeFile(fakeHey, `#!/bin/sh
+printf '%s\\n' "$*" > "$HEY_ARGS_FILE"
+printf '%s' '{"ok":true,"data":{"date":"2026-09-03","content":"Today notes"}}'
+`);
+  await execFile(process.env.SHELL || "/bin/sh", ["-c", `chmod +x "$1"`, "sh", fakeHey]);
+  const argsFile = join(directory, "args");
+  const result = await new Promise((resolve) => execFile(process.execPath, ["src/hey-axi.js", "journal", "read", "2026-09-03"], {
+    env: { ...process.env, HEY_BIN: fakeHey, HEY_ARGS_FILE: argsFile },
+  }, (error, stdout, stderr) => resolve({ error, stdout, stderr })));
+  assert.equal(result.error, null);
+  assert.match(result.stdout, /Today notes/);
+  const forwarded = await import("node:fs/promises").then(({ readFile }) => readFile(argsFile, "utf8"));
+  assert.equal(forwarded.trim(), "journal read 2026-09-03 --json --quiet");
+  await rm(directory, { recursive: true, force: true });
+});
+
 test("delegates collection listing and preserves pagination flags", async () => {
   const directory = await mkdtemp(join(tmpdir(), "hey-axi-"));
   const fakeHey = join(directory, "hey");
