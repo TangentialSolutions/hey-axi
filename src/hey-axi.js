@@ -34,6 +34,7 @@ function usage() {
     "  search filters        List available search refinement values",
     "  thread read <id>      Read an email thread",
     "  attachment list <id>  List thread attachments",
+    "  clip list              List saved email clips",
     "  set-aside view        List Set Aside threads",
     "  commands              Show the upstream HEY command catalog",
     "  version               Show the installed HEY version",
@@ -116,6 +117,8 @@ if (commandName === "account list") {
 } else if (commandName === "thread read") {
   result = await runHey(command);
 } else if (commandName === "attachment list") {
+  result = await runHey(command);
+} else if (commandName === "clip list") {
   result = await runHey(command);
 } else if (commandName === "set-aside view") {
   result = await runHey(command);
