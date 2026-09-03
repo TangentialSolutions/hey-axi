@@ -31,6 +31,7 @@ function usage() {
     "  journal list           List journal entries",
     "  journal read [date]   Read a journal entry",
     "  search [query]        Search email threads and messages",
+    "  search filters        List available search refinement values",
     "  thread read <id>      Read an email thread",
     "  attachment list <id>  List thread attachments",
     "  set-aside view        List Set Aside threads",
