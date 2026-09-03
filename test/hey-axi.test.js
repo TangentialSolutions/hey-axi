@@ -520,3 +520,23 @@ printf '%s' '{"ok":true,"data":[{"id":812,"subject":"Unsent note","to":"jane@exa
   assert.equal(forwarded.trim(), "draft list --limit 5 --all --json --quiet");
   await rm(directory, { recursive: true, force: true });
 });
+
+test("delegates contact show and renders contact details", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "hey-axi-"));
+  const fakeHey = join(directory, "hey");
+  await writeFile(fakeHey, `#!/bin/sh
+printf '%s\\n' "$*" > "$HEY_ARGS_FILE"
+printf '%s' '{"ok":true,"data":{"id":789,"name":"Jane Example","email":"jane@example.com"}}'
+`);
+  await execFile(process.env.SHELL || "/bin/sh", ["-c", `chmod +x "$1"`, "sh", fakeHey]);
+  const argsFile = join(directory, "args");
+  const result = await new Promise((resolve) => execFile(process.execPath, ["src/hey-axi.js", "contact", "show", "789"], {
+    env: { ...process.env, HEY_BIN: fakeHey, HEY_ARGS_FILE: argsFile },
+  }, (error, stdout, stderr) => resolve({ error, stdout, stderr })));
+  assert.equal(result.error, null);
+  assert.match(result.stdout, /Jane Example/);
+  assert.match(result.stdout, /jane@example\.com/);
+  const forwarded = await import("node:fs/promises").then(({ readFile }) => readFile(argsFile, "utf8"));
+  assert.equal(forwarded.trim(), "contact show 789 --json --quiet");
+  await rm(directory, { recursive: true, force: true });
+});
