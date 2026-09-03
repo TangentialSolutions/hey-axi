@@ -14,6 +14,7 @@ function usage() {
     "  auth status           Check HEY authentication status",
     "  box list              List HEY mailboxes",
     "  box view <name|id>    List threads in a mailbox",
+    "  thread read <id>      Read an email thread",
     "  commands              Show the upstream HEY command catalog",
     "",
     "flags:",
@@ -56,6 +57,8 @@ if (commandName === "account list") {
 } else if (commandName === "box list") {
   result = await runHey(command);
 } else if (commandName === "box view") {
+  result = await runHey(command);
+} else if (commandName === "thread read") {
   result = await runHey(command);
 } else if (commandName === "commands") {
   result = await runHey(["commands"]);
