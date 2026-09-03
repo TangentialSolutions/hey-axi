@@ -18,6 +18,7 @@ function usage() {
     "  label view <id>       List threads with a label",
     "  calendar list         List calendars",
     "  event list             List calendar events",
+    "  todo list              List todos",
     "  search [query]        Search email threads and messages",
     "  thread read <id>      Read an email thread",
     "  commands              Show the upstream HEY command catalog",
@@ -70,6 +71,8 @@ if (commandName === "account list") {
 } else if (commandName === "calendar list") {
   result = await runHey(command);
 } else if (commandName === "event list") {
+  result = await runHey(command);
+} else if (commandName === "todo list") {
   result = await runHey(command);
 } else if (command[0] === "search") {
   result = await runHey(command);
