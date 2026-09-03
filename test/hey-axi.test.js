@@ -173,3 +173,22 @@ printf '%s' '{"ok":true,"data":[{"id":2718,"title":"Review inbox","due_on":"2026
   assert.equal(forwarded.trim(), "todo list --calendar 42 --starts-on 2026-09-01 --ends-on 2026-09-30 --limit 10 --json --quiet");
   await rm(directory, { recursive: true, force: true });
 });
+
+test("delegates contact listing and preserves pagination flags", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "hey-axi-"));
+  const fakeHey = join(directory, "hey");
+  await writeFile(fakeHey, `#!/bin/sh
+printf '%s\\n' "$*" > "$HEY_ARGS_FILE"
+printf '%s' '{"ok":true,"data":[{"id":314,"name":"Jane Doe","email":"jane@example.com"}]}'
+`);
+  await execFile(process.env.SHELL || "/bin/sh", ["-c", `chmod +x "$1"`, "sh", fakeHey]);
+  const argsFile = join(directory, "args");
+  const result = await new Promise((resolve) => execFile(process.execPath, ["src/hey-axi.js", "contact", "list", "--page", "2", "--all"], {
+    env: { ...process.env, HEY_BIN: fakeHey, HEY_ARGS_FILE: argsFile },
+  }, (error, stdout, stderr) => resolve({ error, stdout, stderr })));
+  assert.equal(result.error, null);
+  assert.match(result.stdout, /Jane Doe/);
+  const forwarded = await import("node:fs/promises").then(({ readFile }) => readFile(argsFile, "utf8"));
+  assert.equal(forwarded.trim(), "contact list --page 2 --all --json --quiet");
+  await rm(directory, { recursive: true, force: true });
+});

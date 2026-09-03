@@ -19,6 +19,7 @@ function usage() {
     "  calendar list         List calendars",
     "  event list             List calendar events",
     "  todo list              List todos",
+    "  contact list           List contacts",
     "  search [query]        Search email threads and messages",
     "  thread read <id>      Read an email thread",
     "  commands              Show the upstream HEY command catalog",
@@ -73,6 +74,8 @@ if (commandName === "account list") {
 } else if (commandName === "event list") {
   result = await runHey(command);
 } else if (commandName === "todo list") {
+  result = await runHey(command);
+} else if (commandName === "contact list") {
   result = await runHey(command);
 } else if (command[0] === "search") {
   result = await runHey(command);
