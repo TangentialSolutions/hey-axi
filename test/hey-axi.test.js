@@ -269,6 +269,25 @@ printf '%s' '{"ok":true,"data":[{"id":17,"name":"Follow up","account_id":3}]}'
   await rm(directory, { recursive: true, force: true });
 });
 
+test("delegates workflow view and preserves the workflow id", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "hey-axi-"));
+  const fakeHey = join(directory, "hey");
+  await writeFile(fakeHey, `#!/bin/sh
+printf '%s\\n' "$*" > "$HEY_ARGS_FILE"
+printf '%s' '{"ok":true,"data":{"id":17,"name":"Follow up","stages":[{"id":4,"name":"Waiting"}]}}'
+`);
+  await execFile(process.env.SHELL || "/bin/sh", ["-c", `chmod +x "$1"`, "sh", fakeHey]);
+  const argsFile = join(directory, "args");
+  const result = await new Promise((resolve) => execFile(process.execPath, ["src/hey-axi.js", "workflow", "view", "17"], {
+    env: { ...process.env, HEY_BIN: fakeHey, HEY_ARGS_FILE: argsFile },
+  }, (error, stdout, stderr) => resolve({ error, stdout, stderr })));
+  assert.equal(result.error, null);
+  assert.match(result.stdout, /Waiting/);
+  const forwarded = await import("node:fs/promises").then(({ readFile }) => readFile(argsFile, "utf8"));
+  assert.equal(forwarded.trim(), "workflow view 17 --json --quiet");
+  await rm(directory, { recursive: true, force: true });
+});
+
 test("delegates snippet listing and renders reusable snippet data", async () => {
   const directory = await mkdtemp(join(tmpdir(), "hey-axi-"));
   const fakeHey = join(directory, "hey");
