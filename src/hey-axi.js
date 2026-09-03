@@ -36,6 +36,7 @@ function usage() {
     "  attachment list <id>  List thread attachments",
     "  set-aside view        List Set Aside threads",
     "  commands              Show the upstream HEY command catalog",
+    "  version               Show the installed HEY version",
     "",
     "flags:",
     "  --json                Preserve the upstream JSON envelope",
@@ -120,6 +121,8 @@ if (commandName === "account list") {
   result = await runHey(command);
 } else if (commandName === "commands") {
   result = await runHey(["commands"]);
+} else if (commandName === "version") {
+  result = await runHey(["version"]);
 } else {
   output({ ok: false, error: "unknown command", usage: "Run hey-axi --help" });
   process.exit(2);

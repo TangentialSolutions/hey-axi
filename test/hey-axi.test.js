@@ -12,6 +12,26 @@ test("shows concise help without invoking HEY", async () => {
   assert.equal(result.stderr, "");
 });
 
+test("delegates version and renders the installed release metadata", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "hey-axi-"));
+  const fakeHey = join(directory, "hey");
+  await writeFile(fakeHey, `#!/bin/sh
+printf '%s\\n' "$*" > "$HEY_ARGS_FILE"
+printf '%s' '{"version":"1.4.0","commit":"abc123","source":"release"}'
+`);
+  await execFile(process.env.SHELL || "/bin/sh", ["-c", `chmod +x "$1"`, "sh", fakeHey]);
+  const argsFile = join(directory, "args");
+  const result = await new Promise((resolve) => execFile(process.execPath, ["src/hey-axi.js", "version"], {
+    env: { ...process.env, HEY_BIN: fakeHey, HEY_ARGS_FILE: argsFile },
+  }, (error, stdout, stderr) => resolve({ error, stdout, stderr })));
+  assert.equal(result.error, null);
+  assert.match(result.stdout, /1\.4\.0/);
+  assert.match(result.stdout, /abc123/);
+  const forwarded = await import("node:fs/promises").then(({ readFile }) => readFile(argsFile, "utf8"));
+  assert.equal(forwarded.trim(), "version --json --quiet");
+  await rm(directory, { recursive: true, force: true });
+});
+
 test("rejects unknown commands with a structured error and exit 2", async () => {
   const result = await new Promise((resolve) => execFile(process.execPath, ["src/hey-axi.js", "wat"], (error, stdout, stderr) => resolve({ error, stdout, stderr })));
   assert.equal(result.error.code, 2);
