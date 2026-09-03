@@ -11,6 +11,8 @@ function usage() {
     "",
     "commands:",
     "  account list          List linked HEY accounts",
+    "  box list              List HEY mailboxes",
+    "  box view <name|id>    List threads in a mailbox",
     "  commands              Show the upstream HEY command catalog",
     "",
     "flags:",
@@ -43,11 +45,16 @@ if (args.length === 0 || args[0] === "--help" || args[0] === "-h") {
 
 const json = args.includes("--json");
 const command = args.filter((arg) => arg !== "--json");
+const commandName = command.filter((arg) => !arg.startsWith("--")).slice(0, 2).join(" ");
 let result;
 
-if (command.join(" ") === "account list") {
+if (commandName === "account list") {
   result = await runHey(["account", "list"]);
-} else if (command.join(" ") === "commands") {
+} else if (commandName === "box list") {
+  result = await runHey(command);
+} else if (commandName === "box view") {
+  result = await runHey(command);
+} else if (commandName === "commands") {
   result = await runHey(["commands"]);
 } else {
   output({ ok: false, error: "unknown command", usage: "Run hey-axi --help" });
