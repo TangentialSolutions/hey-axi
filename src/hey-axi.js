@@ -15,6 +15,7 @@ function usage() {
     "  box list              List HEY mailboxes",
     "  box view <name|id>    List threads in a mailbox",
     "  bundle view <id>      List threads grouped in a bundle",
+    "  bubble list            List bubbled-up and scheduled threads",
     "  label list            List email labels",
     "  label view <id>       List threads with a label",
     "  collection list       List email collections",
@@ -76,6 +77,8 @@ if (commandName === "account list") {
 } else if (commandName === "box view") {
   result = await runHey(command);
 } else if (commandName === "bundle view") {
+  result = await runHey(command);
+} else if (commandName === "bubble list") {
   result = await runHey(command);
 } else if (commandName === "label list") {
   result = await runHey(command);

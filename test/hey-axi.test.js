@@ -79,6 +79,26 @@ printf '%s' '{"ok":true,"data":[{"id":321,"topic_id":654,"subject":"Grouped mess
   await rm(directory, { recursive: true, force: true });
 });
 
+test("delegates bubble listing and preserves pagination flags", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "hey-axi-"));
+  const fakeHey = join(directory, "hey");
+  await writeFile(fakeHey, `#!/bin/sh
+printf '%s\\n' "$*" > "$HEY_ARGS_FILE"
+printf '%s' '{"ok":true,"data":{"bubbled_up":[{"id":321,"subject":"Bubbled message"}],"scheduled":[{"id":654,"subject":"Scheduled message"}]}}'
+`);
+  await execFile(process.env.SHELL || "/bin/sh", ["-c", `chmod +x "$1"`, "sh", fakeHey]);
+  const argsFile = join(directory, "args");
+  const result = await new Promise((resolve) => execFile(process.execPath, ["src/hey-axi.js", "bubble", "list", "--limit", "5", "--all"], {
+    env: { ...process.env, HEY_BIN: fakeHey, HEY_ARGS_FILE: argsFile },
+  }, (error, stdout, stderr) => resolve({ error, stdout, stderr })));
+  assert.equal(result.error, null);
+  assert.match(result.stdout, /Bubbled message/);
+  assert.match(result.stdout, /Scheduled message/);
+  const forwarded = await import("node:fs/promises").then(({ readFile }) => readFile(argsFile, "utf8"));
+  assert.equal(forwarded.trim(), "bubble list --limit 5 --all --json --quiet");
+  await rm(directory, { recursive: true, force: true });
+});
+
 test("delegates thread read and preserves the partial-read safety flag", async () => {
   const directory = await mkdtemp(join(tmpdir(), "hey-axi-"));
   const fakeHey = join(directory, "hey");
