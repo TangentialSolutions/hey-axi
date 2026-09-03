@@ -23,6 +23,7 @@ function usage() {
     "  workflow list         List email workflows",
     "  workflow view <id>    View a workflow and its stages",
     "  snippet list          List reusable email snippets",
+    "  draft list             List draft emails",
     "  calendar list         List calendars",
     "  event list             List calendar events",
     "  todo list              List todos",
@@ -97,6 +98,8 @@ if (commandName === "account list") {
 } else if (commandName === "workflow view") {
   result = await runHey(command);
 } else if (commandName === "snippet list") {
+  result = await runHey(command);
+} else if (commandName === "draft list") {
   result = await runHey(command);
 } else if (commandName === "calendar list") {
   result = await runHey(command);

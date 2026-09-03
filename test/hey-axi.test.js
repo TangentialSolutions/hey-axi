@@ -481,3 +481,22 @@ printf '%s' '{"ok":true,"data":[{"id":51,"name":"Meeting follow-up","content":"T
   assert.equal(forwarded.trim(), "snippet list --json --quiet");
   await rm(directory, { recursive: true, force: true });
 });
+
+test("delegates draft listing and preserves pagination flags", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "hey-axi-"));
+  const fakeHey = join(directory, "hey");
+  await writeFile(fakeHey, `#!/bin/sh
+printf '%s\\n' "$*" > "$HEY_ARGS_FILE"
+printf '%s' '{"ok":true,"data":[{"id":812,"subject":"Unsent note","to":"jane@example.com"}]}'
+`);
+  await execFile(process.env.SHELL || "/bin/sh", ["-c", `chmod +x "$1"`, "sh", fakeHey]);
+  const argsFile = join(directory, "args");
+  const result = await new Promise((resolve) => execFile(process.execPath, ["src/hey-axi.js", "draft", "list", "--limit", "5", "--all"], {
+    env: { ...process.env, HEY_BIN: fakeHey, HEY_ARGS_FILE: argsFile },
+  }, (error, stdout, stderr) => resolve({ error, stdout, stderr })));
+  assert.equal(result.error, null);
+  assert.match(result.stdout, /Unsent note/);
+  const forwarded = await import("node:fs/promises").then(({ readFile }) => readFile(argsFile, "utf8"));
+  assert.equal(forwarded.trim(), "draft list --limit 5 --all --json --quiet");
+  await rm(directory, { recursive: true, force: true });
+});
