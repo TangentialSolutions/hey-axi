@@ -3,7 +3,7 @@
 import { spawn } from "node:child_process";
 import { encode } from "@toon-format/toon";
 import { loadBundledManifest, normalizeCatalog, resolveCommand } from "./router.js";
-import { AXI_FLAGS, blockedReason, checkPolicy } from "./policy.js";
+import { AXI_FLAGS, blockedReason, checkPolicy, sendStaging } from "./policy.js";
 import { RAW_OUTPUT_FLAGS, hasAny, scanArgs, valueFlagSet } from "./args.js";
 
 // Resolve the HEY CLI: an explicit HEY_BIN wins, otherwise `hey` is looked up on PATH
@@ -37,8 +37,8 @@ function usage(manifest) {
     "  --help                Show this help (or `hey-axi <command> --help`)",
     "",
     "safety:",
-    "  compose, reply, forward, draft send, bulk-reply send deliver email and are refused unless",
-    "  staged (compose --draft, reply --draft/--dry-run) or opted in with --allow-send / HEY_AXI_ALLOW_SEND=1.",
+    "  Nothing is sent without --allow-send (or HEY_AXI_ALLOW_SEND=1): compose and reply are saved",
+    "  as drafts (hey-axi adds --draft and says so); forward, draft send and bulk-reply send are refused.",
     "  auth token needs --allow-secret / HEY_AXI_ALLOW_SECRETS=1.",
   );
   return lines.join("\n");
@@ -59,6 +59,7 @@ function commandHelp(node) {
   if (reason) lines.push("", `not supported by hey-axi: ${reason}`);
   const gate = checkPolicy(node.path, new Set(), {});
   if (!reason && gate) lines.push("", `${gate.error}: ${gate.reason}; ${gate.hint}`);
+  if (sendStaging(node.path, new Set(), {})) lines.push("", "without --allow-send (or HEY_AXI_ALLOW_SEND=1) hey-axi adds --draft: it's saved as a draft, not sent");
   return lines.join("\n");
 }
 
@@ -152,6 +153,25 @@ if (refusal) {
   process.exit(2);
 }
 
+// compose/reply without a send opt-in: save a draft instead of sending.
+const staging = sendStaging(resolved.path, flags);
+if (staging) {
+  heyArgs.push(staging.flag);
+  command.push(staging.flag);
+  process.stderr.write(`hey-axi: ${staging.notice}\n`);
+}
+
+// Put hey-axi's "saved as a draft, not sent" marker at the top of the result.
+function markStaged(parsed) {
+  if (!staging) return parsed;
+  const marker = { sent: false, saved_as: "draft", axi_notice: staging.notice };
+  if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+    const { ok, ...rest } = parsed;
+    return ok === undefined ? { ...marker, ...rest } : { ok, ...marker, ...rest };
+  }
+  return { ...marker, data: parsed };
+}
+
 if (raw) {
   // --ids-only, --count, --markdown, --html, --styled, --jq: HEY owns the output format.
   const result = await runHeyRaw(heyArgs);
@@ -171,7 +191,7 @@ if (result.status !== 0) {
 }
 
 try {
-  const parsed = JSON.parse(result.stdout);
+  const parsed = markStaged(JSON.parse(result.stdout));
   if (json) process.stdout.write(`${JSON.stringify(parsed)}\n`);
   else output(parsed);
 } catch (error) {
