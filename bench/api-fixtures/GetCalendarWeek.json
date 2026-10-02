@@ -1,0 +1,457 @@
+{
+ "starts_at": "2026-09-27T00:00:00-04:00",
+ "ends_at": "2026-10-04T00:00:00-04:00",
+ "kind": "week",
+ "recordings": {
+  "Calendar::Event": [
+   {
+    "id": 4000,
+    "title": "Team standup",
+    "all_day": false,
+    "recurring": true,
+    "starts_at": "2026-09-28T09:30:00-04:00",
+    "ends_at": "2026-09-28T09:45:00-04:00",
+    "created_at": "2026-09-11T15:19:00Z",
+    "updated_at": "2026-09-12T16:26:00Z",
+    "type": "Calendar::Event",
+    "starts_at_time_zone": "America/New_York",
+    "ends_at_time_zone": "America/New_York",
+    "reminders_label": "reminders_label-440",
+    "calendar": {
+     "id": 3000,
+     "name": "Personal"
+    },
+    "url": "https://app.hey.com/recordings/1000472.json",
+    "edit_url": "https://app.hey.com/recordings/1000470/edit",
+    "occurrences_url": "https://app.hey.com/recordings/1000455/occurrences",
+    "location": "location-473",
+    "description": "Just a heads-up that the payment is scheduled for Friday; reply if you need us to adjust the amount or date.",
+    "join_link": {
+     "title": "Reminder: dentist appointment tomorrow at 9:30",
+     "url": "https://app.hey.com/join_links/1000489.json"
+    },
+    "organizer": {
+     "email_address": "receipts@stripe.example",
+     "name": "Stripe"
+    },
+    "attendances_summary": "attendances_summary-486"
+   },
+   {
+    "id": 4001,
+    "title": "Design review",
+    "all_day": false,
+    "recurring": false,
+    "starts_at": "2026-09-28T11:00:00-04:00",
+    "ends_at": "2026-09-28T12:00:00-04:00",
+    "created_at": "2026-09-17T09:37:00Z",
+    "updated_at": "2026-09-18T10:44:00Z",
+    "type": "Calendar::Event",
+    "starts_at_time_zone": "America/New_York",
+    "ends_at_time_zone": "America/New_York",
+    "reminders_label": "reminders_label-914",
+    "calendar": {
+     "id": 3000,
+     "name": "Personal"
+    },
+    "url": "https://app.hey.com/recordings/1000946.json",
+    "edit_url": "https://app.hey.com/recordings/1000944/edit",
+    "occurrences_url": "https://app.hey.com/recordings/1000929/occurrences",
+    "location": "location-947",
+    "description": "Here's the summary of what changed this week, plus links to the full release notes and the migration guide.",
+    "join_link": {
+     "title": "Board deck draft v3",
+     "url": "https://app.hey.com/join_links/1000963.json"
+    },
+    "organizer": {
+     "email_address": "notifications@linear.example",
+     "name": "Linear"
+    },
+    "attendances_summary": "attendances_summary-960"
+   },
+   {
+    "id": 4010,
+    "title": "Team standup",
+    "all_day": false,
+    "recurring": true,
+    "starts_at": "2026-09-29T09:30:00-04:00",
+    "ends_at": "2026-09-29T09:45:00-04:00",
+    "created_at": "2026-09-23T13:55:00Z",
+    "updated_at": "2026-09-24T14:02:00Z",
+    "type": "Calendar::Event",
+    "starts_at_time_zone": "America/New_York",
+    "ends_at_time_zone": "America/New_York",
+    "reminders_label": "reminders_label-1388",
+    "calendar": {
+     "id": 3000,
+     "name": "Personal"
+    },
+    "url": "https://app.hey.com/recordings/1001420.json",
+    "edit_url": "https://app.hey.com/recordings/1001418/edit",
+    "occurrences_url": "https://app.hey.com/recordings/1001403/occurrences",
+    "location": "location-1421",
+    "description": "Thanks for sending this over — I left a few comments inline and flagged two open questions for legal.",
+    "join_link": {
+     "title": "Shipping update: your order is on the way",
+     "url": "https://app.hey.com/join_links/1001437.json"
+    },
+    "organizer": {
+     "email_address": "receipts@stripe.example",
+     "name": "Stripe"
+    },
+    "attendances_summary": "attendances_summary-1434"
+   },
+   {
+    "id": 4011,
+    "title": "Design review",
+    "all_day": false,
+    "recurring": false,
+    "starts_at": "2026-09-29T11:00:00-04:00",
+    "ends_at": "2026-09-29T12:00:00-04:00",
+    "created_at": "2026-09-11T17:13:00Z",
+    "updated_at": "2026-09-12T08:20:00Z",
+    "type": "Calendar::Event",
+    "starts_at_time_zone": "America/New_York",
+    "ends_at_time_zone": "America/New_York",
+    "reminders_label": "reminders_label-1862",
+    "calendar": {
+     "id": 3000,
+     "name": "Personal"
+    },
+    "url": "https://app.hey.com/recordings/1001894.json",
+    "edit_url": "https://app.hey.com/recordings/1001892/edit",
+    "occurrences_url": "https://app.hey.com/recordings/1001877/occurrences",
+    "location": "location-1895",
+    "description": "Attached is the latest draft. The main changes are in sections 3 and 5; everything else is formatting.",
+    "join_link": {
+     "title": "Re: Hiring loop for the senior backend role",
+     "url": "https://app.hey.com/join_links/1001911.json"
+    },
+    "organizer": {
+     "email_address": "notifications@linear.example",
+     "name": "Linear"
+    },
+    "attendances_summary": "attendances_summary-1908"
+   },
+   {
+    "id": 4012,
+    "title": "Lunch with Marcus",
+    "all_day": false,
+    "recurring": false,
+    "starts_at": "2026-09-29T12:30:00-04:00",
+    "ends_at": "2026-09-29T13:30:00-04:00",
+    "created_at": "2026-09-17T11:31:00Z",
+    "updated_at": "2026-09-18T12:38:00Z",
+    "type": "Calendar::Event",
+    "starts_at_time_zone": "America/New_York",
+    "ends_at_time_zone": "America/New_York",
+    "reminders_label": "reminders_label-2336",
+    "calendar": {
+     "id": 3000,
+     "name": "Personal"
+    },
+    "url": "https://app.hey.com/recordings/1002368.json",
+    "edit_url": "https://app.hey.com/recordings/1002366/edit",
+    "occurrences_url": "https://app.hey.com/recordings/1002351/occurrences",
+    "location": "location-2369",
+    "description": "Can we push to Thursday afternoon? Something came up Wednesday and I want to give this the time it deserves.",
+    "join_link": {
+     "title": "Welcome to the beta!",
+     "url": "https://app.hey.com/join_links/1002385.json"
+    },
+    "organizer": {
+     "email_address": "receipts@stripe.example",
+     "name": "Stripe"
+    },
+    "attendances_summary": "attendances_summary-2382"
+   },
+   {
+    "id": 4020,
+    "title": "Team standup",
+    "all_day": false,
+    "recurring": true,
+    "starts_at": "2026-09-30T09:30:00-04:00",
+    "ends_at": "2026-09-30T09:45:00-04:00",
+    "created_at": "2026-09-23T15:49:00Z",
+    "updated_at": "2026-09-24T16:56:00Z",
+    "type": "Calendar::Event",
+    "starts_at_time_zone": "America/New_York",
+    "ends_at_time_zone": "America/New_York",
+    "reminders_label": "reminders_label-2810",
+    "calendar": {
+     "id": 3000,
+     "name": "Personal"
+    },
+    "url": "https://app.hey.com/recordings/1002842.json",
+    "edit_url": "https://app.hey.com/recordings/1002840/edit",
+    "occurrences_url": "https://app.hey.com/recordings/1002825/occurrences",
+    "location": "location-2843",
+    "description": "Just a heads-up that the payment is scheduled for Friday; reply if you need us to adjust the amount or date.",
+    "join_link": {
+     "title": "Design review notes + next steps",
+     "url": "https://app.hey.com/join_links/1002859.json"
+    },
+    "organizer": {
+     "email_address": "notifications@linear.example",
+     "name": "Linear"
+    },
+    "attendances_summary": "attendances_summary-2856"
+   },
+   {
+    "id": 4021,
+    "title": "Design review",
+    "all_day": false,
+    "recurring": false,
+    "starts_at": "2026-09-30T11:00:00-04:00",
+    "ends_at": "2026-09-30T12:00:00-04:00",
+    "created_at": "2026-09-11T09:07:00Z",
+    "updated_at": "2026-09-12T10:14:00Z",
+    "type": "Calendar::Event",
+    "starts_at_time_zone": "America/New_York",
+    "ends_at_time_zone": "America/New_York",
+    "reminders_label": "reminders_label-3284",
+    "calendar": {
+     "id": 3000,
+     "name": "Personal"
+    },
+    "url": "https://app.hey.com/recordings/1003316.json",
+    "edit_url": "https://app.hey.com/recordings/1003314/edit",
+    "occurrences_url": "https://app.hey.com/recordings/1003299/occurrences",
+    "location": "location-3317",
+    "description": "Here's the summary of what changed this week, plus links to the full release notes and the migration guide.",
+    "join_link": {
+     "title": "Your September statement is ready",
+     "url": "https://app.hey.com/join_links/1003333.json"
+    },
+    "organizer": {
+     "email_address": "receipts@stripe.example",
+     "name": "Stripe"
+    },
+    "attendances_summary": "attendances_summary-3330"
+   },
+   {
+    "id": 4022,
+    "title": "Lunch with Marcus",
+    "all_day": false,
+    "recurring": false,
+    "starts_at": "2026-09-30T12:30:00-04:00",
+    "ends_at": "2026-09-30T13:30:00-04:00",
+    "created_at": "2026-09-17T13:25:00Z",
+    "updated_at": "2026-09-18T14:32:00Z",
+    "type": "Calendar::Event",
+    "starts_at_time_zone": "America/New_York",
+    "ends_at_time_zone": "America/New_York",
+    "reminders_label": "reminders_label-3758",
+    "calendar": {
+     "id": 3000,
+     "name": "Personal"
+    },
+    "url": "https://app.hey.com/recordings/1003790.json",
+    "edit_url": "https://app.hey.com/recordings/1003788/edit",
+    "occurrences_url": "https://app.hey.com/recordings/1003773/occurrences",
+    "location": "location-3791",
+    "description": "Thanks for sending this over — I left a few comments inline and flagged two open questions for legal.",
+    "join_link": {
+     "title": "Re: Can we move our 1:1 to Thursday?",
+     "url": "https://app.hey.com/join_links/1003807.json"
+    },
+    "organizer": {
+     "email_address": "notifications@linear.example",
+     "name": "Linear"
+    },
+    "attendances_summary": "attendances_summary-3804"
+   },
+   {
+    "id": 4023,
+    "title": "1:1 with Priya",
+    "all_day": false,
+    "recurring": false,
+    "starts_at": "2026-09-30T15:00:00-04:00",
+    "ends_at": "2026-09-30T15:30:00-04:00",
+    "created_at": "2026-09-23T17:43:00Z",
+    "updated_at": "2026-09-24T08:50:00Z",
+    "type": "Calendar::Event",
+    "starts_at_time_zone": "America/New_York",
+    "ends_at_time_zone": "America/New_York",
+    "reminders_label": "reminders_label-4232",
+    "calendar": {
+     "id": 3000,
+     "name": "Personal"
+    },
+    "url": "https://app.hey.com/recordings/1004264.json",
+    "edit_url": "https://app.hey.com/recordings/1004262/edit",
+    "occurrences_url": "https://app.hey.com/recordings/1004247/occurrences",
+    "location": "location-4265",
+    "description": "Attached is the latest draft. The main changes are in sections 3 and 5; everything else is formatting.",
+    "join_link": {
+     "title": "Invoice INV-20931 is due Friday",
+     "url": "https://app.hey.com/join_links/1004281.json"
+    },
+    "organizer": {
+     "email_address": "receipts@stripe.example",
+     "name": "Stripe"
+    },
+    "attendances_summary": "attendances_summary-4278"
+   },
+   {
+    "id": 4030,
+    "title": "Team standup",
+    "all_day": false,
+    "recurring": true,
+    "starts_at": "2026-10-01T09:30:00-04:00",
+    "ends_at": "2026-10-01T09:45:00-04:00",
+    "created_at": "2026-09-11T11:01:00Z",
+    "updated_at": "2026-09-12T12:08:00Z",
+    "type": "Calendar::Event",
+    "starts_at_time_zone": "America/New_York",
+    "ends_at_time_zone": "America/New_York",
+    "reminders_label": "reminders_label-4706",
+    "calendar": {
+     "id": 3000,
+     "name": "Personal"
+    },
+    "url": "https://app.hey.com/recordings/1004738.json",
+    "edit_url": "https://app.hey.com/recordings/1004736/edit",
+    "occurrences_url": "https://app.hey.com/recordings/1004721/occurrences",
+    "location": "location-4739",
+    "description": "Can we push to Thursday afternoon? Something came up Wednesday and I want to give this the time it deserves.",
+    "join_link": {
+     "title": "Weekly product digest — what shipped",
+     "url": "https://app.hey.com/join_links/1004755.json"
+    },
+    "organizer": {
+     "email_address": "notifications@linear.example",
+     "name": "Linear"
+    },
+    "attendances_summary": "attendances_summary-4752"
+   },
+   {
+    "id": 4031,
+    "title": "Design review",
+    "all_day": false,
+    "recurring": false,
+    "starts_at": "2026-10-01T11:00:00-04:00",
+    "ends_at": "2026-10-01T12:00:00-04:00",
+    "created_at": "2026-09-17T15:19:00Z",
+    "updated_at": "2026-09-18T16:26:00Z",
+    "type": "Calendar::Event",
+    "starts_at_time_zone": "America/New_York",
+    "ends_at_time_zone": "America/New_York",
+    "reminders_label": "reminders_label-5180",
+    "calendar": {
+     "id": 3000,
+     "name": "Personal"
+    },
+    "url": "https://app.hey.com/recordings/1005212.json",
+    "edit_url": "https://app.hey.com/recordings/1005210/edit",
+    "occurrences_url": "https://app.hey.com/recordings/1005195/occurrences",
+    "location": "location-5213",
+    "description": "Just a heads-up that the payment is scheduled for Friday; reply if you need us to adjust the amount or date.",
+    "join_link": {
+     "title": "Flight confirmation: BOS → SFO, Oct 14",
+     "url": "https://app.hey.com/join_links/1005229.json"
+    },
+    "organizer": {
+     "email_address": "receipts@stripe.example",
+     "name": "Stripe"
+    },
+    "attendances_summary": "attendances_summary-5226"
+   },
+   {
+    "id": 4040,
+    "title": "Team standup",
+    "all_day": false,
+    "recurring": true,
+    "starts_at": "2026-10-02T09:30:00-04:00",
+    "ends_at": "2026-10-02T09:45:00-04:00",
+    "created_at": "2026-09-23T09:37:00Z",
+    "updated_at": "2026-09-24T10:44:00Z",
+    "type": "Calendar::Event",
+    "starts_at_time_zone": "America/New_York",
+    "ends_at_time_zone": "America/New_York",
+    "reminders_label": "reminders_label-5654",
+    "calendar": {
+     "id": 3000,
+     "name": "Personal"
+    },
+    "url": "https://app.hey.com/recordings/1005686.json",
+    "edit_url": "https://app.hey.com/recordings/1005684/edit",
+    "occurrences_url": "https://app.hey.com/recordings/1005669/occurrences",
+    "location": "location-5687",
+    "description": "Here's the summary of what changed this week, plus links to the full release notes and the migration guide.",
+    "join_link": {
+     "title": "Re: Contract redlines for the Acme renewal",
+     "url": "https://app.hey.com/join_links/1005703.json"
+    },
+    "organizer": {
+     "email_address": "notifications@linear.example",
+     "name": "Linear"
+    },
+    "attendances_summary": "attendances_summary-5700"
+   },
+   {
+    "id": 4041,
+    "title": "Design review",
+    "all_day": false,
+    "recurring": false,
+    "starts_at": "2026-10-02T11:00:00-04:00",
+    "ends_at": "2026-10-02T12:00:00-04:00",
+    "created_at": "2026-09-11T13:55:00Z",
+    "updated_at": "2026-09-12T14:02:00Z",
+    "type": "Calendar::Event",
+    "starts_at_time_zone": "America/New_York",
+    "ends_at_time_zone": "America/New_York",
+    "reminders_label": "reminders_label-6128",
+    "calendar": {
+     "id": 3000,
+     "name": "Personal"
+    },
+    "url": "https://app.hey.com/recordings/1006160.json",
+    "edit_url": "https://app.hey.com/recordings/1006158/edit",
+    "occurrences_url": "https://app.hey.com/recordings/1006143/occurrences",
+    "location": "location-6161",
+    "description": "Thanks for sending this over — I left a few comments inline and flagged two open questions for legal.",
+    "join_link": {
+     "title": "Your receipt from Linear (#4821)",
+     "url": "https://app.hey.com/join_links/1006177.json"
+    },
+    "organizer": {
+     "email_address": "receipts@stripe.example",
+     "name": "Stripe"
+    },
+    "attendances_summary": "attendances_summary-6174"
+   },
+   {
+    "id": 4042,
+    "title": "Lunch with Marcus",
+    "all_day": false,
+    "recurring": false,
+    "starts_at": "2026-10-02T12:30:00-04:00",
+    "ends_at": "2026-10-02T13:30:00-04:00",
+    "created_at": "2026-09-17T17:13:00Z",
+    "updated_at": "2026-09-18T08:20:00Z",
+    "type": "Calendar::Event",
+    "starts_at_time_zone": "America/New_York",
+    "ends_at_time_zone": "America/New_York",
+    "reminders_label": "reminders_label-6602",
+    "calendar": {
+     "id": 3000,
+     "name": "Personal"
+    },
+    "url": "https://app.hey.com/recordings/1006634.json",
+    "edit_url": "https://app.hey.com/recordings/1006632/edit",
+    "occurrences_url": "https://app.hey.com/recordings/1006617/occurrences",
+    "location": "location-6635",
+    "description": "Attached is the latest draft. The main changes are in sections 3 and 5; everything else is formatting.",
+    "join_link": {
+     "title": "Q4 planning: agenda and pre-reads",
+     "url": "https://app.hey.com/join_links/1006651.json"
+    },
+    "organizer": {
+     "email_address": "notifications@linear.example",
+     "name": "Linear"
+    },
+    "attendances_summary": "attendances_summary-6648"
+   }
+  ]
+ }
+}

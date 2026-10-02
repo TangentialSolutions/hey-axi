@@ -1,0 +1,241 @@
+{
+ "items": [
+  {
+   "title": "Labels",
+   "app_url": "https://app.hey.com/folders",
+   "platform": "platform-3",
+   "hotkey": "hotkey-4",
+   "highlighted": false,
+   "icon": {
+    "name": "folders",
+    "android_url": "https://app.hey.com/navigation_icons/1000007/android",
+    "ios_url": "https://app.hey.com/navigation_icons/1000008/ios"
+   },
+   "menu_items": [
+    {
+     "title": "Receipts",
+     "app_url": "https://app.hey.com/folders/8100",
+     "platform": "platform-83",
+     "hotkey": "hotkey-84",
+     "highlighted": false,
+     "icon": {
+      "name": "Priya Natarajan",
+      "android_url": "https://app.hey.com/navigation_icons/1000087/android",
+      "ios_url": "https://app.hey.com/navigation_icons/1000088/ios"
+     },
+     "menu_items": []
+    },
+    {
+     "title": "Travel",
+     "app_url": "https://app.hey.com/folders/8101",
+     "platform": "platform-91",
+     "hotkey": "hotkey-92",
+     "highlighted": false,
+     "icon": {
+      "name": "Noah Brooks",
+      "android_url": "https://app.hey.com/navigation_icons/1000095/android",
+      "ios_url": "https://app.hey.com/navigation_icons/1000096/ios"
+     },
+     "menu_items": []
+    },
+    {
+     "title": "Taxes 2026",
+     "app_url": "https://app.hey.com/folders/8102",
+     "platform": "platform-99",
+     "hotkey": "hotkey-100",
+     "highlighted": false,
+     "icon": {
+      "name": "Sam Ortiz",
+      "android_url": "https://app.hey.com/navigation_icons/1000103/android",
+      "ios_url": "https://app.hey.com/navigation_icons/1000104/ios"
+     },
+     "menu_items": []
+    },
+    {
+     "title": "Kids' school",
+     "app_url": "https://app.hey.com/folders/8103",
+     "platform": "platform-107",
+     "hotkey": "hotkey-108",
+     "highlighted": false,
+     "icon": {
+      "name": "Priya Natarajan",
+      "android_url": "https://app.hey.com/navigation_icons/1000111/android",
+      "ios_url": "https://app.hey.com/navigation_icons/1000112/ios"
+     },
+     "menu_items": []
+    },
+    {
+     "title": "Clients/Acme",
+     "app_url": "https://app.hey.com/folders/8104",
+     "platform": "platform-115",
+     "hotkey": "hotkey-116",
+     "highlighted": false,
+     "icon": {
+      "name": "Noah Brooks",
+      "android_url": "https://app.hey.com/navigation_icons/1000119/android",
+      "ios_url": "https://app.hey.com/navigation_icons/1000120/ios"
+     },
+     "menu_items": []
+    },
+    {
+     "title": "Clients/Globex",
+     "app_url": "https://app.hey.com/folders/8105",
+     "platform": "platform-123",
+     "hotkey": "hotkey-124",
+     "highlighted": false,
+     "icon": {
+      "name": "Sam Ortiz",
+      "android_url": "https://app.hey.com/navigation_icons/1000127/android",
+      "ios_url": "https://app.hey.com/navigation_icons/1000128/ios"
+     },
+     "menu_items": []
+    },
+    {
+     "title": "Newsletters",
+     "app_url": "https://app.hey.com/folders/8106",
+     "platform": "platform-131",
+     "hotkey": "hotkey-132",
+     "highlighted": false,
+     "icon": {
+      "name": "Priya Natarajan",
+      "android_url": "https://app.hey.com/navigation_icons/1000135/android",
+      "ios_url": "https://app.hey.com/navigation_icons/1000136/ios"
+     },
+     "menu_items": []
+    },
+    {
+     "title": "Follow up",
+     "app_url": "https://app.hey.com/folders/8107",
+     "platform": "platform-139",
+     "hotkey": "hotkey-140",
+     "highlighted": false,
+     "icon": {
+      "name": "Noah Brooks",
+      "android_url": "https://app.hey.com/navigation_icons/1000143/android",
+      "ios_url": "https://app.hey.com/navigation_icons/1000144/ios"
+     },
+     "menu_items": []
+    }
+   ]
+  },
+  {
+   "title": "Imbox",
+   "app_url": "https://app.hey.com/navigation_items/1000010",
+   "platform": "platform-11",
+   "hotkey": "hotkey-12",
+   "highlighted": false,
+   "icon": {
+    "name": "Priya Natarajan",
+    "android_url": "https://app.hey.com/navigation_icons/1000015/android",
+    "ios_url": "https://app.hey.com/navigation_icons/1000016/ios"
+   },
+   "menu_items": []
+  },
+  {
+   "title": "The Feed",
+   "app_url": "https://app.hey.com/navigation_items/1000018",
+   "platform": "platform-19",
+   "hotkey": "hotkey-20",
+   "highlighted": false,
+   "icon": {
+    "name": "Noah Brooks",
+    "android_url": "https://app.hey.com/navigation_icons/1000023/android",
+    "ios_url": "https://app.hey.com/navigation_icons/1000024/ios"
+   },
+   "menu_items": []
+  },
+  {
+   "title": "Paper Trail",
+   "app_url": "https://app.hey.com/navigation_items/1000026",
+   "platform": "platform-27",
+   "hotkey": "hotkey-28",
+   "highlighted": false,
+   "icon": {
+    "name": "Sam Ortiz",
+    "android_url": "https://app.hey.com/navigation_icons/1000031/android",
+    "ios_url": "https://app.hey.com/navigation_icons/1000032/ios"
+   },
+   "menu_items": []
+  },
+  {
+   "title": "Set Aside",
+   "app_url": "https://app.hey.com/navigation_items/1000034",
+   "platform": "platform-35",
+   "hotkey": "hotkey-36",
+   "highlighted": false,
+   "icon": {
+    "name": "Priya Natarajan",
+    "android_url": "https://app.hey.com/navigation_icons/1000039/android",
+    "ios_url": "https://app.hey.com/navigation_icons/1000040/ios"
+   },
+   "menu_items": []
+  },
+  {
+   "title": "Reply Later",
+   "app_url": "https://app.hey.com/navigation_items/1000042",
+   "platform": "platform-43",
+   "hotkey": "hotkey-44",
+   "highlighted": false,
+   "icon": {
+    "name": "Noah Brooks",
+    "android_url": "https://app.hey.com/navigation_icons/1000047/android",
+    "ios_url": "https://app.hey.com/navigation_icons/1000048/ios"
+   },
+   "menu_items": []
+  }
+ ],
+ "hotkeys": [
+  {
+   "title": "Re: Customer escalation — Globex",
+   "app_url": "https://app.hey.com/navigation_items/1000050",
+   "platform": "platform-51",
+   "hotkey": "hotkey-52",
+   "highlighted": false,
+   "icon": {
+    "name": "Sam Ortiz",
+    "android_url": "https://app.hey.com/navigation_icons/1000055/android",
+    "ios_url": "https://app.hey.com/navigation_icons/1000056/ios"
+   },
+   "menu_items": []
+  },
+  {
+   "title": "Your September statement is ready",
+   "app_url": "https://app.hey.com/navigation_items/1000058",
+   "platform": "platform-59",
+   "hotkey": "hotkey-60",
+   "highlighted": false,
+   "icon": {
+    "name": "Priya Natarajan",
+    "android_url": "https://app.hey.com/navigation_icons/1000063/android",
+    "ios_url": "https://app.hey.com/navigation_icons/1000064/ios"
+   },
+   "menu_items": []
+  },
+  {
+   "title": "New sign-in to your account",
+   "app_url": "https://app.hey.com/navigation_items/1000066",
+   "platform": "platform-67",
+   "hotkey": "hotkey-68",
+   "highlighted": false,
+   "icon": {
+    "name": "Noah Brooks",
+    "android_url": "https://app.hey.com/navigation_icons/1000071/android",
+    "ios_url": "https://app.hey.com/navigation_icons/1000072/ios"
+   },
+   "menu_items": []
+  },
+  {
+   "title": "Conference talk accepted 🎉",
+   "app_url": "https://app.hey.com/navigation_items/1000074",
+   "platform": "platform-75",
+   "hotkey": "hotkey-76",
+   "highlighted": false,
+   "icon": {
+    "name": "Sam Ortiz",
+    "android_url": "https://app.hey.com/navigation_icons/1000079/android",
+    "ios_url": "https://app.hey.com/navigation_icons/1000080/ios"
+   },
+   "menu_items": []
+  }
+ ]
+}

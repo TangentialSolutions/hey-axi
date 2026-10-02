@@ -24,3 +24,4 @@ jobs:
       - run: npm ci
       # Tests use a fake `hey`; HEY_BIN is unset and no real HEY CLI is installed.
       - run: npm test
+      - run: npm run skill:check

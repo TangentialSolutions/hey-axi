@@ -1,0 +1,62 @@
+[
+ {
+  "id": 7000,
+  "kind": "imbox",
+  "name": "Imbox",
+  "app_url": "https://app.hey.com/imbox",
+  "url": "https://app.hey.com/boxs/1000005.json",
+  "signed_stream_name": "eyJfcmFpbHMiOnsiZGF0YSI6WyJ6",
+  "posting_changes_url": "https://app.hey.com/boxs/1000007/posting-changes",
+  "updates_channels": []
+ },
+ {
+  "id": 7001,
+  "kind": "feed",
+  "name": "The Feed",
+  "app_url": "https://app.hey.com/feed",
+  "url": "https://app.hey.com/boxs/1000012.json",
+  "signed_stream_name": "eyJfcmFpbHMiOnsiZGF0YSI6WyJ13",
+  "posting_changes_url": "https://app.hey.com/boxs/1000014/posting-changes",
+  "updates_channels": []
+ },
+ {
+  "id": 7002,
+  "kind": "paper_trail",
+  "name": "Paper Trail",
+  "app_url": "https://app.hey.com/paper-trail",
+  "url": "https://app.hey.com/boxs/1000019.json",
+  "signed_stream_name": "eyJfcmFpbHMiOnsiZGF0YSI6WyJ20",
+  "posting_changes_url": "https://app.hey.com/boxs/1000021/posting-changes",
+  "updates_channels": []
+ },
+ {
+  "id": 7003,
+  "kind": "set_aside",
+  "name": "Set Aside",
+  "app_url": "https://app.hey.com/set-aside",
+  "url": "https://app.hey.com/boxs/1000026.json",
+  "signed_stream_name": "eyJfcmFpbHMiOnsiZGF0YSI6WyJ27",
+  "posting_changes_url": "https://app.hey.com/boxs/1000028/posting-changes",
+  "updates_channels": []
+ },
+ {
+  "id": 7004,
+  "kind": "reply_later",
+  "name": "Reply Later",
+  "app_url": "https://app.hey.com/reply-later",
+  "url": "https://app.hey.com/boxs/1000033.json",
+  "signed_stream_name": "eyJfcmFpbHMiOnsiZGF0YSI6WyJ34",
+  "posting_changes_url": "https://app.hey.com/boxs/1000035/posting-changes",
+  "updates_channels": []
+ },
+ {
+  "id": 7005,
+  "kind": "trailbox",
+  "name": "Bubble Up",
+  "app_url": "https://app.hey.com/trailbox",
+  "url": "https://app.hey.com/boxs/1000040.json",
+  "signed_stream_name": "eyJfcmFpbHMiOnsiZGF0YSI6WyJ41",
+  "posting_changes_url": "https://app.hey.com/boxs/1000042/posting-changes",
+  "updates_channels": []
+ }
+]

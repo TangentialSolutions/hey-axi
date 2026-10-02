@@ -1,7 +1,7 @@
 name: manifest drift
 
 # Weekly check that src/manifest.json still matches the latest HEY CLI release.
-# Only `hey version` and `hey commands` are run; no login, no mailbox access.
+# Only `hey version`, `hey commands` and `hey <command> --help` are run; no login, no mailbox access.
 on:
   schedule:
     - cron: "17 13 * * 1"

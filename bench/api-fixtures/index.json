@@ -1,0 +1,56 @@
+{
+ "source": "basecamp/hey-sdk openapi.json @ go/v0.31.1",
+ "synthetic": true,
+ "fixtures": {
+  "ListBoxes": {
+   "template": "/boxes.json",
+   "file": "ListBoxes.json",
+   "note": "6 standard boxes"
+  },
+  "GetImbox": {
+   "template": "/imbox.json",
+   "file": "GetImbox.json",
+   "note": "Imbox, first page: 25 postings"
+  },
+  "GetTopicEntries": {
+   "template": "/topics/{topicId}/entries",
+   "file": "GetTopicEntries.json",
+   "note": "4 entries in one thread"
+  },
+  "GetMessage": {
+   "template": "/messages/{messageId}",
+   "file": "GetMessage.json",
+   "note": "One long HTML message (served for every message ID)"
+  },
+  "GetNavigation": {
+   "template": "/my/navigation.json",
+   "file": "GetNavigation.json",
+   "note": "Navigation with a Labels group of 8 labels"
+  },
+  "GetClearances": {
+   "template": "/clearances.json",
+   "file": "GetClearances.json",
+   "note": "8 pending Screener clearances"
+  },
+  "ListCalendars": {
+   "template": "/calendars.json",
+   "file": "ListCalendars.json",
+   "note": "2 calendars"
+  },
+  "GetCalendarWeek": {
+   "template": "/calendar/weeks/{week}",
+   "file": "GetCalendarWeek.json",
+   "note": "14 events in one week"
+  },
+  "GetCalendarRecordings": {
+   "template": "/calendars/{calendarId}/recordings",
+   "file": "GetCalendarRecordings.json",
+   "note": "8 open todos"
+  },
+  "AdvancedSearch": {
+   "template": "/advanced_search.json",
+   "file": "AdvancedSearch.json",
+   "note": "20 search matches (one page)"
+  }
+ }
+}

@@ -1,0 +1,19 @@
+{
+ "synthetic": true,
+ "command": "label list",
+ "argv": [
+  "label",
+  "list"
+ ],
+ "hey_version": "1.7.0",
+ "json": {
+  "exit_code": 0,
+  "stdout": "{\n  \"ok\": true,\n  \"data\": [\n    {\n      \"id\": 8100,\n      \"name\": \"Receipts\",\n      \"app_url\": \"https://app.hey.com/folders/8100\"\n    },\n    {\n      \"id\": 8101,\n      \"name\": \"Travel\",\n      \"app_url\": \"https://app.hey.com/folders/8101\"\n    },\n    {\n      \"id\": 8102,\n      \"name\": \"Taxes 2026\",\n      \"app_url\": \"https://app.hey.com/folders/8102\"\n    },\n    {\n      \"id\": 8103,\n      \"name\": \"Kids' school\",\n      \"app_url\": \"https://app.hey.com/folders/8103\"\n    },\n    {\n      \"id\": 8104,\n      \"name\": \"Clients/Acme\",\n      \"app_url\": \"https://app.hey.com/folders/8104\"\n    },\n    {\n      \"id\": 8105,\n      \"name\": \"Clients/Globex\",\n      \"app_url\": \"https://app.hey.com/folders/8105\"\n    },\n    {\n      \"id\": 8106,\n      \"name\": \"Newsletters\",\n      \"app_url\": \"https://app.hey.com/folders/8106\"\n    },\n    {\n      \"id\": 8107,\n      \"name\": \"Follow up\",\n      \"app_url\": \"https://app.hey.com/folders/8107\"\n    }\n  ],\n  \"summary\": \"8 labels\",\n  \"breadcrumbs\": [\n    {\n      \"action\": \"view\",\n      \"command\": \"hey label view \\u003cid\\u003e\",\n      \"description\": \"View email threads with a label\"\n    }\n  ]\n}\n",
+  "stderr": ""
+ },
+ "styled": {
+  "exit_code": 0,
+  "stdout": "ID    Name            \n8100  Receipts        \n8101  Travel          \n8102  Taxes 2026      \n8103  Kids' school    \n8104  Clients/Acme    \n8105  Clients/Globex  \n8106  Newsletters     \n8107  Follow up       \n",
+  "stderr": ""
+ }
+}

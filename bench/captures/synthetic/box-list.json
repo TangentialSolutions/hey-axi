@@ -1,0 +1,19 @@
+{
+ "synthetic": true,
+ "command": "box list",
+ "argv": [
+  "box",
+  "list"
+ ],
+ "hey_version": "1.7.0",
+ "json": {
+  "exit_code": 0,
+  "stdout": "{\n  \"ok\": true,\n  \"data\": [\n    {\n      \"app_url\": \"https://app.hey.com/imbox\",\n      \"id\": 7000,\n      \"kind\": \"imbox\",\n      \"name\": \"Imbox\",\n      \"posting_changes_url\": \"https://app.hey.com/boxs/1000007/posting-changes\",\n      \"signed_stream_name\": \"eyJfcmFpbHMiOnsiZGF0YSI6WyJ6\",\n      \"url\": \"https://app.hey.com/boxs/1000005.json\"\n    },\n    {\n      \"app_url\": \"https://app.hey.com/feed\",\n      \"id\": 7001,\n      \"kind\": \"feed\",\n      \"name\": \"The Feed\",\n      \"posting_changes_url\": \"https://app.hey.com/boxs/1000014/posting-changes\",\n      \"signed_stream_name\": \"eyJfcmFpbHMiOnsiZGF0YSI6WyJ13\",\n      \"url\": \"https://app.hey.com/boxs/1000012.json\"\n    },\n    {\n      \"app_url\": \"https://app.hey.com/paper-trail\",\n      \"id\": 7002,\n      \"kind\": \"paper_trail\",\n      \"name\": \"Paper Trail\",\n      \"posting_changes_url\": \"https://app.hey.com/boxs/1000021/posting-changes\",\n      \"signed_stream_name\": \"eyJfcmFpbHMiOnsiZGF0YSI6WyJ20\",\n      \"url\": \"https://app.hey.com/boxs/1000019.json\"\n    },\n    {\n      \"app_url\": \"https://app.hey.com/set-aside\",\n      \"id\": 7003,\n      \"kind\": \"set_aside\",\n      \"name\": \"Set Aside\",\n      \"posting_changes_url\": \"https://app.hey.com/boxs/1000028/posting-changes\",\n      \"signed_stream_name\": \"eyJfcmFpbHMiOnsiZGF0YSI6WyJ27\",\n      \"url\": \"https://app.hey.com/boxs/1000026.json\"\n    },\n    {\n      \"app_url\": \"https://app.hey.com/reply-later\",\n      \"id\": 7004,\n      \"kind\": \"reply_later\",\n      \"name\": \"Reply Later\",\n      \"posting_changes_url\": \"https://app.hey.com/boxs/1000035/posting-changes\",\n      \"signed_stream_name\": \"eyJfcmFpbHMiOnsiZGF0YSI6WyJ34\",\n      \"url\": \"https://app.hey.com/boxs/1000033.json\"\n    },\n    {\n      \"app_url\": \"https://app.hey.com/trailbox\",\n      \"id\": 7005,\n      \"kind\": \"trailbox\",\n      \"name\": \"Bubble Up\",\n      \"posting_changes_url\": \"https://app.hey.com/boxs/1000042/posting-changes\",\n      \"signed_stream_name\": \"eyJfcmFpbHMiOnsiZGF0YSI6WyJ41\",\n      \"url\": \"https://app.hey.com/boxs/1000040.json\"\n    }\n  ],\n  \"summary\": \"6 mailboxes\",\n  \"breadcrumbs\": [\n    {\n      \"action\": \"view\",\n      \"command\": \"hey box view \\u003cname\\u003e\",\n      \"description\": \"View email threads in a box\"\n    }\n  ]\n}\n",
+  "stderr": ""
+ },
+ "styled": {
+  "exit_code": 0,
+  "stdout": "ID    Kind         Name         \n7000  imbox        Imbox        \n7001  feed         The Feed     \n7002  paper_trail  Paper Trail  \n7003  set_aside    Set Aside    \n7004  reply_later  Reply Later  \n7005  trailbox     Bubble Up    \n",
+  "stderr": ""
+ }
+}

@@ -25,11 +25,12 @@ test("interactive commands get HEY untouched: no --json, output as-is, exit code
   const fake = await makeFakeHey({ stdout: "interactive output\n", exitCode: 3 });
   const paths = interactivePaths().filter((path) => path !== "tui");
   for (const path of paths) {
-    const result = await runAxi([...path.split(" "), "--no-browser"], { fake });
+    const result = await runAxi(path.split(" "), { fake });
     assert.equal(result.code, 3, path);
     assert.equal(result.stdout, "interactive output\n", path);
   }
-  assert.deepEqual(await fake.calls(), paths.map((path) => `${path} --no-browser`));
+  assert.equal((await runAxi(["auth", "login", "--no-browser"], { fake })).code, 3);
+  assert.deepEqual(await fake.calls(), [...paths, "auth login --no-browser"]);
   await fake.cleanup();
 });
 
@@ -109,7 +110,7 @@ test("HEY's JSON error envelope becomes a structured error with HEY's exit code"
   assert.equal(result.code, 3);
   assert.match(result.stdout, /error: Not logged in/);
   assert.match(result.stdout, /code: auth/);
-  assert.match(result.stdout, /hint: Run hey auth login/);
+  assert.match(result.stdout, /hint: Run hey-axi auth login/);
   assert.match(result.stdout, /exit_code: 3/);
   assert.doesNotMatch(result.stdout, /\{/);
   await fake.cleanup();
@@ -126,15 +127,15 @@ test("non-JSON HEY failures still produce a structured error", async () => {
 test("heyFailure prefers HEY's envelope and drops empty fields", () => {
   assert.deepEqual(
     heyFailure({ status: 2, stderr: '{"ok":false,"error":"Thread not found","code":"not_found","hint":""}', stdout: "" }),
-    { ok: false, error: "Thread not found", code: "not_found", exit_code: 2 },
+    { ok: false, error: "Thread not found", code: "not_found", exit_code: 2, help: "Check the id; list commands such as `hey-axi box view imbox` show valid ids (threads use topic_id)" },
   );
   // Real HEY 1.7.0 output: a keyring warning line, then the indented envelope.
   assert.deepEqual(
     heyFailure({ status: 3, stdout: "", stderr: 'warning: system keyring unavailable\n{\n  "ok": false,\n  "error": "Not logged in",\n  "code": "auth",\n  "hint": "Run: hey auth login"\n}\n' }),
-    { ok: false, error: "Not logged in", code: "auth", hint: "Run: hey auth login", warning: "warning: system keyring unavailable", exit_code: 3 },
+    { ok: false, error: "Not logged in", code: "auth", hint: "Run: hey-axi auth login", warning: "warning: system keyring unavailable", exit_code: 3 },
   );
-  assert.deepEqual(heyFailure({ status: 1, stderr: "", stdout: "" }), { ok: false, error: "hey command failed", exit_code: 1 });
-  assert.deepEqual(heyFailure({ status: 127, error: "HEY CLI not found on PATH" }), { ok: false, error: "HEY CLI not found on PATH", exit_code: 127 });
+  assert.deepEqual(heyFailure({ status: 1, stderr: "", stdout: "" }), { ok: false, error: "hey command failed", exit_code: 1, help: "Run `hey-axi <command> --help` to check the arguments" });
+  assert.deepEqual(heyFailure({ status: 127, error: "HEY CLI not found on PATH" }), { ok: false, error: "HEY CLI not found on PATH", exit_code: 127, help: "Install the HEY CLI (curl -fsSL https://hey.com/install-cli | bash) or set HEY_BIN" });
 });
 
 test("invalid JSON from HEY on success is reported, exit 1", async () => {

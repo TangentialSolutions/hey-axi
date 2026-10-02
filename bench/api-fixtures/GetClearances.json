@@ -1,0 +1,334 @@
+{
+ "pending_clearances_count": 8,
+ "signed_stream_name": "eyJfcmFpbHMiOnsiZGF0YSI6WyJ1",
+ "clearances": [
+  {
+   "id": 9100,
+   "status": "pending",
+   "created_at": "2026-09-14T12:28:00Z",
+   "updated_at": "2026-09-15T13:35:00Z",
+   "petitioner": {
+    "id": 1000222,
+    "account_id": 1000259,
+    "updated_at": "2026-09-18T16:56:00Z",
+    "name": "Stripe",
+    "email_address": "receipts@stripe.example",
+    "avatar_url": "https://app.hey.com/contacts/1000011/avatar",
+    "initials": "S",
+    "avatar_background_color": "#5B8DEF",
+    "contactable_type": "topic",
+    "name_tag": "name_tag-15"
+   },
+   "most_recent_entry": {
+    "id": 1000592,
+    "created_at": "2026-09-27T15:59:00Z",
+    "updated_at": "2026-09-10T16:06:00Z",
+    "creator": {
+     "id": 1000703,
+     "account_id": 1000740,
+     "updated_at": "2026-09-13T09:27:00Z",
+     "name": "Noah Brooks",
+     "email_address": "noah@brooks.example",
+     "avatar_url": "https://app.hey.com/contacts/1000024/avatar",
+     "initials": "NB",
+     "avatar_background_color": "#5B8DEF",
+     "contactable_type": "topic",
+     "name_tag": "name_tag-28"
+    },
+    "alternative_sender_name": "Delta Air Lines",
+    "summary": "Thanks for sending this over — I left a few comments inline and flagged two open questions for legal.",
+    "kind": "topic",
+    "app_url": "https://app.hey.com/entrys/1000032",
+    "subject": "Design review notes + next steps",
+    "topic_id": 1001258
+   }
+  },
+  {
+   "id": 9101,
+   "status": "pending",
+   "created_at": "2026-09-11T15:19:00Z",
+   "updated_at": "2026-09-12T16:26:00Z",
+   "petitioner": {
+    "id": 1001443,
+    "account_id": 1001480,
+    "updated_at": "2026-09-15T09:47:00Z",
+    "name": "Sam Ortiz",
+    "email_address": "sam@ortiz.example",
+    "avatar_url": "https://app.hey.com/contacts/1000044/avatar",
+    "initials": "SO",
+    "avatar_background_color": "#5B8DEF",
+    "contactable_type": "topic",
+    "name_tag": "name_tag-48"
+   },
+   "most_recent_entry": {
+    "id": 1001813,
+    "created_at": "2026-09-24T08:50:00Z",
+    "updated_at": "2026-09-25T09:57:00Z",
+    "creator": {
+     "id": 1001924,
+     "account_id": 1001961,
+     "updated_at": "2026-09-10T12:18:00Z",
+     "name": "Chase",
+     "email_address": "alerts@chase.example",
+     "avatar_url": "https://app.hey.com/contacts/1000057/avatar",
+     "initials": "C",
+     "avatar_background_color": "#5B8DEF",
+     "contactable_type": "topic",
+     "name_tag": "name_tag-61"
+    },
+    "alternative_sender_name": "Priya Natarajan",
+    "summary": "Can we push to Thursday afternoon? Something came up Wednesday and I want to give this the time it deserves.",
+    "kind": "topic",
+    "app_url": "https://app.hey.com/entrys/1000065",
+    "subject": "Re: Offsite logistics (hotel block closes 10/10)",
+    "topic_id": 1002479
+   }
+  },
+  {
+   "id": 9102,
+   "status": "pending",
+   "created_at": "2026-09-26T08:10:00Z",
+   "updated_at": "2026-09-27T09:17:00Z",
+   "petitioner": {
+    "id": 1002664,
+    "account_id": 1002701,
+    "updated_at": "2026-09-12T12:38:00Z",
+    "name": "Linear",
+    "email_address": "notifications@linear.example",
+    "avatar_url": "https://app.hey.com/contacts/1000077/avatar",
+    "initials": "L",
+    "avatar_background_color": "#5B8DEF",
+    "contactable_type": "topic",
+    "name_tag": "name_tag-81"
+   },
+   "most_recent_entry": {
+    "id": 1003034,
+    "created_at": "2026-09-21T11:41:00Z",
+    "updated_at": "2026-09-22T12:48:00Z",
+    "creator": {
+     "id": 1003145,
+     "account_id": 1003182,
+     "updated_at": "2026-09-25T15:09:00Z",
+     "name": "Dana Whitfield",
+     "email_address": "dana@whitfield.example",
+     "avatar_url": "https://app.hey.com/contacts/1000090/avatar",
+     "initials": "DW",
+     "avatar_background_color": "#5B8DEF",
+     "contactable_type": "topic",
+     "name_tag": "name_tag-94"
+    },
+    "alternative_sender_name": "Strava",
+    "summary": "Here's the summary of what changed this week, plus links to the full release notes and the migration guide.",
+    "kind": "topic",
+    "app_url": "https://app.hey.com/entrys/1000098",
+    "subject": "Re: Customer escalation — Globex",
+    "topic_id": 1003700
+   }
+  },
+  {
+   "id": 9103,
+   "status": "pending",
+   "created_at": "2026-09-23T11:01:00Z",
+   "updated_at": "2026-09-24T12:08:00Z",
+   "petitioner": {
+    "id": 1003885,
+    "account_id": 1003922,
+    "updated_at": "2026-09-27T15:29:00Z",
+    "name": "Jane Cooper",
+    "email_address": "jane@acme.example",
+    "avatar_url": "https://app.hey.com/contacts/1000110/avatar",
+    "initials": "JC",
+    "avatar_background_color": "#5B8DEF",
+    "contactable_type": "topic",
+    "name_tag": "name_tag-114"
+   },
+   "most_recent_entry": {
+    "id": 1004255,
+    "created_at": "2026-09-18T14:32:00Z",
+    "updated_at": "2026-09-19T15:39:00Z",
+    "creator": {
+     "id": 1004366,
+     "account_id": 1004403,
+     "updated_at": "2026-09-22T08:00:00Z",
+     "name": "Marcus Lee",
+     "email_address": "marcus.lee@globex.example",
+     "avatar_url": "https://app.hey.com/contacts/1000123/avatar",
+     "initials": "ML",
+     "avatar_background_color": "#5B8DEF",
+     "contactable_type": "topic",
+     "name_tag": "name_tag-127"
+    },
+    "alternative_sender_name": "Avery Chen",
+    "summary": "Attached is the latest draft. The main changes are in sections 3 and 5; everything else is formatting.",
+    "kind": "topic",
+    "app_url": "https://app.hey.com/entrys/1000131",
+    "subject": "Your September statement is ready",
+    "topic_id": 1004921
+   }
+  },
+  {
+   "id": 9104,
+   "status": "pending",
+   "created_at": "2026-09-20T14:52:00Z",
+   "updated_at": "2026-09-21T15:59:00Z",
+   "petitioner": {
+    "id": 1005106,
+    "account_id": 1005143,
+    "updated_at": "2026-09-24T08:20:00Z",
+    "name": "Stripe",
+    "email_address": "receipts@stripe.example",
+    "avatar_url": "https://app.hey.com/contacts/1000143/avatar",
+    "initials": "S",
+    "avatar_background_color": "#5B8DEF",
+    "contactable_type": "topic",
+    "name_tag": "name_tag-147"
+   },
+   "most_recent_entry": {
+    "id": 1005476,
+    "created_at": "2026-09-15T17:23:00Z",
+    "updated_at": "2026-09-16T08:30:00Z",
+    "creator": {
+     "id": 1005587,
+     "account_id": 1005624,
+     "updated_at": "2026-09-19T11:51:00Z",
+     "name": "Noah Brooks",
+     "email_address": "noah@brooks.example",
+     "avatar_url": "https://app.hey.com/contacts/1000156/avatar",
+     "initials": "NB",
+     "avatar_background_color": "#5B8DEF",
+     "contactable_type": "topic",
+     "name_tag": "name_tag-160"
+    },
+    "alternative_sender_name": "Delta Air Lines",
+    "summary": "Just a heads-up that the payment is scheduled for Friday; reply if you need us to adjust the amount or date.",
+    "kind": "topic",
+    "app_url": "https://app.hey.com/entrys/1000164",
+    "subject": "New sign-in to your account",
+    "topic_id": 1006142
+   }
+  },
+  {
+   "id": 9105,
+   "status": "pending",
+   "created_at": "2026-09-17T17:43:00Z",
+   "updated_at": "2026-09-18T08:50:00Z",
+   "petitioner": {
+    "id": 1006327,
+    "account_id": 1006364,
+    "updated_at": "2026-09-21T11:11:00Z",
+    "name": "Sam Ortiz",
+    "email_address": "sam@ortiz.example",
+    "avatar_url": "https://app.hey.com/contacts/1000176/avatar",
+    "initials": "SO",
+    "avatar_background_color": "#5B8DEF",
+    "contactable_type": "topic",
+    "name_tag": "name_tag-180"
+   },
+   "most_recent_entry": {
+    "id": 1006697,
+    "created_at": "2026-09-12T10:14:00Z",
+    "updated_at": "2026-09-13T11:21:00Z",
+    "creator": {
+     "id": 1006808,
+     "account_id": 1006845,
+     "updated_at": "2026-09-16T14:42:00Z",
+     "name": "Chase",
+     "email_address": "alerts@chase.example",
+     "avatar_url": "https://app.hey.com/contacts/1000189/avatar",
+     "initials": "C",
+     "avatar_background_color": "#5B8DEF",
+     "contactable_type": "topic",
+     "name_tag": "name_tag-193"
+    },
+    "alternative_sender_name": "Priya Natarajan",
+    "summary": "Thanks for sending this over — I left a few comments inline and flagged two open questions for legal.",
+    "kind": "topic",
+    "app_url": "https://app.hey.com/entrys/1000197",
+    "subject": "Conference talk accepted 🎉",
+    "topic_id": 1007363
+   }
+  },
+  {
+   "id": 9106,
+   "status": "pending",
+   "created_at": "2026-09-14T10:34:00Z",
+   "updated_at": "2026-09-15T11:41:00Z",
+   "petitioner": {
+    "id": 1007548,
+    "account_id": 1007585,
+    "updated_at": "2026-09-18T14:02:00Z",
+    "name": "Linear",
+    "email_address": "notifications@linear.example",
+    "avatar_url": "https://app.hey.com/contacts/1000209/avatar",
+    "initials": "L",
+    "avatar_background_color": "#5B8DEF",
+    "contactable_type": "topic",
+    "name_tag": "name_tag-213"
+   },
+   "most_recent_entry": {
+    "id": 1007918,
+    "created_at": "2026-09-27T13:05:00Z",
+    "updated_at": "2026-09-10T14:12:00Z",
+    "creator": {
+     "id": 1008029,
+     "account_id": 1008066,
+     "updated_at": "2026-09-13T17:33:00Z",
+     "name": "Dana Whitfield",
+     "email_address": "dana@whitfield.example",
+     "avatar_url": "https://app.hey.com/contacts/1000222/avatar",
+     "initials": "DW",
+     "avatar_background_color": "#5B8DEF",
+     "contactable_type": "topic",
+     "name_tag": "name_tag-226"
+    },
+    "alternative_sender_name": "Strava",
+    "summary": "Can we push to Thursday afternoon? Something came up Wednesday and I want to give this the time it deserves.",
+    "kind": "topic",
+    "app_url": "https://app.hey.com/entrys/1000230",
+    "subject": "Re: Can we move our 1:1 to Thursday?",
+    "topic_id": 1008584
+   }
+  },
+  {
+   "id": 9107,
+   "status": "pending",
+   "created_at": "2026-09-11T13:25:00Z",
+   "updated_at": "2026-09-12T14:32:00Z",
+   "petitioner": {
+    "id": 1008769,
+    "account_id": 1008806,
+    "updated_at": "2026-09-15T17:53:00Z",
+    "name": "Jane Cooper",
+    "email_address": "jane@acme.example",
+    "avatar_url": "https://app.hey.com/contacts/1000242/avatar",
+    "initials": "JC",
+    "avatar_background_color": "#5B8DEF",
+    "contactable_type": "topic",
+    "name_tag": "name_tag-246"
+   },
+   "most_recent_entry": {
+    "id": 1009139,
+    "created_at": "2026-09-24T16:56:00Z",
+    "updated_at": "2026-09-25T17:03:00Z",
+    "creator": {
+     "id": 1009250,
+     "account_id": 1009287,
+     "updated_at": "2026-09-10T10:24:00Z",
+     "name": "Marcus Lee",
+     "email_address": "marcus.lee@globex.example",
+     "avatar_url": "https://app.hey.com/contacts/1000255/avatar",
+     "initials": "ML",
+     "avatar_background_color": "#5B8DEF",
+     "contactable_type": "topic",
+     "name_tag": "name_tag-259"
+    },
+    "alternative_sender_name": "Avery Chen",
+    "summary": "Here's the summary of what changed this week, plus links to the full release notes and the migration guide.",
+    "kind": "topic",
+    "app_url": "https://app.hey.com/entrys/1000263",
+    "subject": "Re: Kitchen remodel quote",
+    "topic_id": 1009805
+   }
+  }
+ ]
+}

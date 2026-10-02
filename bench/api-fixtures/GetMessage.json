@@ -1,0 +1,99 @@
+{
+ "id": 1000037,
+ "created_at": "2026-09-12T10:14:00Z",
+ "updated_at": "2026-09-13T11:21:00Z",
+ "url": "https://app.hey.com/messages/1000004.json",
+ "creator": {
+  "id": 1000185,
+  "account_id": 1000222,
+  "updated_at": "2026-09-17T15:49:00Z",
+  "name": "Avery Chen",
+  "email_address": "avery.chen@acme.example",
+  "avatar_url": "https://app.hey.com/contacts/1000010/avatar",
+  "initials": "AC",
+  "avatar_background_color": "#5B8DEF",
+  "contactable_type": "topic",
+  "name_tag": "name_tag-14"
+ },
+ "sender": {
+  "id": 1000555,
+  "account_id": 1000592,
+  "updated_at": "2026-09-27T15:59:00Z",
+  "name": "Sam Ortiz",
+  "email_address": "sam@ortiz.example",
+  "avatar_url": "https://app.hey.com/contacts/1000020/avatar",
+  "initials": "SO",
+  "avatar_background_color": "#5B8DEF",
+  "contactable_type": "topic",
+  "name_tag": "name_tag-24"
+ },
+ "is_reply": true,
+ "subject": "Re: Contract redlines for the Acme renewal",
+ "content": "<div class=\"trix-content\"><p>Thanks again for making time yesterday. I wanted to follow up with a written summary so everyone who couldn't join has the same context, and so we have something concrete to react to before Thursday.</p>\n<p>First, on scope: we agreed to keep the renewal at the current seat count through Q1 and revisit expansion once the new team is onboarded. Finance asked that any change to payment terms go through procurement, so I've looped in Marcus.</p>\n<p>Second, on the redlines: legal accepted most of our edits to section 4 (data processing) but pushed back on the uncapped liability language in 9.2. Their proposal is a cap at 2x annual fees, which seems reasonable to me, but I'd like a second opinion before we respond.</p>\n<p>Third, timeline. If we can get comments back by end of day Wednesday, they can turn a clean version by Friday and we stay on track for signature before the 15th. If that's too tight, let me know and I'll ask for an extension now rather than later.</p>\n<p>A few smaller items: the security questionnaire is done and uploaded to the shared folder; the SOC 2 report is attached; and I've asked support to confirm the SLA numbers we quoted in the proposal match what's in the master agreement.</p>\n<p>Let me know if I missed anything. I'll set up a 30-minute call Thursday morning to close out whatever is still open — reply with times that don't work and I'll route around them.</p>\n<blockquote><p>On Sep 28, 2026, Marcus Lee wrote:</p><p>Looping in legal. Can we get comments back by Wednesday? The redlined PDF is attached.</p></blockquote></div>",
+ "addressed": {
+  "directly": [
+   {
+    "id": 1001036,
+    "account_id": 1001073,
+    "updated_at": "2026-09-22T08:30:00Z",
+    "name": "Chase",
+    "email_address": "alerts@chase.example",
+    "avatar_url": "https://app.hey.com/contacts/1000033/avatar",
+    "initials": "C",
+    "avatar_background_color": "#5B8DEF",
+    "contactable_type": "topic",
+    "name_tag": "name_tag-37"
+   }
+  ],
+  "copied": [
+   {
+    "id": 1001406,
+    "account_id": 1001443,
+    "updated_at": "2026-09-14T08:40:00Z",
+    "name": "Delta Air Lines",
+    "email_address": "noreply@delta.example",
+    "avatar_url": "https://app.hey.com/contacts/1000043/avatar",
+    "initials": "DAL",
+    "avatar_background_color": "#5B8DEF",
+    "contactable_type": "topic",
+    "name_tag": "name_tag-47"
+   }
+  ],
+  "blindcopied": [
+   {
+    "id": 1001776,
+    "account_id": 1001813,
+    "updated_at": "2026-09-24T08:50:00Z",
+    "name": "Linear",
+    "email_address": "notifications@linear.example",
+    "avatar_url": "https://app.hey.com/contacts/1000053/avatar",
+    "initials": "L",
+    "avatar_background_color": "#5B8DEF",
+    "contactable_type": "topic",
+    "name_tag": "name_tag-57"
+   }
+  ]
+ },
+ "show_addressed_selector": false,
+ "scheduled_delivery_at": "2026-09-15T17:53:00Z",
+ "posting": {
+  "box": "box-60"
+ },
+ "addressed_sender": {
+  "directly": [
+   {
+    "id": 1002257,
+    "account_id": 1002294,
+    "updated_at": "2026-09-19T11:21:00Z",
+    "name": "Dana Whitfield",
+    "email_address": "dana@whitfield.example",
+    "avatar_url": "https://app.hey.com/contacts/1000066/avatar",
+    "initials": "DW",
+    "avatar_background_color": "#5B8DEF",
+    "contactable_type": "topic",
+    "name_tag": "name_tag-70"
+   }
+  ]
+ },
+ "received_via": []
+}
