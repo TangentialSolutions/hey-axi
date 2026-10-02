@@ -9,10 +9,15 @@ hey-axi runs `hey`, asks for its JSON response envelope, and prints it as [TOON]
 Requirements: Node 20+ and an authenticated HEY CLI (`curl -fsSL https://hey.com/install-cli | bash`, then `hey auth login`).
 
 ```bash
-git clone https://github.com/TangentialSolutions/hey-axi && cd hey-axi
-npm ci
-npm link            # puts `hey-axi` on your PATH
+npm i -g hey-axi    # puts `hey-axi` on your PATH
+# or run it without installing:
+npx -y hey-axi box view imbox
+
+# agent skill (see "Agent integrations" below)
+npx skills add TangentialSolutions/hey-axi
 ```
+
+From source: `git clone https://github.com/TangentialSolutions/hey-axi && cd hey-axi && npm ci && npm link`.
 
 hey-axi uses `$HEY_BIN` if it's set, and otherwise finds `hey` on `PATH`. launchd/cron jobs usually have a minimal PATH, so set `HEY_BIN=$HOME/.local/bin/hey` there.
 
@@ -95,7 +100,7 @@ gh skill install TangentialSolutions/hey-axi hey-axi --agent claude-code --scope
 cp -r skills/hey-axi ~/.claude/skills/               # or ~/.agents/skills/, ~/.codex/skills/, …
 ```
 
-While the repository is private, `npx skills add` and `gh skill install` work only for people with access (they use your git/gh credentials). See [docs/listing.md](docs/listing.md) for the public-listing checklist.
+See [docs/listing.md](docs/listing.md) for how hey-axi gets listed on skills.sh and axi.md.
 
 ## Keeping up with HEY releases
 
@@ -116,3 +121,7 @@ npm test     # node:test; every test uses a fake `hey` (test/helpers.js), never 
 Token benchmark (HEY CLI vs hey-axi output): [docs/benchmarks.md](docs/benchmarks.md), with `npm run bench:tokens`.
 
 See [AGENTS.md](AGENTS.md) for the code map and conventions, and [SCHEDULED_HEY_CLI.md](SCHEDULED_HEY_CLI.md) for running triage on a schedule.
+
+## License
+
+[MIT](LICENSE) © 2026 TangentialSolutions. hey-axi is an independent project. It isn't affiliated with or endorsed by Basecamp or HEY.
