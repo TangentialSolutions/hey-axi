@@ -1,0 +1,48 @@
+// Shared test helpers: a fake `hey` binary that records its argv and replies with
+// canned output, so no test ever touches the real HEY CLI or a mailbox.
+
+import { execFile } from "node:child_process";
+import { mkdtemp, writeFile, readFile, chmod, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
+const shellQuote = (value) => `'${String(value).replace(/'/g, `'\\''`)}'`;
+
+// options: stdout, stderr, exitCode, catalog (array served for `hey commands`)
+export async function makeFakeHey(options = {}) {
+  const directory = await mkdtemp(join(tmpdir(), "hey-axi-fake-"));
+  const bin = join(directory, "hey");
+  const log = join(directory, "calls");
+  const catalogFile = join(directory, "catalog.json");
+  const stdoutFile = join(directory, "stdout");
+  const stderrFile = join(directory, "stderr");
+  await writeFile(catalogFile, JSON.stringify({ ok: true, data: options.catalog || [] }));
+  await writeFile(stdoutFile, options.stdout ?? '{"ok":true,"data":[]}');
+  await writeFile(stderrFile, options.stderr ?? "");
+  await writeFile(bin, `#!/bin/sh
+printf '%s\\n' "$*" >> ${shellQuote(log)}
+if [ "$1" = "commands" ] && [ -n "${options.catalog ? "1" : ""}" ]; then cat ${shellQuote(catalogFile)}; exit 0; fi
+cat ${shellQuote(stdoutFile)}
+cat ${shellQuote(stderrFile)} >&2
+exit ${Number(options.exitCode || 0)}
+`);
+  await chmod(bin, 0o755);
+  return {
+    bin,
+    async calls() {
+      try {
+        return (await readFile(log, "utf8")).split("\n").filter(Boolean);
+      } catch {
+        return [];
+      }
+    },
+    cleanup: () => rm(directory, { recursive: true, force: true }),
+  };
+}
+
+export function runAxi(args, { env = {}, fake } = {}) {
+  const fullEnv = { ...process.env, ...env };
+  if (fake) fullEnv.HEY_BIN = fake.bin;
+  return new Promise((resolve) => execFile(process.execPath, ["src/hey-axi.js", ...args], { env: fullEnv },
+    (error, stdout, stderr) => resolve({ code: error ? error.code : 0, stdout, stderr })));
+}

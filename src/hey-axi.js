@@ -2,56 +2,51 @@
 
 import { spawn } from "node:child_process";
 import { encode } from "@toon-format/toon";
+import { loadBundledManifest, normalizeCatalog, resolveCommand } from "./router.js";
+import { blockedReason } from "./policy.js";
 
 // Resolve the HEY CLI: an explicit HEY_BIN wins, otherwise `hey` is looked up on PATH
 // by spawn(), the same way a shell would find it.
 const HEY = process.env.HEY_BIN || "hey";
 
-function usage() {
-  return [
+function flagLabel(flag) {
+  const short = flag.shorthand ? `, -${flag.shorthand}` : "";
+  return `--${flag.name}${short}${flag.value ? " <value>" : ""}`;
+}
+
+function usage(manifest) {
+  const lines = [
     "hey-axi — token-efficient HEY CLI interface",
     "",
-    "commands:",
-    "  account list          List linked HEY accounts",
-    "  auth status           Check HEY authentication status",
-    "  box list              List HEY mailboxes",
-    "  box view <name|id>    List threads in a mailbox",
-    "  bundle view <id>      List threads grouped in a bundle",
-    "  bubble list            List bubbled-up and scheduled threads",
-    "  bulk-reply preview <id> Preview threads and recipients without sending",
-    "  label list            List email labels",
-    "  label view <id>       List threads with a label",
-    "  label add <id>...     Add a label to email threads",
-    "  seen <id>...          Mark email threads as seen",
-    "  move <id>...          Move email threads to another box",
-    "  trash <id>...         Move email threads to Trash",
-    "  collection list       List email collections",
-    "  collection view <id>  List threads in a collection",
-    "  workflow list         List email workflows",
-    "  workflow view <id>    View a workflow and its stages",
-    "  snippet list          List reusable email snippets",
-    "  draft list             List draft emails",
-    "  calendar list         List calendars",
-    "  event list             List calendar events",
-    "  todo list              List todos",
-    "  contact list           List contacts",
-    "  contact show <id>      View a contact",
-    "  contact threads <id>   List all threads for a contact",
-    "  journal list           List journal entries",
-    "  journal read [date]   Read a journal entry",
-    "  search [query]        Search email threads and messages",
-    "  search filters        List available search refinement values",
-    "  thread read <id>      Read an email thread",
-    "  attachment list <id>  List thread attachments",
-    "  clip list              List saved email clips",
-    "  set-aside view        List Set Aside threads",
-    "  commands              Show the upstream HEY command catalog",
-    "  version               Show the installed HEY version",
+    `commands (from hey ${manifest.hey_version}; run \`hey-axi <command> --help\` for details):`,
+  ];
+  for (const node of manifest.commands) {
+    const subs = node.subcommands?.length ? ` ${node.subcommands.map((child) => child.name).join("|")}` : "";
+    lines.push(`  ${node.name}${subs} — ${node.short}`);
+  }
+  lines.push(
     "",
     "flags:",
-    "  --json                Preserve the upstream JSON envelope",
+    "  --json                Print HEY's JSON instead of TOON",
     "  --help                Show this help",
-  ].join("\n");
+  );
+  return lines.join("\n");
+}
+
+function commandHelp(node) {
+  const lines = [`hey-axi ${node.path} — ${node.short}`];
+  if (node.usage) lines.push(`shortcut: hey-axi ${node.usage}`);
+  if (node.subcommands?.length) {
+    lines.push("", "subcommands:");
+    for (const child of node.subcommands) lines.push(`  ${child.path} — ${child.short}`);
+  }
+  if (node.flags?.length) {
+    lines.push("", "flags:");
+    for (const flag of node.flags) lines.push(`  ${flagLabel(flag)}`);
+  }
+  const reason = blockedReason(node.path);
+  if (reason) lines.push("", `not supported by hey-axi: ${reason}`);
+  return lines.join("\n");
 }
 
 function output(value) {
@@ -79,89 +74,63 @@ function runHey(args) {
   });
 }
 
+// Ask the installed HEY for its live catalog, for commands newer than the bundled manifest.
+async function discoverCommands() {
+  const result = await runHey(["commands"]);
+  if (result.status !== 0) return null;
+  try {
+    const parsed = JSON.parse(result.stdout);
+    const data = Array.isArray(parsed) ? parsed : parsed?.data;
+    return Array.isArray(data) ? normalizeCatalog(data) : null;
+  } catch {
+    return null;
+  }
+}
+
+const manifest = loadBundledManifest();
 const args = process.argv.slice(2);
 if (args.length === 0 || args[0] === "--help" || args[0] === "-h") {
-  process.stdout.write(`${usage()}\n`);
+  process.stdout.write(`${usage(manifest)}\n`);
   process.exit(0);
 }
 
 const json = args.includes("--json");
 const command = args.filter((arg) => arg !== "--json");
-const commandName = command.filter((arg) => !arg.startsWith("--")).slice(0, 2).join(" ");
-let result;
+const words = [];
+for (const arg of command) {
+  if (arg.startsWith("-")) break;
+  words.push(arg);
+}
 
-if (commandName === "account list") {
-  result = await runHey(["account", "list"]);
-} else if (commandName === "auth status") {
-  result = await runHey(["auth", "status"]);
-} else if (commandName === "box list") {
-  result = await runHey(command);
-} else if (commandName === "box view") {
-  result = await runHey(command);
-} else if (commandName === "bundle view") {
-  result = await runHey(command);
-} else if (commandName === "bubble list") {
-  result = await runHey(command);
-} else if (commandName === "bulk-reply preview") {
-  result = await runHey(command);
-} else if (commandName === "label list") {
-  result = await runHey(command);
-} else if (commandName === "label view") {
-  result = await runHey(command);
-} else if (commandName === "label add") {
-  result = await runHey(command);
-} else if (command[0] === "seen") {
-  result = await runHey(command);
-} else if (command[0] === "move") {
-  result = await runHey(command);
-} else if (command[0] === "trash") {
-  result = await runHey(command);
-} else if (commandName === "collection list") {
-  result = await runHey(command);
-} else if (commandName === "collection view") {
-  result = await runHey(command);
-} else if (commandName === "workflow list") {
-  result = await runHey(command);
-} else if (commandName === "workflow view") {
-  result = await runHey(command);
-} else if (commandName === "snippet list") {
-  result = await runHey(command);
-} else if (commandName === "draft list") {
-  result = await runHey(command);
-} else if (commandName === "calendar list") {
-  result = await runHey(command);
-} else if (commandName === "event list") {
-  result = await runHey(command);
-} else if (commandName === "todo list") {
-  result = await runHey(command);
-} else if (commandName === "contact list") {
-  result = await runHey(command);
-} else if (commandName === "contact show") {
-  result = await runHey(command);
-} else if (commandName === "contact threads") {
-  result = await runHey(command);
-} else if (commandName === "journal list") {
-  result = await runHey(command);
-} else if (commandName === "journal read") {
-  result = await runHey(command);
-} else if (command[0] === "search") {
-  result = await runHey(command);
-} else if (commandName === "thread read") {
-  result = await runHey(command);
-} else if (commandName === "attachment list") {
-  result = await runHey(command);
-} else if (commandName === "clip list") {
-  result = await runHey(command);
-} else if (commandName === "set-aside view") {
-  result = await runHey(command);
-} else if (commandName === "commands") {
-  result = await runHey(["commands"]);
-} else if (commandName === "version") {
-  result = await runHey(["version"]);
-} else {
-  output({ ok: false, error: "unknown command", usage: "Run hey-axi --help" });
+let resolved = resolveCommand(manifest.commands, words);
+if (resolved.error === "unknown command" || resolved.error === "unknown subcommand") {
+  const live = await discoverCommands();
+  const retry = live && resolveCommand(live, words);
+  if (retry && !retry.error) resolved = retry;
+}
+
+if (resolved.error) {
+  const failure = { ok: false, error: resolved.error };
+  if (resolved.path) failure.command = resolved.path;
+  if (resolved.word) failure.word = resolved.word;
+  if (resolved.subcommands) failure.subcommands = resolved.subcommands;
+  failure.usage = "Run hey-axi --help";
+  output(failure);
   process.exit(2);
 }
+
+if (command.includes("--help") || command.includes("-h")) {
+  process.stdout.write(`${commandHelp(resolved.node)}\n`);
+  process.exit(0);
+}
+
+const blocked = blockedReason(resolved.path);
+if (blocked) {
+  output({ ok: false, error: "unsupported command", command: resolved.path, reason: blocked });
+  process.exit(2);
+}
+
+const result = await runHey(command);
 
 if (result.status !== 0) {
   output({ ok: false, error: result.error || result.stdout.trim() || result.stderr.trim() || "hey command failed", exit_code: result.status });
