@@ -475,3 +475,17 @@ test("a list with no next steps from HEY still gets one", async () => {
   assert.match(labels.stdout, /Run `hey-axi label view <id> --account 5` to see one in full/);
   await fake.cleanup();
 });
+
+test("fourth review: partial failures, multi-list fields, selector forms, empty-list next steps", async () => {
+  const { noopFor } = await import("../src/policy.js");
+  assert.equal(noopFor("seen", { error: "Item 1 already seen; item 2 failed", kind: "command_error" }, ["1", "2"]), null);
+  assert.equal(noopFor("label add", { error: "Already in label Other; cannot add to Requested", kind: "command_error" }, ["1"]), null);
+  assert.throws(() => shapeEnvelope({ ok: true, data: { todos: [{ id: 1 }], habits: [{ id: 2 }] } }, { path: "x", fields: ["typo"], commandLine: "hey-axi x" }), /unknown field/);
+  const { carrySelectors } = await import("../src/shape.js");
+  assert.equal(carrySelectors("Run hey-axi auth login", ["--account", "5"]), "Run hey-axi auth login --account 5");
+  assert.equal(carrySelectors('Run `hey-axi search "<query>"` to search', ["--account", "5"]), 'Run `hey-axi search "<query>" --account 5` to search');
+  const fake = await makeFakeHey({ stdout: JSON.stringify({ ok: true, data: [] }) });
+  const labels = await runAxi(["label", "list"], { fake });
+  assert.match(labels.stdout, /hey-axi label create --help/);
+  await fake.cleanup();
+});

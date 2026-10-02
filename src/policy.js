@@ -156,6 +156,8 @@ export function noopFor(path, failure, positionals = [], values = {}) {
   const endState = END_STATES[path];
   const destination = DESTINATION[path] ? values[DESTINATION[path]] : undefined;
   if (DESTINATION[path] && (!destination || !text.toLowerCase().includes(String(destination).toLowerCase()))) return null;
+  // A failure that also reports a failed part ("1 already seen; 2 failed") is not a no-op.
+  if (/\b(failed|cannot|can'?t|could ?n[o']t|unable|error)\b/i.test(failure.error || "")) return null;
   if (endState && failure.kind !== "auth" && failure.kind !== "forbidden" && failure.kind !== "not_found" && endState.test(text)) {
     return { ok: true, noop: true, command: path, result: `already done${target ? ` for${target}` : ""} (no-op)`, detail: failure.error };
   }

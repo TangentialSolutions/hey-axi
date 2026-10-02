@@ -245,7 +245,10 @@ function runHeyStream(args, { toon = true } = {}) {
       try {
         event = JSON.parse(line);
       } catch {
-        return process.stdout.write(`${line}\n`);
+        // Not an event: a diagnostic. It goes to stderr, cleaned, never into the stream.
+        const clean = cleanLine(line);
+        if (clean) process.stderr.write(`hey-axi: ${clean}\n`);
+        return undefined;
       }
       process.stdout.write(`${encode(event)}\n\n`);
     });
@@ -551,16 +554,21 @@ shaped = markStaged(shaped);
 
 // A list whose HEY result carried no next steps still gets one (AXI principle 9): the
 // matching view/show command when there is one, else how to see every field.
-if (!full && !quiet && !plainText && shaped && typeof shaped === "object" && shaped.count !== undefined && !shaped.empty) {
+if (!full && !quiet && !plainText && shaped && typeof shaped === "object" && shaped.count !== undefined) {
   const help = Array.isArray(shaped.help) ? shaped.help : [];
   const hasNext = help.some((line) => /^Run `hey-axi /.test(line) && !/ --(all|full|page|limit)\b/.test(line));
   if (!hasNext) {
     const words = path.split(" ");
     const parent = resolveCommand(manifest.commands, words.slice(0, -1));
-    const sibling = words.length > 1 && !parent.error && (parent.node.subcommands || []).find((child) => ["view", "show", "read"].includes(child.name) && child.path !== path);
-    const next = sibling
+    const siblings = words.length > 1 && !parent.error ? parent.node.subcommands || [] : [];
+    // After an empty list, suggest creating; after a list, suggest viewing.
+    const wanted = shaped.empty ? ["create", "add"] : ["view", "show", "read"];
+    const sibling = wanted.map((name) => siblings.find((child) => child.name === name && child.path !== path)).find(Boolean);
+    const next = sibling && shaped.empty
+      ? `Run \`${withSelectors(`hey-axi ${sibling.path} --help`, carry)}\` to see how to add one`
+      : sibling
       ? `Run \`${withSelectors(`hey-axi ${sibling.path} <id>`, carry)}\` to see one in full`
-      : `Run \`${commandLine} --fields all\` to see every field`;
+      : shaped.empty ? `Run \`hey-axi ${path} --help\` to check the filters` : `Run \`${commandLine} --fields all\` to see every field`;
     shaped.help = [next, ...help];
   }
 }

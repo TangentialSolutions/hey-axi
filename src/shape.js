@@ -189,6 +189,11 @@ export function shapeData(data, { path, fields = null }) {
     const shaped = {};
     for (const [name, value] of Object.entries(found.container)) {
       const entry = found.lists.find((item) => item.key === name);
+      if (entry && Array.isArray(fields) && fields.length) {
+        // Explicit fields must exist in at least one of the lists.
+        const unknown = fields.filter((field) => !found.lists.some(({ list }) => project(list, [field], { strict: false }).rows.some((row) => Object.keys(row).length)));
+        if (unknown.length) throw new FieldError(unknown, [...new Set(found.lists.flatMap(({ list }) => list.slice(0, 5).flatMap((item) => Object.keys(item || {}))))]);
+      }
       if (entry) {
         const specs = fields === "all" ? null : Array.isArray(fields) && fields.length ? fields : heuristicFields(entry.list);
         const rows = specs ? project(entry.list, specs).rows : entry.list;
@@ -281,7 +286,11 @@ export function withSelectors(command, carry = []) {
 export function carrySelectors(text, carry = []) {
   if (typeof text !== "string" || !carry.length) return text;
   if (/^hey-axi \S/.test(text) && !/[`'"]/.test(text)) return withSelectors(text, carry);
-  return text.replace(/([`'"])(hey-axi [^`'"]+?)\1/g, (match, quote, command) => `${quote}${withSelectors(command, carry)}${quote}`);
+  // `…` may contain quotes ("<query>"); '…' and "…" may not contain their own quote.
+  let out = text.replace(/`(hey-axi [^`]+)`/g, (match, command) => `\`${withSelectors(command, carry)}\``);
+  out = out.replace(/(^|[^`\w])(['"])(hey-axi [^'"`]+?)\2/g, (match, lead, quote, command) => `${lead}${quote}${withSelectors(command, carry)}${quote}`);
+  // Unquoted "Run hey-axi …" to the end of the sentence.
+  return out.replace(/(\bRun:? )(hey-axi [^`'".;,\n]+?)(?=[.;,]?\s*$|[.;,]\s)/g, (match, run, command) => `${run}${withSelectors(command.trim(), carry)}`);
 }
 
 function breadcrumbHelp(crumb, carry) {
