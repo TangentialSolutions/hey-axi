@@ -327,7 +327,11 @@ export function shapeEnvelope(envelope, { path, fields = null, commandLine, carr
   const nothing = body === null || body === undefined || (typeof body === "object" && !Array.isArray(body) && Object.keys(body).length === 0);
   if (!enveloped && !found && !truncated && !nothing) return data;
   out.data = data;
-  if (empty) out.empty = `0 results for \`${commandLine}\``;
+  const reported = size || multiSize;
+  if (empty && reported && (reported.more || reported.total > 0)) {
+    // An empty page while HEY reports more is not "nothing".
+    out.empty = `0 results on this page for \`${commandLine}\`; HEY reports ${reported.total > 0 ? `${reported.total} in total` : "more"}`;
+  } else if (empty) out.empty = `0 results for \`${commandLine}\``;
   else if (nothing && !(enveloped && envelope.summary)) out.empty = `no data returned for \`${commandLine}\``;
   const help = [];
   if (enveloped && !quiet) {

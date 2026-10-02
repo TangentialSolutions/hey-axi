@@ -59,14 +59,14 @@ printf '{"ok":true,"data":{"noninteractive":"%s","editor":"%s","visual":"%s","st
   await fake.cleanup();
 });
 
-test("watch streams each NDJSON line as it arrives, never a partial line", async () => {
+test("watch --json streams each NDJSON line as it arrives, never a partial line", async () => {
   const fake = await makeFakeHeyScript(`
 printf '%s\\n' '{"event":"ready"}'
 printf '%s' '{"event":"added",'
 sleep 1
 printf '%s\\n' '"id":1}'
 exit 0`);
-  const { chunks, done } = startAxi(["watch", "--box", "imbox", "--events", "new"], fake);
+  const { chunks, done } = startAxi(["watch", "--box", "imbox", "--events", "new", "--json"], fake);
   await waitFor(() => chunks.length > 0);
   const firstAt = chunks[0].at;
   assert.equal(chunks[0].text, '{"event":"ready"}\n');
@@ -76,7 +76,19 @@ exit 0`);
   const text = chunks.map((chunk) => chunk.text).join("");
   assert.equal(text, '{"event":"ready"}\n{"event":"added","id":1}\n');
   for (const chunk of chunks) assert.ok(chunk.text.endsWith("\n"), "chunks end on line boundaries");
-  assert.deepEqual(await fake.calls(), ["watch --box imbox --events new"]);
+  assert.deepEqual(await fake.calls(), ["watch --box imbox --events new --json"]);
+  await fake.cleanup();
+});
+
+test("watch renders each event as a TOON block by default", async () => {
+  const fake = await makeFakeHeyScript(`
+printf '%s\\n' '{"event":"ready"}'
+printf '%s\\n' '{"event":"added","id":1}'
+exit 0`);
+  const { chunks, done } = startAxi(["watch"], fake);
+  const exit = await done;
+  assert.equal(exit.code, 0);
+  assert.equal(chunks.map((chunk) => chunk.text).join(""), "event: ready\n\nevent: added\nid: 1\n\n");
   await fake.cleanup();
 });
 
@@ -91,7 +103,7 @@ wait $!`);
   child.kill("SIGTERM");
   const exit = await done;
   assert.equal(exit.code, 0);
-  assert.match(chunks.map((chunk) => chunk.text).join(""), /"stopped"/);
+  assert.match(chunks.map((chunk) => chunk.text).join(""), /event: stopped/);
   await fake.cleanup();
 });
 

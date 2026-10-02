@@ -442,3 +442,36 @@ test("local refusals carry --account into their suggestions", async () => {
   assert.deepEqual(await fake.calls(), []);
   await fake.cleanup();
 });
+
+test("a delete is a no-op only when the missing thing is the target", async () => {
+  const { noopFor } = await import("../src/policy.js");
+  assert.equal(noopFor("todo delete", { kind: "not_found", error: "calendar not found" }, ["42"]), null);
+  assert.equal(noopFor("todo delete", { kind: "not_found", error: "Todo not found" }, ["42"]).noop, true);
+  assert.equal(noopFor("todo delete", { kind: "not_found", error: "resource not found" }, ["42"]).noop, true);
+});
+
+test("an empty page is not 'nothing' when HEY reports more", () => {
+  const out = shapeEnvelope({ ok: true, data: [], meta: { total_count: 42 } }, { path: "x", commandLine: "hey-axi x" });
+  assert.equal(out.count, "0 of 42 total");
+  assert.equal(out.empty, "0 results on this page for `hey-axi x`; HEY reports 42 in total");
+});
+
+test("hey-axi's own commands have help and validate flags before it", async () => {
+  const hook = await runAxi(["hook", "session-end", "--help"]);
+  assert.equal(hook.code, 0);
+  assert.match(hook.stdout, /usage: hey-axi hook session-end/);
+  const scope = await runAxi(["setup", "scope", "--help", "--bogus"]);
+  assert.equal(scope.code, 2);
+  assert.match(scope.stdout, /unknown flag --bogus/);
+  const top = await runAxi(["--help", "--bogus"]);
+  assert.equal(top.code, 2);
+  const redirected = await runAxi(["--help", "move"]);
+  assert.match(redirected.stdout, /^hey-axi move — /);
+});
+
+test("a list with no next steps from HEY still gets one", async () => {
+  const fake = await makeFakeHey({ stdout: JSON.stringify({ ok: true, data: [{ id: 1, name: "Acme" }] }) });
+  const labels = await runAxi(["label", "list", "--account", "5"], { fake });
+  assert.match(labels.stdout, /Run `hey-axi label view <id> --account 5` to see one in full/);
+  await fake.cleanup();
+});

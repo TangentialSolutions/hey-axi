@@ -149,7 +149,7 @@ Flags every command accepts: `--account <id|all>`, `--json`, `--quiet`, `--field
 | `unshare` | Turn off an email thread's sharing link |  |  |
 | `upgrade` | Upgrade hey to the latest release |  |  |
 | `version` | Show the installed hey version |  |  |
-| `watch` | Follow email threads and calendars as they change | `--box <v>` `--events <v>` `--exit-on-first` `--run-async <v>` `--run-sync <v>` `--since <v>` `--timeout <v>` | streams NDJSON |
+| `watch` | Follow email threads and calendars as they change | `--box <v>` `--events <v>` `--exit-on-first` `--run-async <v>` `--run-sync <v>` `--since <v>` `--timeout <v>` | streams events (TOON; --json for NDJSON) |
 | `workflow` | List and manage email workflows |  |  |
 | `workflow add` | Add email threads to a workflow stage | `--stage <v>` `--to <v>` |  |
 | `workflow create` | Create an email workflow |  |  |

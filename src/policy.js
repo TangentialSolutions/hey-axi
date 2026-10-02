@@ -21,7 +21,7 @@ export const DRAFT_NOTICE = "Saved as a DRAFT. Nothing was sent. Pass --allow-se
 const SECRET_COMMANDS = new Set(["auth token"]);
 
 // How a command runs. Anything not listed is "json": captured, parsed, rendered as TOON.
-//   stream: long-running NDJSON, relayed line by line as it arrives
+//   stream: long-running NDJSON, relayed event by event as it arrives (TOON, or NDJSON with --json)
 //   raw:    prints non-JSON (a script, a CSV); relayed untouched
 // Captured runs give HEY a closed stdin and HEY_NONINTERACTIVE=1, so it can never prompt.
 const STREAM = new Set(["watch"]);
@@ -99,7 +99,15 @@ export function contentProblem(node, flags, positionals = []) {
 // command has its own pattern; a generic "conflict" is not enough). Send, reply and read
 // commands never become no-ops. Deletes are idempotent too: deleting something that
 // is not there is a no-op.
-const DELETES = new Set(["draft delete", "event delete", "todo delete", "habit delete", "clip delete", "snippet delete", "timetrack delete", "timetrack category delete", "workflow delete", "workflow stage delete", "set-aside group delete", "contact note delete"]);
+// Each delete, and the words HEY uses for its target. A not-found that names something
+// else ("calendar not found" for todo delete) is not a no-op.
+const DELETES = new Map([
+  ["draft delete", /\bdraft/i], ["event delete", /\bevent/i], ["todo delete", /\btodo/i], ["habit delete", /\bhabit/i],
+  ["clip delete", /\bclip/i], ["snippet delete", /\bsnippet/i], ["timetrack delete", /\b(time ?track|track|entry)/i],
+  ["timetrack category delete", /\bcategor/i], ["workflow delete", /\bworkflow/i], ["workflow stage delete", /\bstage/i],
+  ["set-aside group delete", /\bgroup/i], ["contact note delete", /\bnote/i],
+]);
+const GENERIC_NOT_FOUND = /^\s*(the )?((requested )?(resource|record|item|object) )?(was )?not found\.?\s*$|^\s*404\b/i;
 const ADDED = /\balready (in|on|has|have|added|labell?ed|a member|part of|belongs?)\b/i;
 const REMOVED = /\b(not (in|on|labell?ed|a member|part of)|already removed|isn'?t (in|on|labell?ed))\b/i;
 export const END_STATES = {
@@ -142,7 +150,7 @@ const DESTINATION = { move: "to" };
 export function noopFor(path, failure, positionals = [], values = {}) {
   const text = `${failure.error || ""} ${failure.hint || ""}`;
   const target = positionals.length ? ` ${positionals.join(" ")}` : "";
-  if (DELETES.has(path) && failure.kind === "not_found") {
+  if (DELETES.has(path) && failure.kind === "not_found" && (GENERIC_NOT_FOUND.test(failure.error || "") || DELETES.get(path).test(failure.error || ""))) {
     return { ok: true, noop: true, command: path, result: `nothing to delete:${target || " it"} is already gone (no-op)`, note: "if you expected it to exist, check the id with the matching list command" };
   }
   const endState = END_STATES[path];

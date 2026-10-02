@@ -109,7 +109,7 @@ export const SCOPE_HELP = [
   "  hey-axi setup scope --status",
 ].join("\n");
 
-const SCOPE_FLAGS = new Set(["--box", "--label", "--search", "--account", "--limit", "--status", "--remove", "--help", "-h"]);
+export const SCOPE_FLAGS = new Set(["--box", "--label", "--search", "--account", "--limit", "--status", "--remove", "--help", "-h"]);
 const SCOPE_VALUE_FLAGS = new Set(["--box", "--label", "--search", "--account", "--limit"]);
 
 // `hey-axi setup scope ...`. Returns { output, code }.

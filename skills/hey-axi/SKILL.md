@@ -100,7 +100,7 @@ Everything is checked before HEY runs (exit 2, with the fix inline): unknown com
 
 ## 5. Watching for changes
 
-`npx -y hey-axi watch` streams HEY's NDJSON one line at a time until it's interrupted. Use bounded forms in agent sessions:
+`npx -y hey-axi watch` streams each event as it arrives (a TOON block per event, separated by blank lines; add `--json` for HEY's NDJSON, one line per event) until it's interrupted. Use bounded forms in agent sessions:
 
 ```bash
 npx -y hey-axi watch --box imbox --events new --exit-on-first --timeout 10m
