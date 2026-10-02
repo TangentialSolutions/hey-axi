@@ -3,7 +3,7 @@
 import { spawn } from "node:child_process";
 import { encode } from "@toon-format/toon";
 import { loadBundledManifest, normalizeCatalog, resolveCommand } from "./router.js";
-import { blockedReason } from "./policy.js";
+import { AXI_FLAGS, blockedReason, checkPolicy } from "./policy.js";
 import { RAW_OUTPUT_FLAGS, hasAny, scanArgs, valueFlagSet } from "./args.js";
 
 // Resolve the HEY CLI: an explicit HEY_BIN wins, otherwise `hey` is looked up on PATH
@@ -35,6 +35,11 @@ function usage(manifest) {
     "                        Passed to HEY untouched; HEY's output is printed as-is",
     "  --account <id|email>, --base-url <url>, --stats, -v   Forwarded to HEY",
     "  --help                Show this help (or `hey-axi <command> --help`)",
+    "",
+    "safety:",
+    "  compose, reply, forward, draft send, bulk-reply send deliver email and are refused unless",
+    "  staged (compose --draft, reply --draft/--dry-run) or opted in with --allow-send / HEY_AXI_ALLOW_SEND=1.",
+    "  auth token needs --allow-secret / HEY_AXI_ALLOW_SECRETS=1.",
   );
   return lines.join("\n");
 }
@@ -52,6 +57,8 @@ function commandHelp(node) {
   }
   const reason = blockedReason(node.path);
   if (reason) lines.push("", `not supported by hey-axi: ${reason}`);
+  const gate = checkPolicy(node.path, new Set(), {});
+  if (!reason && gate) lines.push("", `${gate.error}: ${gate.reason}; ${gate.hint}`);
   return lines.join("\n");
 }
 
@@ -111,10 +118,11 @@ if (args.length === 0 || args[0] === "--help" || args[0] === "-h") {
 }
 
 const { words, flags } = scanArgs(args, valueFlagSet(manifest.commands));
+const heyArgs = args.filter((arg) => !AXI_FLAGS.includes(arg));
 const json = flags.has("--json");
 const quiet = flags.has("--quiet");
 const raw = hasAny(flags, RAW_OUTPUT_FLAGS);
-const command = args.filter((arg) => arg !== "--json" && arg !== "--quiet");
+const command = heyArgs.filter((arg) => arg !== "--json" && arg !== "--quiet");
 
 let resolved = resolveCommand(manifest.commands, words);
 if (resolved.error === "unknown command" || resolved.error === "unknown subcommand") {
@@ -138,15 +146,15 @@ if (flags.has("--help") || flags.has("-h")) {
   process.exit(0);
 }
 
-const blocked = blockedReason(resolved.path);
-if (blocked) {
-  output({ ok: false, error: "unsupported command", command: resolved.path, reason: blocked });
+const refusal = checkPolicy(resolved.path, flags);
+if (refusal) {
+  output({ ok: false, ...refusal });
   process.exit(2);
 }
 
 if (raw) {
   // --ids-only, --count, --markdown, --html, --styled, --jq: HEY owns the output format.
-  const result = await runHeyRaw(args);
+  const result = await runHeyRaw(heyArgs);
   if (result.error) {
     output({ ok: false, error: result.error, exit_code: result.status });
     process.exit(1);
