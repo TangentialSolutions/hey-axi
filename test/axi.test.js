@@ -9,7 +9,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { makeFakeHey, runAxi } from "./helpers.js";
 import { VERSION } from "../src/version.js";
-import { HOME_HELP, HOME_LIMIT } from "../src/guide.js";
+import { HOME_LIMIT, homeHelp } from "../src/guide.js";
 import { project, shapeData, shapeEnvelope, LIST_TEXT_LIMIT, DETAIL_TEXT_LIMIT } from "../src/shape.js";
 
 const pkg = JSON.parse(readFileSync("package.json", "utf8"));
@@ -65,11 +65,12 @@ test("no arguments: home view with identity, compact Imbox and next commands", a
   assert.equal(result.code, 0);
   assert.match(result.stdout, /^bin: .*hey-axi\.js$/m);
   assert.match(result.stdout, /^description: /m);
-  assert.match(result.stdout, /imbox: 2 threads in Imbox/);
-  assert.match(result.stdout, /threads\[2\]\{id,topic_id,from,subject,seen,at\}:/);
-  assert.match(result.stdout, /1,2,Sender 1,Subject 1,false/);
+  assert.match(result.stdout, /^scope: "?account-wide Imbox \(no \.hey-axi\.json here/m);
+  assert.match(result.stdout, /^count: 2 total$/m);
+  assert.match(result.stdout, /threads\[2\]\{id,topic_id,from,subject\}:/);
+  assert.match(result.stdout, /1,2,Sender 1,Subject 1\n/);
   assert.doesNotMatch(result.stdout, /app_url|avatar|xxxxx/);
-  for (const line of HOME_HELP.filter((text) => !text.includes('"'))) assert.ok(result.stdout.includes(line), line);
+  for (const line of homeHelp().filter((text) => !text.includes('"'))) assert.ok(result.stdout.includes(line), line);
   assert.deepEqual(await fake.calls(), [`box view imbox --limit ${HOME_LIMIT} --json`]);
   await fake.cleanup();
 });
@@ -84,19 +85,21 @@ test("home view degrades gracefully: HEY missing, signed out, empty Imbox", asyn
   const auth = await runAxi([], { fake: signedOut });
   assert.equal(auth.code, 0);
   assert.match(auth.stdout, /status: not signed in to HEY/);
-  assert.match(auth.stdout, /hey auth login/);
+  assert.match(auth.stdout, /hey-axi auth login/);
   await signedOut.cleanup();
 
   const empty = await makeFakeHey({ stdout: imbox([]) });
   const none = await runAxi([], { fake: empty });
-  assert.match(none.stdout, /imbox: "?0 threads: the Imbox is empty"?/);
+  assert.match(none.stdout, /mail: "?0 threads: nothing in account-wide Imbox"?/);
+  assert.doesNotMatch(none.stdout, /^count:/m);
   await empty.cleanup();
 });
 
 test("lists default to a few fields; --fields picks, --fields all and --full keep everything", async () => {
   const fake = await makeFakeHey({ stdout: imbox([posting(1)]) });
   const plain = await runAxi(["box", "view", "imbox"], { fake });
-  assert.match(plain.stdout, /postings\[1\]\{id,topic_id,from,subject,seen,at\}:/);
+  assert.match(plain.stdout, /postings\[1\]\{id,topic_id,from,subject\}:/);
+  assert.match(plain.stdout, /^count: 1 total$/m);
   assert.doesNotMatch(plain.stdout, /app_url|avatar_url|\nurl:/);
   assert.match(plain.stdout, /help\[1\]: Run `hey-axi thread read <thread-id>` to read an email thread/);
 
@@ -154,7 +157,7 @@ test("unknown and missing-required flags fail before HEY runs (exit 2) and list 
   const typo = await runAxi(["box", "list", "--limt", "5"], { fake });
   assert.equal(typo.code, 2);
   assert.match(typo.stdout, /unknown flag --limt for `box list`/);
-  assert.match(typo.stdout, /valid flags for `box list`: --all, --limit <value>/);
+  assert.match(typo.stdout, /valid flags for `box list`: --all, --limit <int>/);
   const missing = await runAxi(["move", "123"], { fake });
   assert.equal(missing.code, 2);
   assert.match(missing.stdout, /missing required flag --to for `move`/);
@@ -169,11 +172,11 @@ test("unknown and missing-required flags fail before HEY runs (exit 2) and list 
 test("per-command help has usage, flag descriptions, examples and notes in hey-axi terms", async () => {
   const result = await runAxi(["move", "--help"]);
   assert.match(result.stdout, /usage: hey-axi move <box-item-id>\.\.\. \[flags\]/);
-  assert.match(result.stdout, /--to <value>  Destination box name, kind, or ID \(required\)/);
+  assert.match(result.stdout, /--to <string>  Destination box name, kind, or ID \(required\) \(default: none\)/);
   assert.match(result.stdout, /examples:\n  hey-axi move 12345 --to feed/);
   assert.match(result.stdout, /notes: Accepts box item IDs from hey-axi box view output/);
   const list = await runAxi(["box", "view", "--help"]);
-  assert.match(list.stdout, /default fields: id, topic_id, from, subject, seen, at/);
+  assert.match(list.stdout, /default fields: id, topic_id, from, subject  /);
 });
 
 const runIn = (cwd, args, env) => new Promise((done) => execFile(process.execPath, [resolve("src/hey-axi.js"), ...args], { cwd, env: { ...process.env, ...env } },
@@ -221,12 +224,17 @@ test("setup hooks --project writes into the current directory only", async () =>
   await rm(project, { recursive: true, force: true });
 });
 
-test("other `setup` commands still go to HEY interactively", async () => {
-  const fake = await makeFakeHey({ stdout: "setup ran\n" });
+test("HEY's non-interactive `setup` commands run captured, with no prompts", async () => {
+  const fake = await makeFakeHey({ stdout: '{"ok":true,"data":{"plugin_installed":true,"agent_detected":true}}' });
   const result = await runAxi(["setup", "claude"], { fake });
-  assert.equal(result.stdout, "setup ran\n");
-  assert.deepEqual(await fake.calls(), ["setup claude"]);
+  assert.equal(result.code, 0);
+  assert.match(result.stdout, /plugin_installed: true/);
+  const text = await makeFakeHey({ stdout: "setup ran\n" });
+  const plain = await runAxi(["setup", "omarchy"], { fake: text });
+  assert.match(plain.stdout, /output: setup ran/);
+  assert.deepEqual([...await fake.calls(), ...await text.calls()], ["setup claude --json", "setup omarchy --json"]);
   await fake.cleanup();
+  await text.cleanup();
 });
 
 test("shape helpers: projection, fallbacks, array mapping, cell truncation", () => {

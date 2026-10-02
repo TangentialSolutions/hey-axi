@@ -54,17 +54,17 @@ test("reports a structured, actionable error when HEY is not installed", async (
   const env = envWithout("HEY_BIN");
   env.PATH = directory;
   const result = await runAxi(["version"], env);
-  assert.equal(result.error.code, 127);
+  assert.equal(result.error.code, 1);
   assert.match(result.stdout, /ok: false/);
   assert.match(result.stdout, /HEY CLI not found on PATH/);
-  assert.match(result.stdout, /exit_code: 127/);
+  assert.match(result.stdout, /kind: hey_missing/);
   assert.doesNotMatch(result.stdout, /\/Users\//);
   await rm(directory, { recursive: true, force: true });
 });
 
 test("names HEY_BIN in the error when the explicit binary is missing", async () => {
   const result = await runAxi(["version"], { ...process.env, HEY_BIN: "/nonexistent/hey" });
-  assert.equal(result.error.code, 127);
+  assert.equal(result.error.code, 1);
   assert.match(result.stdout, /HEY_BIN=\/nonexistent\/hey/);
 });
 

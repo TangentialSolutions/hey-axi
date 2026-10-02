@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { interactivePaths } from "../src/policy.js";
-import { heyFailure } from "../src/errors.js";
+import { heyFailure, translateFailure } from "../src/errors.js";
 import { makeFakeHey, makeFakeHeyScript, runAxi } from "./helpers.js";
 
 function startAxi(args, fake) {
@@ -21,25 +21,41 @@ const waitFor = async (predicate, ms = 5000) => {
   }
 };
 
-test("interactive commands get HEY untouched: no --json, output as-is, exit code passed through", async () => {
+test("commands that need a person are refused without a terminal, before HEY runs", async () => {
   const fake = await makeFakeHey({ stdout: "interactive output\n", exitCode: 3 });
-  const paths = interactivePaths().filter((path) => path !== "tui");
-  for (const path of paths) {
+  for (const path of interactivePaths()) {
     const result = await runAxi(path.split(" "), { fake });
-    assert.equal(result.code, 3, path);
-    assert.equal(result.stdout, "interactive output\n", path);
+    assert.equal(result.code, 2, path);
+    assert.match(result.stdout, /error: needs the user/, path);
+    assert.match(result.stdout, /hint: .*hey-axi/, path);
   }
-  assert.equal((await runAxi(["auth", "login", "--no-browser"], { fake })).code, 3);
-  assert.deepEqual(await fake.calls(), [...paths, "auth login --no-browser"]);
+  assert.equal((await runAxi(["auth", "login", "--no-browser"], { fake })).code, 2);
+  assert.deepEqual(await fake.calls(), []);
   await fake.cleanup();
 });
 
-test("tui is refused without a terminal and HEY is not started", async () => {
-  const fake = await makeFakeHey();
-  const result = await runAxi(["tui"], { fake });
-  assert.equal(result.code, 2);
-  assert.match(result.stdout, /needs a terminal/);
-  assert.deepEqual(await fake.calls(), []);
+test("auth login --token and HEY's prompt-free setup commands run captured", async () => {
+  const fake = await makeFakeHey({ stdout: '{"ok":true,"data":{"authenticated":true}}' });
+  const login = await runAxi(["auth", "login", "--token", "t0k"], { fake });
+  assert.equal(login.code, 0, login.stdout);
+  assert.match(login.stdout, /authenticated: true/);
+  const agents = await runAxi(["setup", "agents"], { fake });
+  assert.equal(agents.code, 0, agents.stdout);
+  assert.deepEqual(await fake.calls(), ["auth login --token t0k --json", "setup agents --json"]);
+  await fake.cleanup();
+});
+
+test("HEY runs with stdin closed and prompts/editors disabled", async () => {
+  const fake = await makeFakeHeyScript(`
+if [ -t 0 ]; then tty=yes; else tty=no; fi
+input=$(cat)
+printf '{"ok":true,"data":{"noninteractive":"%s","editor":"%s","visual":"%s","stdin":"%s"}}' "$HEY_NONINTERACTIVE" "$EDITOR" "$VISUAL" "$input"`);
+  const result = await runAxi(["doctor"], { fake });
+  assert.equal(result.code, 0, result.stdout);
+  assert.match(result.stdout, /noninteractive: "?1"?/);
+  assert.match(result.stdout, /editor: "?false"?/);
+  assert.match(result.stdout, /visual: "?false"?/);
+  assert.match(result.stdout, /stdin: ""/);
   await fake.cleanup();
 });
 
@@ -100,18 +116,19 @@ test("timetrack export --output answers with JSON like other commands", async ()
   await fake.cleanup();
 });
 
-test("HEY's JSON error envelope becomes a structured error with HEY's exit code", async () => {
+test("HEY's JSON error envelope becomes a structured error with an AXI exit code", async () => {
   const fake = await makeFakeHey({
     stdout: "",
     stderr: JSON.stringify({ ok: false, error: "Not logged in", code: "auth", hint: "Run hey auth login" }, null, 2),
     exitCode: 3,
   });
   const result = await runAxi(["box", "list"], { fake });
-  assert.equal(result.code, 3);
+  assert.equal(result.code, 1);
   assert.match(result.stdout, /error: Not logged in/);
+  assert.match(result.stdout, /kind: auth/);
   assert.match(result.stdout, /code: auth/);
   assert.match(result.stdout, /hint: Run hey-axi auth login/);
-  assert.match(result.stdout, /exit_code: 3/);
+  assert.match(result.stdout, /help: .*hey-axi auth status/);
   assert.doesNotMatch(result.stdout, /\{/);
   await fake.cleanup();
 });
@@ -119,30 +136,37 @@ test("HEY's JSON error envelope becomes a structured error with HEY's exit code"
 test("non-JSON HEY failures still produce a structured error", async () => {
   const fake = await makeFakeHey({ stdout: "", stderr: "Error: something broke\n", exitCode: 7 });
   const result = await runAxi(["thread", "read", "1"], { fake });
-  assert.equal(result.code, 7);
-  assert.match(result.stdout, /error: "Error: something broke"/);
+  assert.equal(result.code, 1);
+  assert.match(result.stdout, /error: "HEY's API returned an error: something broke"/);
+  assert.match(result.stdout, /kind: api_error/);
   await fake.cleanup();
 });
 
-test("heyFailure prefers HEY's envelope and drops empty fields", () => {
+test("translateFailure keeps HEY's envelope, maps exit codes to AXI's, and translates the rest", () => {
   assert.deepEqual(
-    heyFailure({ status: 2, stderr: '{"ok":false,"error":"Thread not found","code":"not_found","hint":""}', stdout: "" }),
-    { ok: false, error: "Thread not found", code: "not_found", exit_code: 2, help: "Check the id; list commands such as `hey-axi box view imbox` show valid ids (threads use topic_id)" },
+    translateFailure({ status: 2, stderr: '{"ok":false,"error":"Thread not found","code":"not_found","hint":""}', stdout: "" }),
+    { failure: { ok: false, error: "Thread not found", kind: "not_found", code: "not_found", help: "Check the id; list commands such as `hey-axi box view imbox` show valid ids (threads use topic_id)" }, exitCode: 1, warnings: [] },
   );
-  // Real HEY 1.7.0 output: a keyring warning line, then the indented envelope.
+  // Real HEY 1.7.0 output: a keyring warning line, then the indented envelope. The warning goes to stderr.
   assert.deepEqual(
-    heyFailure({ status: 3, stdout: "", stderr: 'warning: system keyring unavailable\n{\n  "ok": false,\n  "error": "Not logged in",\n  "code": "auth",\n  "hint": "Run: hey auth login"\n}\n' }),
-    { ok: false, error: "Not logged in", code: "auth", hint: "Run: hey-axi auth login", warning: "warning: system keyring unavailable", exit_code: 3 },
+    translateFailure({ status: 3, stdout: "", stderr: 'warning: system keyring unavailable\n{\n  "ok": false,\n  "error": "Not logged in",\n  "code": "auth",\n  "hint": "Run: hey auth login"\n}\n' }),
+    { failure: { ok: false, error: "Not logged in", kind: "auth", code: "auth", hint: "Run: hey-axi auth login", help: "Ask the user to run `hey auth login` in their terminal, then `hey-axi auth status`" }, exitCode: 1, warnings: ["warning: system keyring unavailable"] },
   );
-  assert.deepEqual(heyFailure({ status: 1, stderr: "", stdout: "" }), { ok: false, error: "hey command failed", exit_code: 1, help: "Run `hey-axi <command> --help` to check the arguments" });
-  assert.deepEqual(heyFailure({ status: 127, error: "HEY CLI not found on PATH" }), { ok: false, error: "HEY CLI not found on PATH", exit_code: 127, help: "Install the HEY CLI (curl -fsSL https://hey.com/install-cli | bash) or set HEY_BIN" });
+  // Real HEY 1.7.0 usage error: exit 2, HEY's generic hint dropped, help names the command.
+  assert.deepEqual(
+    translateFailure({ status: 1, stderr: '{"ok":false,"error":"accepts at most 1 arg(s), received 2","code":"usage","hint":"Run \'hey --help\' for usage information"}' }, { path: "search" }),
+    { failure: { ok: false, error: "accepts at most 1 arg(s), received 2", kind: "usage", code: "usage", help: "Run `hey-axi search --help` for its arguments and flags" }, exitCode: 2, warnings: [] },
+  );
+  assert.deepEqual(heyFailure({ status: 1, stderr: "", stdout: "" }), { ok: false, error: "the command failed", kind: "command_error", help: "Run `hey-axi <command> --help` to check the arguments" });
+  assert.deepEqual(heyFailure({ status: 7, stderr: "\u001b[31mError: upstream 502\u001b[0m\ngoroutine 1 [running]:\n  main.go:3\n" }), { ok: false, error: "HEY's API returned an error: upstream 502", kind: "api_error", help: "Retry later, or run `hey-axi doctor`" });
+  assert.deepEqual(heyFailure({ status: 127, error: "HEY CLI not found on PATH" }), { ok: false, error: "HEY CLI not found on PATH", kind: "hey_missing", help: "Install the HEY CLI (curl -fsSL https://hey.com/install-cli | bash) or set HEY_BIN" });
 });
 
-test("invalid JSON from HEY on success is reported, exit 1", async () => {
+test("non-JSON output from HEY on success is shown (cut to size), exit 0", async () => {
   const fake = await makeFakeHey({ stdout: "not json" });
   const result = await runAxi(["box", "list"], { fake });
-  assert.equal(result.code, 1);
-  assert.match(result.stdout, /HEY returned invalid JSON/);
+  assert.equal(result.code, 0);
+  assert.match(result.stdout, /output: not json/);
   await fake.cleanup();
 });
 

@@ -11,7 +11,7 @@ const TRIAGE = [
   "collection create Travel --summary trips", "collection add 1 --to 3", "collection remove 1 --from 3", "collection update 3 --name Trips",
   "workflow create Hiring", "workflow update 65 --name Recruiting", "workflow delete 65",
   "workflow add 987 --to 65 --stage 321", "workflow move 987 --workflow 65 --to 322", "workflow remove 987 --from 65",
-  "workflow stage create 65", "workflow stage update 321 --name Interviewing", "workflow stage delete 321",
+  "workflow stage create 65", "workflow stage update 65 321 --name Interviewing", "workflow stage delete 65 321",
   "set-aside group create 1 2", "set-aside group add 3 --to 4", "set-aside group remove 3", "set-aside group delete 4",
   "screener approve 55 --box feed --seen", "screener deny 56 --spam", "screener clear",
   "share 1", "unshare 1",

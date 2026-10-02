@@ -21,17 +21,27 @@ export const DRAFT_NOTICE = "Saved as a DRAFT. Nothing was sent. Pass --allow-se
 const SECRET_COMMANDS = new Set(["auth token"]);
 
 // How a command runs. Anything not listed is "json": captured, parsed, rendered as TOON.
-//   interactive: HEY gets the terminal (inherited stdio); nothing is injected or parsed
-//   stream:      long-running NDJSON, relayed line by line as it arrives
-//   raw:         prints non-JSON (a script, a CSV); relayed untouched
-const INTERACTIVE = new Set(["tui", "mcp", "auth login", "login", "setup", "setup agents", "setup claude", "setup codex", "setup omarchy", "upgrade"]);
-// Interactive commands that can't do anything useful without a terminal.
-const NEEDS_TTY = new Set(["tui"]);
+//   stream: long-running NDJSON, relayed line by line as it arrives
+//   raw:    prints non-JSON (a script, a CSV); relayed untouched
+// Captured runs give HEY a closed stdin and HEY_NONINTERACTIVE=1, so it can never prompt.
 const STREAM = new Set(["watch"]);
 const RAW = new Set(["shell-completion generate"]);
 
+// Commands that only work with a person at a terminal (a full-screen UI, a browser
+// sign-in, a wizard, a long-running stdio server). Without a terminal on both stdin and
+// stdout (an agent's shell) hey-axi refuses them before HEY runs, naming the command
+// the user can run themselves or the non-interactive form. With a terminal (a person),
+// HEY gets the terminal.
+const USER_ONLY = {
+  tui: { reason: "it is a full-screen terminal UI", hint: "ask the user to run `hey-axi tui` in their own terminal" },
+  mcp: { reason: "it is a long-running MCP server for agent harnesses, not a shell command", hint: "ask the user to add `hey-axi mcp` as an MCP server in the agent's settings" },
+  setup: { reason: "it is the first-run wizard (browser sign-in and prompts)", hint: "ask the user to run `hey-axi setup` in their terminal; `hey-axi setup agents`, `setup claude` and `setup codex` run without prompts" },
+  "auth login": { reason: "it opens a browser and waits for the user", hint: "ask the user to run `hey-axi auth login` in their terminal, or pass --token <token>", unless: ["--token", "--cookie"] },
+  login: { reason: "it opens a browser and waits for the user", hint: "ask the user to run `hey-axi login` in their terminal, or pass --token <token>", unless: ["--token", "--cookie"] },
+};
+
 export function runMode(path, flags) {
-  if (INTERACTIVE.has(path)) return "interactive";
+  if (USER_ONLY[path] && !USER_ONLY[path].unless?.some((flag) => flags.has(flag))) return "interactive";
   if (STREAM.has(path)) return "stream";
   if (RAW.has(path)) return "raw";
   // CSV goes to stdout unless --output names a file (then HEY answers with JSON).
@@ -39,8 +49,63 @@ export function runMode(path, flags) {
   return "json";
 }
 
+export function userOnly(path, flags = new Set(), io = { stdin: process.stdin.isTTY, stdout: process.stdout.isTTY }) {
+  const rule = USER_ONLY[path];
+  if (!rule || rule.unless?.some((flag) => flags.has(flag)) || (io.stdin && io.stdout)) return null;
+  return { error: "needs the user", command: path, reason: rule.reason, hint: rule.hint };
+}
+
+export function userOnlyPaths() {
+  return Object.keys(USER_ONLY);
+}
+
+// Commands that fall back to opening $EDITOR when no content is given. hey-axi requires
+// the content up front (exit 2) so nothing ever waits on an editor. `--message -` (and
+// --note -, --content -) reads the content from stdin.
+export const STDIN_VALUE_FLAGS = ["--message", "-m", "--message-html", "--note", "--note-html", "--content", "--content-html"];
+const DATE_LIKE = /^(\d{4}-\d{2}-\d{2}|today|yesterday|tomorrow|(last|next|this)[ _-]\w+|mon|tue|wed|thu|fri|sat|sun)\w*$/i;
+const CONTENT = {
+  compose: { flags: ["--message", "-m", "--message-html", "--attach"], what: "a message", hint: "pass --message \"...\" (or --message - to read it from stdin)" },
+  reply: { flags: ["--message", "-m", "--message-html", "--attach", "--dry-run"], what: "a message", hint: "pass --message \"...\" (or --message - to read it from stdin); --dry-run previews without one" },
+  "bulk-reply send": { flags: ["--message", "-m", "--message-html", "--attach"], what: "a message", hint: "pass --message \"...\" (or --message - to read it from stdin)" },
+  "contact note set": { flags: ["--note", "--note-html"], positional: (words) => words.length >= 2, what: "the note", hint: "pass --note \"...\" (or the note as a second argument, or --note - for stdin)" },
+  "journal write": { flags: ["--content", "--content-html"], positional: (words) => words.length >= 2 || (words.length === 1 && !DATE_LIKE.test(words[0])), what: "the entry", hint: "pass --content \"...\" (or --content - to read it from stdin)" },
+  "draft edit": { own: true, what: "a field to change", hint: "pass the fields to change, e.g. --message \"...\" or --subject \"...\"" },
+};
+
+// Returns null, or a refusal when the command would open an editor.
+export function contentProblem(node, flags, positionals = []) {
+  const rule = CONTENT[node.path];
+  if (!rule) return null;
+  // Shorthands count as their long flag (`-n` is --note for contact note set).
+  const has = (name) => flags.has(name) || (node.flags || []).some((flag) => `--${flag.name}` === name && flag.shorthand && flags.has(`-${flag.shorthand}`));
+  if (rule.own) {
+    if ((node.flags || []).some((flag) => has(`--${flag.name}`))) return null;
+  } else if (rule.flags.some(has) || rule.positional?.(positionals)) return null;
+  return { error: `missing ${rule.what} for \`${node.path}\``, command: node.path, reason: "without it HEY would open an editor and wait", hint: rule.hint };
+}
+
+// Mutations whose desired end state may already hold. When HEY reports that (an
+// "already ..." failure), hey-axi answers with a no-op success instead of an error.
+// Deletes are idempotent too: deleting something that is not there is a no-op.
+const DELETES = new Set(["draft delete", "event delete", "todo delete", "habit delete", "clip delete", "snippet delete", "timetrack delete", "timetrack category delete", "workflow delete", "workflow stage delete", "set-aside group delete", "contact note delete"]);
+const ALREADY = /\balready\b|\bno changes?\b|\bnot changed\b|\bunchanged\b|\bnothing to\b/i;
+const NOT_RUNNING = { "timetrack stop": /no (time ?track|timer|track)[^.]*running|not running/i };
+
+export function noopFor(path, failure, positionals = []) {
+  const text = `${failure.error || ""} ${failure.hint || ""}`;
+  const target = positionals.length ? ` ${positionals.join(" ")}` : "";
+  if (DELETES.has(path) && (failure.kind === "not_found")) {
+    return { ok: true, noop: true, command: path, result: `nothing to delete:${target || " it"} is already gone (no-op)`, note: "if you expected it to exist, check the id with the matching list command" };
+  }
+  if (failure.code === "conflict" || failure.code === "already_exists" || ALREADY.test(text) || NOT_RUNNING[path]?.test(text)) {
+    return { ok: true, noop: true, command: path, result: `already done${target ? ` for${target}` : ""} (no-op)`, detail: failure.error };
+  }
+  return null;
+}
+
 export function interactivePaths() {
-  return [...INTERACTIVE];
+  return userOnlyPaths();
 }
 
 const truthy = (value) => ["1", "true", "yes"].includes(String(value || "").toLowerCase());
@@ -63,9 +128,8 @@ export function sendStaging(path, flags, env = process.env) {
 
 // Returns null when the command may run, or a structured refusal.
 export function checkPolicy(path, flags, env = process.env, io = { stdin: process.stdin.isTTY, stdout: process.stdout.isTTY }) {
-  if (NEEDS_TTY.has(path) && !(io.stdin && io.stdout)) {
-    return { error: "needs a terminal", command: path, reason: "interactive full-screen UI", hint: `run \`hey ${path}\` in a terminal` };
-  }
+  const person = userOnly(path, flags, io);
+  if (person) return person;
 
   if (SEND_COMMANDS.has(path)) {
     const rule = SEND_COMMANDS.get(path);

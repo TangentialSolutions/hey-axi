@@ -1,21 +1,36 @@
-// The no-args home view (AXI principles 8 and 10): who this is, then live Imbox state,
-// then the next commands. Also what the session hook prints. It never fails hard:
+// The no-args home view (AXI principles 7, 8 and 10): who this is, the directory scope,
+// live mail for that scope with its count, what the last session in this directory did,
+// then the next commands. It is also what the session hook prints. It never fails hard:
 // a missing or signed-out HEY is reported as `status` with the fix (exit 0), so a
 // session hook still gives the agent something useful.
 
-import { homedir } from "node:os";
-import { DESCRIPTION, HOME_HELP, HOME_LIMIT, SETUP_HELP } from "./guide.js";
-import { shapeData } from "./shape.js";
+import { DESCRIPTION, SETUP_HELP, homeHelp } from "./guide.js";
+import { countLine, listSize, shapeData, findList } from "./shape.js";
 import { heyFailure } from "./errors.js";
 import { heyToAxi } from "./text.js";
+import { ScopeError, findScope, scopeQuery } from "./scope.js";
+import { lastSession } from "./activity.js";
+import { collapse } from "./home-path.js";
 
-export function collapse(path, home = homedir()) {
-  return path && home && path.startsWith(home) ? `~${path.slice(home.length)}` : path;
-}
+export { collapse };
 
-export async function homeView(runHey, { execPath = process.argv[1] } = {}) {
+export async function homeView(runHey, { execPath = process.argv[1], cwd = process.cwd() } = {}) {
   const out = { bin: collapse(execPath), description: DESCRIPTION };
-  const result = await runHey(["box", "view", "imbox", "--limit", String(HOME_LIMIT)], ["--json"]);
+  let scope = null;
+  try {
+    scope = findScope(cwd);
+  } catch (error) {
+    if (!(error instanceof ScopeError)) throw error;
+    out.status = error.message;
+    out.help = ["Fix or delete that file, then run `hey-axi` again", "Run `hey-axi setup scope --help` for the format"];
+    return out;
+  }
+  const query = scopeQuery(scope);
+  out.scope = query.label;
+  const previous = lastSession(scope?.dir || cwd);
+  if (previous) out.last_session = previous.line;
+
+  const result = await runHey(query.argv, ["--json"]);
   if (result.status === 127) {
     out.status = result.error || "HEY CLI not found";
     out.help = SETUP_HELP.missing;
@@ -40,11 +55,23 @@ export async function homeView(runHey, { execPath = process.argv[1] } = {}) {
     out.help = SETUP_HELP.other;
     return out;
   }
-  const { data, empty } = shapeData(envelope.data, { path: "box view" });
-  const threads = Array.isArray(data) ? data : data?.postings;
-  out.imbox = envelope.summary || `${threads?.length ?? 0} threads`;
-  if (empty || !threads?.length) out.imbox = "0 threads: the Imbox is empty";
-  else out.threads = threads;
-  out.help = HOME_HELP;
+  const body = envelope && typeof envelope === "object" && "data" in envelope ? envelope.data : envelope;
+  const found = findList(body);
+  const size = listSize(envelope, found ? found.list.length : 0);
+  // search has no --limit: keep the first `limit` rows here.
+  if (found && found.list.length > query.limit) {
+    if (size.total === undefined && !size.more) size.total = found.list.length;
+    size.more = true;
+  }
+  const { data, truncated } = shapeData(body, { path: query.path });
+  let threads = Array.isArray(data) ? data : data?.[found?.key];
+  if (threads && threads.length > query.limit) threads = threads.slice(0, query.limit);
+  size.shown = threads?.length ?? 0;
+  if (!threads?.length) out.mail = `0 threads: nothing in ${query.label.split(" (")[0]}`;
+  else {
+    out.count = countLine(size);
+    out.threads = threads;
+  }
+  out.help = homeHelp({ base: query.base, carry: query.carry, more: size.more, total: size.total, truncated, drafts: previous?.drafts > 0, search: query.path === "search" });
   return out;
 }

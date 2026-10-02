@@ -1,15 +1,19 @@
-// Shape HEY's JSON envelope for agents (AXI principles 2-5 and 9):
-//   - minimal default fields per list command, `--fields a,b,c` to choose, `--fields all`
+// Shape HEY's JSON for agents (AXI principles 2-5 and 9):
+//   - at most four default fields per list command, `--fields a,b,c` to choose, `--fields all`
 //   - long text truncated with its total size, `--full` to get HEY's output untouched
-//   - a definitive `empty` line for empty lists, `count: N of T total` when HEY knows T
-//   - HEY's breadcrumbs as `help` lines that name hey-axi commands
+//   - every list gets a `count` (`N of T total`, `N total`, or `N shown; more available`)
+//     and a definitive `empty` line when it has no rows, enveloped or not
+//   - HEY's breadcrumbs as `help` lines that name hey-axi commands and carry the
+//     invocation's selectors (--account, --base-url)
 import { heyToAxi } from "./text.js";
 
 // A field is "key" or "key=path", where path is dotted (`creator.name`), may index an
 // array (`messages.0.creator.name`), may map over one (`recipients.to[].email_address`,
 // joined with ", "), and may list fallbacks (`name|subject`).
-const POSTINGS = ["id", "topic_id", "from=creator.name|sender.name|alternative_sender_name", "subject=name|subject", "seen", "at=active_at|created_at|updated_at"];
-const EVENTS = ["id", "title", "starts_at", "ends_at", "calendar=calendar.name"];
+// Box rows keep both ids: `id` (the box item) feeds seen/unseen/move/label, `topic_id`
+// (the thread) feeds thread read/reply/forward. `seen` and `at` are one --fields away.
+const POSTINGS = ["id", "topic_id", "from=creator.name|sender.name|alternative_sender_name", "subject=name|subject"];
+const EVENTS = ["id", "title", "starts_at", "ends_at"];
 const NAMED = ["id", "name"];
 
 export const LIST_FIELDS = {
@@ -24,11 +28,11 @@ export const LIST_FIELDS = {
   "set-aside view": POSTINGS,
   "set-aside group view": POSTINGS,
   "contact threads": POSTINGS,
-  "bubble list": [...POSTINGS, "bubbles_up=bubble_up_schedule.bubble_up_at"],
+  "bubble list": ["id", "topic_id", "subject=name|subject", "bubbles_up=bubble_up_schedule.bubble_up_at"],
   "box list": ["id", "kind", "name"],
-  search: ["id", "topic_id", "subject", "from=messages.0.creator.name|creator.name", "at=updated_at|created_at"],
-  "screener list": ["id", "name", "email_address", "subject", "topic_id"],
-  "screener history": ["id", "status", "name=name|petitioner.name", "email_address=email_address|petitioner.email_address", "decided=decided|updated_at"],
+  search: ["topic_id", "subject", "from=messages.0.creator.name|creator.name", "at=updated_at|created_at"],
+  "screener list": ["id", "email_address", "subject", "topic_id"],
+  "screener history": ["id", "status", "email_address=email_address|petitioner.email_address", "decided=decided|updated_at"],
   "event list": EVENTS,
   "event day": EVENTS,
   "event week": EVENTS,
@@ -44,7 +48,7 @@ export const LIST_FIELDS = {
   "attachment list": ["id", "filename", "content_type", "byte_size"],
   "clip list": ["id", "content", "topic_id", "at=created_at"],
   "snippet list": ["id", "name", "content"],
-  "timetrack list": ["id", "starts_at", "ends_at", "category", "notes"],
+  "timetrack list": ["id", "starts_at", "ends_at", "category"],
   "timetrack categories": ["id", "title"],
   "account list": ["id", "email=email|email_address", "name", "active"],
   "set-aside group list": ["id", "thread_count"],
@@ -88,12 +92,15 @@ export function parseField(spec) {
   return index === -1 ? { key: spec, path: spec } : { key: spec.slice(0, index), path: spec.slice(index + 1) };
 }
 
-// Fields for a list without a declared schema: up to five familiar keys.
+export const MAX_LIST_FIELDS = 4;
+
+// Fields for a list without a declared schema: up to four familiar keys, or the first
+// four keys when none of the familiar ones are there.
 function heuristicFields(items) {
-  const keys = new Set(items.flatMap((item) => (item && typeof item === "object" ? Object.keys(item) : [])));
-  if (keys.size <= 5) return null;
-  const picked = HEURISTIC_KEYS.filter((key) => keys.has(key)).slice(0, 5);
-  return picked.length >= 2 ? picked : null;
+  const keys = [...new Set(items.flatMap((item) => (item && typeof item === "object" ? Object.keys(item) : [])))];
+  if (keys.length <= MAX_LIST_FIELDS) return null;
+  const picked = HEURISTIC_KEYS.filter((key) => keys.includes(key)).slice(0, MAX_LIST_FIELDS);
+  return picked.length >= 2 ? picked : keys.slice(0, MAX_LIST_FIELDS);
 }
 
 // Project items onto fields. Returns { rows, unknown } where unknown lists requested
@@ -205,47 +212,92 @@ export function shapeData(data, { path, fields = null }) {
   return { data: shaped, truncated, empty: list.length === 0 };
 }
 
-function breadcrumbHelp(crumb) {
+const MORE_NOTICE = /more (are )?available|more results|use --all|--page/i;
+const TOTAL_NOTICE = /\b\d[\d,]* of (\d[\d,]*)\b/;
+
+// What HEY told us about the size of a list: { shown, total?, more, next? }. Sources, in
+// order: meta.total_count, a "Showing N of T" notice, and HEY's paging signals
+// (next_page, has_more, a "more available" notice). With none of them the list is complete.
+export function listSize(envelope, shown) {
+  const meta = envelope && typeof envelope.meta === "object" && envelope.meta ? envelope.meta : {};
+  const next = meta.next_page ?? meta.next_cursor ?? null;
+  const noticed = String(envelope?.notice || "").match(TOTAL_NOTICE);
+  const total = typeof meta.total_count === "number" ? meta.total_count : noticed ? Number(noticed[1].replace(/,/g, "")) : undefined;
+  const more = total !== undefined ? total > shown : Boolean(next || meta.has_more || MORE_NOTICE.test(envelope?.notice || ""));
+  return { shown, total, more, next };
+}
+
+// `count: 25 of 847 total` / `count: 8 total` / `count: 25 shown; more available`.
+export function countLine({ shown, total, more }) {
+  if (total !== undefined) return `${shown} of ${total} total`;
+  return more ? `${shown} shown; more available` : `${shown} total`;
+}
+
+// Append the invocation's selectors (`--account 2`) to a suggested command, unless the
+// command already names them.
+export function withSelectors(command, carry = []) {
+  const extra = [];
+  for (let i = 0; i < carry.length; i += 2) {
+    if (!command.includes(carry[i])) extra.push(carry[i], carry[i + 1]);
+  }
+  return extra.length ? `${command} ${extra.join(" ")}` : command;
+}
+
+function breadcrumbHelp(crumb, carry) {
   if (typeof crumb === "string") return heyToAxi(crumb);
   if (!crumb || typeof crumb !== "object" || !crumb.command) return null;
   const description = crumb.description ? ` to ${crumb.description.charAt(0).toLowerCase()}${crumb.description.slice(1)}` : "";
-  return `Run \`${heyToAxi(crumb.command)}\`${description}`;
+  return `Run \`${withSelectors(heyToAxi(crumb.command), carry)}\`${description}`;
 }
 
-// Shape a whole HEY envelope. options: { path, fields, commandLine }.
-// Returns the object to print.
-export function shapeEnvelope(envelope, { path, fields = null, commandLine }) {
-  if (!envelope || typeof envelope !== "object" || Array.isArray(envelope) || !("data" in envelope)) {
-    // Not an envelope (some commands answer with a bare object): just keep it short.
-    let truncated = false;
-    const data = truncateDeep(envelope, DETAIL_TEXT_LIMIT, () => { truncated = true; });
-    if (!truncated) return data;
-    const help = [`Run \`${commandLine} --full\` to see complete content`];
-    return data && typeof data === "object" && !Array.isArray(data) ? { ...data, help } : { data, help };
-  }
+// The help line that reveals the rest of a truncated list (AXI principle 9).
+export function moreHelp(size, { commandLine, pageFlags = [] }) {
+  if (!size.more) return null;
+  const all = size.total !== undefined ? `all ${size.total}` : "all of them";
+  if (pageFlags.includes("all")) return `Run \`${commandLine} --all\` for ${all}`;
+  if (size.next && pageFlags.includes("page")) return `Run \`${commandLine} --page ${size.next}\` for the next page`;
+  if (pageFlags.includes("limit")) return `Run \`${commandLine} --limit <n>\` to show more`;
+  return null;
+}
 
-  const { data, truncated, empty } = shapeData(envelope.data, { path, fields });
+// Shape whatever HEY printed. options: { path, fields, commandLine, carry, pageFlags, quiet }.
+//   carry:     selector args from the invocation (["--account", "2"]) for suggested commands
+//   pageFlags: which of all/page/limit the command takes, for the "see the rest" hint
+//   quiet:     drop HEY's summary, notice, breadcrumbs and meta; keep hey-axi's count,
+//              empty state and --full/--all hints
+// Returns the object to print.
+export function shapeEnvelope(envelope, { path, fields = null, commandLine, carry = [], pageFlags = [], quiet = false }) {
+  const enveloped = envelope && typeof envelope === "object" && !Array.isArray(envelope) && "data" in envelope;
+  const body = enveloped ? envelope.data : envelope;
+  const { data, truncated, empty } = shapeData(body, { path, fields });
+  const found = findList(body);
   const out = {};
-  if (envelope.ok !== undefined) out.ok = envelope.ok;
-  if (envelope.summary) out.summary = envelope.summary;
-  const meta = envelope.meta && typeof envelope.meta === "object" ? { ...envelope.meta } : null;
-  if (meta && typeof meta.total_count === "number") {
-    const found = findList(envelope.data);
-    const shown = found ? found.list.length : 0;
-    out.count = `${shown} of ${meta.total_count} total`;
-    delete meta.total_count;
-  }
-  if (meta) delete meta.pages_fetched;
+  if (enveloped && envelope.ok !== undefined) out.ok = envelope.ok;
+  if (enveloped && envelope.summary && !quiet) out.summary = envelope.summary;
+  const size = found ? listSize(enveloped ? envelope : null, found.list.length) : null;
+  if (size) out.count = countLine(size);
+  const nothing = body === null || body === undefined || (typeof body === "object" && !Array.isArray(body) && Object.keys(body).length === 0);
+  if (!enveloped && !found && !truncated && !nothing) return data;
   out.data = data;
   if (empty) out.empty = `0 results for \`${commandLine}\``;
-  for (const [key, value] of Object.entries(envelope)) {
-    if (["ok", "data", "summary", "meta", "breadcrumbs", "notice"].includes(key)) continue;
-    out[key] = value;
+  else if (nothing && !(enveloped && envelope.summary)) out.empty = `no data returned for \`${commandLine}\``;
+  const help = [];
+  if (enveloped && !quiet) {
+    for (const [key, value] of Object.entries(envelope)) {
+      if (["ok", "data", "summary", "meta", "breadcrumbs", "notice"].includes(key)) continue;
+      out[key] = value;
+    }
+    if (envelope.notice) out.notice = heyToAxi(envelope.notice);
+    help.push(...(Array.isArray(envelope.breadcrumbs) ? envelope.breadcrumbs : []).map((crumb) => breadcrumbHelp(crumb, carry)).filter(Boolean));
   }
-  if (envelope.notice) out.notice = heyToAxi(envelope.notice);
-  const help = (Array.isArray(envelope.breadcrumbs) ? envelope.breadcrumbs : []).map(breadcrumbHelp).filter(Boolean);
+  const more = size && moreHelp(size, { commandLine, pageFlags });
+  if (more) help.push(more);
   if (truncated) help.push(`Run \`${commandLine} --full\` to see complete content`);
   if (help.length) out.help = help;
-  if (meta && Object.keys(meta).length) out.meta = meta;
+  if (enveloped && !quiet && envelope.meta && typeof envelope.meta === "object") {
+    const meta = { ...envelope.meta };
+    for (const key of ["total_count", "pages_fetched", "next_page", "next_cursor", "has_more"]) delete meta[key];
+    if (Object.keys(meta).length) out.meta = meta;
+  }
   return out;
 }

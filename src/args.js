@@ -31,11 +31,15 @@ export function valueFlagSet(commands) {
   return names;
 }
 
-// Split argv into positional words (for routing) and flag names (for mode selection).
-// The argv itself is never reordered: HEY (cobra) accepts flags anywhere.
+// Split argv into positional words (for routing and arity) and flag names (for mode
+// selection). Also returns each flag's value and the value flags that are missing one
+// (`--limit` at the end, or followed by another flag). The argv itself is never
+// reordered: HEY (cobra) accepts flags anywhere.
 export function scanArgs(argv, valueFlags) {
   const words = [];
   const flags = new Set();
+  const values = [];
+  const missing = [];
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === "--") {
@@ -43,14 +47,40 @@ export function scanArgs(argv, valueFlags) {
       break;
     }
     if (arg.startsWith("-") && arg !== "-") {
-      const [name] = arg.split("=", 1);
+      // Shorthand with its value attached (`-mhi`) or stacked shorthands (`-vv`).
+      if (/^-[A-Za-z]./.test(arg) && !arg.startsWith("--")) {
+        const name = arg.slice(0, 2);
+        flags.add(name);
+        if (valueFlags.has(name)) values.push([name, arg.slice(arg[2] === "=" ? 3 : 2)]);
+        continue;
+      }
+      const eq = arg.indexOf("=");
+      const name = eq === -1 ? arg : arg.slice(0, eq);
       flags.add(name);
-      if (!arg.includes("=") && valueFlags.has(name)) i += 1;
+      if (eq !== -1) values.push([name, arg.slice(eq + 1)]);
+      else if (valueFlags.has(name)) {
+        const next = argv[i + 1];
+        if (next === undefined || looksLikeFlag(next)) missing.push(name);
+        else {
+          values.push([name, next]);
+          i += 1;
+        }
+      }
       continue;
     }
     words.push(arg);
   }
-  return { words, flags };
+  return { words, flags, values, missing: [...new Set(missing)] };
+}
+
+// "-5" and "-" are values; "--to" and "-m" are flags.
+function looksLikeFlag(arg) {
+  return arg === "--" || (arg.startsWith("-") && arg !== "-" && !/^-\d/.test(arg));
+}
+
+// The value flags of one command, plus the global and hey-axi ones.
+export function nodeValueFlags(node) {
+  return valueFlagSet(node ? [{ flags: node.flags }] : []);
 }
 
 export function hasAny(flags, names) {
@@ -92,23 +122,45 @@ const flagName = (flag) => (flag.startsWith("--") ? flag : flag.slice(0, 2));
 
 export function flagLabel(flag) {
   const short = flag.shorthand ? `, -${flag.shorthand}` : "";
-  return `--${flag.name}${short}${flag.value ? " <value>" : ""}`;
+  return `--${flag.name}${short}${flag.value ? ` <${flag.type || "value"}>` : ""}`;
 }
 
-// AXI: reject unknown flags (and missing required ones) before HEY is ever called.
-// Returns null, or { unknown: [...] } / { missing: [...] }.
-export function validateFlags(node, flags) {
+const GLOBAL_TYPES = { "--account": "string", "--jq": "string", "--base-url": "string", "--fields": "string" };
+const BOOL_VALUES = new Set(["1", "t", "T", "true", "TRUE", "True", "0", "f", "F", "false", "FALSE", "False"]);
+const GO_DURATION = /^(0|([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))+)$/;
+
+function typeError(name, type, value) {
+  if (type === "int" && !/^-?\d+$/.test(value)) return `${name} needs a whole number, got "${value}"`;
+  if (type === "duration" && !GO_DURATION.test(value)) return `${name} needs a duration such as 30s, 10m or 1h, got "${value}"`;
+  if (type === "bool" && !BOOL_VALUES.has(value)) return `${name} is a switch; use ${name} or ${name}=false, not "${value}"`;
+  return null;
+}
+
+// AXI: reject unknown flags, flags without their value, values of the wrong type and
+// missing required flags before HEY is ever called.
+// Returns null, or { unknown } / { missingValue } / { badValue } / { missing }.
+export function validateFlags(node, flags, { values = [], missingValues = [] } = {}) {
   const allowed = new Set([
     ...[...GLOBAL_VALUE_FLAGS, ...GLOBAL_BOOLEAN_FLAGS, ...AXI_BOOLEAN_FLAGS, ...AXI_VALUE_FLAGS].map((name) => `--${name}`),
     ...GLOBAL_SHORTHANDS,
   ]);
+  const types = new Map(Object.entries(GLOBAL_TYPES));
+  for (const name of [...GLOBAL_BOOLEAN_FLAGS, ...AXI_BOOLEAN_FLAGS]) types.set(`--${name}`, "bool");
   for (const flag of node.flags || []) {
     allowed.add(`--${flag.name}`);
     if (flag.shorthand) allowed.add(`-${flag.shorthand}`);
+    const type = flag.value ? flag.type || "string" : flag.type === "count" ? "count" : "bool";
+    types.set(`--${flag.name}`, type);
+    if (flag.shorthand) types.set(`-${flag.shorthand}`, type);
   }
   const unknown = [...flags].map(flagName).filter((flag) => !allowed.has(flag));
   if (unknown.length) return { unknown: [...new Set(unknown)] };
   if (flags.has("--help") || flags.has("-h")) return null;
+  if (missingValues.length) return { missingValue: missingValues };
+  for (const [name, value] of values) {
+    const problem = typeError(name, types.get(name), value);
+    if (problem) return { badValue: problem };
+  }
   const missing = (node.flags || [])
     .filter((flag) => /\(required\)$/.test(flag.desc || ""))
     .filter((flag) => !flags.has(`--${flag.name}`) && !(flag.shorthand && flags.has(`-${flag.shorthand}`)))

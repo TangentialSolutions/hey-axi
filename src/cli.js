@@ -1,27 +1,41 @@
 // hey-axi's CLI. Loaded by src/hey-axi.js only after the --version fast path.
+//
+// Order of checks, all before HEY runs: the command must exist, its flags must be known,
+// have their values and the right types, its positional arguments must fit HEY's USAGE,
+// the safety policy must allow it, and content that would otherwise open an editor must
+// be given. Only then is HEY started, non-interactively.
 
 import { spawn } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { createInterface } from "node:readline";
 import { encode } from "@toon-format/toon";
-import { loadBundledManifest, normalizeCatalog, resolveCommand } from "./router.js";
-import { checkPolicy, runMode, sendStaging } from "./policy.js";
-import { heyFailure } from "./errors.js";
-import { RAW_OUTPUT_FLAGS, flagLabel, flagValue, hasAny, scanArgs, stripAxiFlags, validateFlags, valueFlagSet } from "./args.js";
-import { FieldError, LIST_FIELDS, DETAIL_FIELDS, shapeData, shapeEnvelope } from "./shape.js";
+import { closestNames, loadBundledManifest, resolveCommand } from "./router.js";
+import { STDIN_VALUE_FLAGS, checkPolicy, contentProblem, noopFor, runMode, sendCommands, sendStaging } from "./policy.js";
+import { translateFailure, cleanLine } from "./errors.js";
+import { RAW_OUTPUT_FLAGS, flagLabel, flagValue, hasAny, nodeValueFlags, scanArgs, stripAxiFlags, validateFlags, valueFlagSet } from "./args.js";
+import { argumentHelp, checkArity, oneOfHelp } from "./arity.js";
+import { FieldError, LIST_FIELDS, DETAIL_FIELDS, shapeEnvelope } from "./shape.js";
 import { homeView } from "./home.js";
 import { DESCRIPTION } from "./guide.js";
 import { heyToAxi, shellWord } from "./text.js";
+import { examplesFor, flagDefault } from "./examples.js";
 import { VERSION } from "./version.js";
 
 // Resolve the HEY CLI: an explicit HEY_BIN wins, otherwise `hey` is looked up on PATH
 // by spawn(), the same way a shell would find it.
 const HEY = process.env.HEY_BIN || "hey";
 
+// HEY never prompts or opens an editor under hey-axi: stdin is closed and these are set.
+const QUIET_ENV = { HEY_NONINTERACTIVE: "1", EDITOR: "false", VISUAL: "false" };
+const heyEnv = () => ({ ...process.env, ...QUIET_ENV });
+
+const ALWAYS_ALLOWED = "--help, --json, --quiet, --fields, --full, --account, --ids-only, --count, --markdown, --html, --styled, --jq, --stats, --verbose, --base-url, --allow-send, --allow-secret";
+
 function usage(manifest) {
   const lines = [
     `hey-axi ${VERSION} — ${DESCRIPTION}`,
     "",
-    "Run `hey-axi` with no arguments for a live home view (Imbox summary + next commands).",
+    "Run `hey-axi` with no arguments for a live home view (mail for this directory's scope + next commands).",
     "",
     `commands (from hey ${manifest.hey_version}; run \`hey-axi <command> --help\` for details):`,
   ];
@@ -30,22 +44,25 @@ function usage(manifest) {
     lines.push(`  ${node.name}${subs} — ${node.short}`);
   }
   lines.push(
+    "  setup hooks — session start/end hooks for Claude Code, Codex and OpenCode (hey-axi's own)",
+    "  setup scope — focus the home view in this directory on a box, label or search (hey-axi's own)",
     "",
-    "output (HEY's global flags may go anywhere on the line):",
+    "output (global flags may go anywhere on the line):",
     "  default               HEY's JSON envelope (data, summary, notice, breadcrumbs, meta) rendered as TOON",
-    "  --json                Print HEY's JSON envelope as compact JSON instead of TOON",
-    "  --quiet               Drop the envelope: just the data (HEY then writes notices to stderr)",
+    "  --json                The same shaped result as compact JSON instead of TOON",
+    "  --quiet               Drop HEY's summary/notice/breadcrumbs/meta; keep data, count, empty state and hints",
     "  --ids-only, --count, --markdown, --html, --styled, --jq <expr>",
     "                        Passed to HEY untouched; HEY's output is printed as-is",
     "  --fields a,b,c        Choose list columns (aliases from the defaults or dotted paths); --fields all keeps every field",
     "  --full                HEY's complete, untruncated result (no field selection, no truncation)",
-    "  --account <id|email>, --base-url <url>, --stats, --verbose   Forwarded to HEY",
+    "  --account <id|all>    Linked account (default: HEY's default account); also --base-url <url>, --stats, --verbose",
     "  --help                Show this help (or `hey-axi <command> --help`)",
     "  -v, -V, --version     Print hey-axi's version (`hey-axi version` also shows HEY's)",
     "",
-    "lists default to a few columns and cut long text (with its total size); unknown flags are rejected (exit 2).",
-    "",
-    "session hook: `hey-axi setup hooks` shows the home view at the start of Claude Code, Codex and OpenCode sessions.",
+    "lists show at most 4 columns, a count, and cut long text (with its total size).",
+    "unknown commands, flags or arguments, flags missing a value, and wrong value types are rejected before HEY runs (exit 2).",
+    "exit codes: 0 success (including no-ops), 1 error, 2 usage error or refusal. Errors are TOON on stdout with `kind` and `help`.",
+    "HEY never prompts: content that would open an editor must be passed (--message, or --message - for stdin).",
     "",
     "safety:",
     "  Nothing is sent without --allow-send (or HEY_AXI_ALLOW_SEND=1): compose and reply are saved",
@@ -55,10 +72,15 @@ function usage(manifest) {
   return lines.join("\n");
 }
 
-function commandHelp(node) {
+export function commandHelp(node) {
   const lines = [`hey-axi ${node.path} — ${node.short}`];
-  for (const synopsis of node.synopsis || []) lines.push(`usage: ${heyToAxi(synopsis)}`);
+  for (const synopsis of node.synopsis || []) if (!synopsis.includes("<command>") || !node.usage) lines.push(`usage: ${heyToAxi(synopsis)}`);
   if (node.usage) lines.push(`shortcut: hey-axi ${node.usage}`);
+  const args = [...argumentHelp(node), ...oneOfHelp(node)];
+  if (args.length) {
+    lines.push("", "arguments:");
+    for (const arg of args) lines.push(`  ${arg}`);
+  }
   if (node.subcommands?.length) {
     lines.push("", "subcommands:");
     for (const child of node.subcommands) lines.push(`  ${child.path} — ${child.short}`);
@@ -66,31 +88,39 @@ function commandHelp(node) {
   if (node.flags?.length) {
     lines.push("", "flags:");
     for (const flag of node.flags) {
-      const extra = [flag.desc, flag.default !== undefined ? `(default ${flag.default})` : ""].filter(Boolean).join(" ");
-      lines.push(`  ${flagLabel(flag)}${extra ? `  ${extra}` : ""}`);
+      const extra = [flag.desc, `(${flagDefault(flag)})`].filter(Boolean).join(" ");
+      lines.push(`  ${flagLabel(flag)}  ${extra}`);
     }
   }
+  lines.push("", "global: --account <id|all> (default: HEY's default account), --json, --quiet, --fields <a,b|all>, --full; see `hey-axi --help`");
   const fields = LIST_FIELDS[node.path] || DETAIL_FIELDS[node.path];
   if (fields) {
     lines.push("", `default fields: ${fields.map((spec) => spec.split("=")[0]).join(", ")}  (--fields a,b,c to choose, --fields all for every field, --full for HEY's untouched result)`);
   }
-  if (node.examples?.length) {
-    lines.push("", "examples:");
-    for (const example of node.examples) lines.push(`  ${heyToAxi(example)}`);
-  }
+  lines.push("", "examples:");
+  for (const example of examplesFor(node)) lines.push(`  ${example}`);
   if (node.notes) lines.push("", `notes: ${heyToAxi(node.notes)}`);
   const mode = runMode(node.path, new Set());
-  if (mode === "interactive") lines.push("", "runs interactively: HEY gets the terminal; output is not converted");
+  if (mode === "interactive") lines.push("", "needs a person at a terminal: refused (exit 2) when stdin/stdout aren't a terminal");
   if (mode === "stream") lines.push("", "streams HEY's NDJSON line by line until it exits or is interrupted");
   if (mode === "raw") lines.push("", "prints HEY's output as-is (not JSON)");
   const gate = checkPolicy(node.path, new Set(), {}, { stdin: true, stdout: true });
   if (gate) lines.push("", `${gate.error}: ${gate.reason}; ${gate.hint}`);
+  const content = contentProblem(node, new Set(), []);
+  if (content) lines.push("", `required: ${content.error.replace("missing ", "")} (${content.hint}); HEY never opens an editor under hey-axi`);
   if (sendStaging(node.path, new Set(), {})) lines.push("", "without --allow-send (or HEY_AXI_ALLOW_SEND=1) hey-axi adds --draft: it's saved as a draft, not sent");
   return lines.join("\n");
 }
 
 function output(value) {
   process.stdout.write(`${encode(value)}\n`);
+}
+
+function fail(value, code) {
+  // Every refusal says what kind of failure it is (exit 2 is always a usage error).
+  if (value && value.ok === false && !value.kind) value = { ok: false, kind: code === 2 ? "usage" : "command_error", ...value };
+  output(value);
+  process.exit(code);
 }
 
 function spawnErrorMessage(error) {
@@ -102,10 +132,10 @@ function spawnErrorMessage(error) {
   return error.message;
 }
 
-// Run HEY with captured output. `extra` holds the format flags hey-axi adds.
+// Run HEY with captured output and no stdin. `extra` holds the format flags hey-axi adds.
 function runHey(args, extra = ["--json"]) {
   return new Promise((resolve) => {
-    const child = spawn(HEY, [...args, ...extra], { stdio: ["inherit", "pipe", "pipe"] });
+    const child = spawn(HEY, [...args, ...extra], { stdio: ["ignore", "pipe", "pipe"], env: heyEnv() });
     let stdout = "";
     let stderr = "";
     child.stdout.on("data", (chunk) => { stdout += chunk; });
@@ -125,16 +155,26 @@ function forwardSignals(child) {
   return () => handlers.forEach(([signal, handler]) => process.off(signal, handler));
 }
 
-const exitStatus = (status, signal) => status ?? (signal ? 128 + (({ SIGHUP: 1, SIGINT: 2, SIGTERM: 15 })[signal] || 0) : 0);
-
-// Run HEY exactly as typed, with stdio going straight to the terminal (raw output and
-// interactive commands).
-function runHeyRaw(args) {
+// Interactive commands (a person at a terminal): HEY gets the terminal.
+function runHeyInteractive(args) {
   return new Promise((resolve) => {
     const child = spawn(HEY, args, { stdio: "inherit" });
     const release = forwardSignals(child);
     child.on("error", (error) => { release(); resolve({ status: 127, error: spawnErrorMessage(error) }); });
-    child.on("close", (status, signal) => { release(); resolve({ status: exitStatus(status, signal) }); });
+    child.on("close", (status, signal) => { release(); resolve({ status: status ?? 0, signal }); });
+  });
+}
+
+// Raw output (a script, a CSV, --ids-only ...): stdout goes straight through; stderr is
+// captured so a failure can be reported as a structured error on stdout.
+function runHeyRaw(args) {
+  return new Promise((resolve) => {
+    const child = spawn(HEY, args, { stdio: ["ignore", "inherit", "pipe"], env: heyEnv() });
+    const release = forwardSignals(child);
+    let stderr = "";
+    child.stderr.on("data", (chunk) => { stderr += chunk; });
+    child.on("error", (error) => { release(); resolve({ status: 127, error: spawnErrorMessage(error) }); });
+    child.on("close", (status, signal) => { release(); resolve({ status: status ?? 0, signal, stderr, stdout: "" }); });
   });
 }
 
@@ -142,8 +182,10 @@ function runHeyRaw(args) {
 // it arrives so consumers never see a partial event.
 function runHeyStream(args) {
   return new Promise((resolve) => {
-    const child = spawn(HEY, args, { stdio: ["inherit", "pipe", "inherit"] });
+    const child = spawn(HEY, args, { stdio: ["ignore", "pipe", "pipe"], env: heyEnv() });
     const release = forwardSignals(child);
+    let stderr = "";
+    child.stderr.on("data", (chunk) => { stderr += chunk; });
     const lines = createInterface({ input: child.stdout, crlfDelay: Infinity });
     lines.on("line", (line) => process.stdout.write(`${line}\n`));
     // A consumer that stops reading (e.g. `| head -1`) ends the watch cleanly.
@@ -151,21 +193,26 @@ function runHeyStream(args) {
       if (error.code === "EPIPE") child.kill("SIGTERM");
     });
     child.on("error", (error) => { release(); resolve({ status: 127, error: spawnErrorMessage(error) }); });
-    child.on("close", (status, signal) => { release(); lines.close(); resolve({ status: exitStatus(status, signal) }); });
+    child.on("close", (status, signal) => { release(); lines.close(); resolve({ status: status ?? 0, signal, stderr, stdout: "" }); });
   });
 }
 
-
-// Ask the installed HEY for its live catalog, for commands newer than the bundled manifest.
-async function discoverCommands() {
-  const result = await runHey(["commands"]);
-  if (result.status !== 0) return null;
+// Read the session-end hook's JSON payload from stdin, if one is piped (never waits on a terminal).
+function readHookInput() {
+  if (process.stdin.isTTY) return {};
   try {
-    const parsed = JSON.parse(result.stdout);
-    const data = Array.isArray(parsed) ? parsed : parsed?.data;
-    return Array.isArray(data) ? normalizeCatalog(data) : null;
+    const text = readFileSync(0, "utf8");
+    return text.trim() ? JSON.parse(text) : {};
   } catch {
-    return null;
+    return {};
+  }
+}
+
+function scopeDirFor(cwd, findScope) {
+  try {
+    return findScope(cwd)?.dir || cwd;
+  } catch {
+    return cwd;
   }
 }
 
@@ -180,21 +227,117 @@ if (args[0] === "--help" || args[0] === "-h") {
   process.exit(0);
 }
 
-const { words, flags } = scanArgs(args, valueFlagSet(manifest.commands));
+// hey-axi's own commands: the session-end hook, `setup hooks` and `setup scope`.
+if (args[0] === "hook" && args[1] === "session-end" && args.length === 2) {
+  const { endSession } = await import("./activity.js");
+  const { findScope } = await import("./scope.js");
+  const input = readHookInput();
+  const cwd = typeof input.cwd === "string" && input.cwd ? input.cwd : process.cwd();
+  output(endSession(scopeDirFor(cwd, findScope)));
+  process.exit(0);
+}
+if (args[0] === "setup" && args[1] === "scope") {
+  const { SCOPE_HELP, setupScope } = await import("./scope.js");
+  if (args.includes("--help") || args.includes("-h")) {
+    process.stdout.write(`${SCOPE_HELP}\n`);
+    process.exit(0);
+  }
+  const { output: result, code } = setupScope(args.slice(2));
+  fail(result, code);
+}
 
-// hey-axi's own setup command; every other `setup …` is HEY's (interactive).
-if (words[0] === "setup" && words[1] === "hooks" && words.length === 2) {
+const first = scanArgs(args, valueFlagSet(manifest.commands));
+if (first.words[0] === "setup" && first.words[1] === "hooks") {
   const { HOOKS_HELP, setupHooks } = await import("./hooks.js");
-  if (flags.has("--help") || flags.has("-h")) {
+  if (first.words.length > 2) fail({ ok: false, error: `unexpected argument "${first.words[2]}" for \`setup hooks\``, help: "Run `hey-axi setup hooks --help`" }, 2);
+  if (first.flags.has("--help") || first.flags.has("-h")) {
     process.stdout.write(`${HOOKS_HELP}\n`);
     process.exit(0);
   }
-  const { output: result, code } = await setupHooks(flags);
-  output(result);
-  process.exit(code);
+  const { output: result, code } = await setupHooks(first.flags);
+  fail(result, code);
 }
 
-const heyArgs = stripAxiFlags(args);
+if (first.words.length === 0) {
+  // Only flags, no command (`hey-axi --account 5`).
+  if (first.missing.length) fail({ ok: false, kind: "usage", error: `missing value for ${first.missing.join(", ")}`, help: "Run `hey-axi --help` for all commands" }, 2);
+  fail({ ok: false, kind: "usage", error: "no command given", help: ["Run `hey-axi` with no arguments for the home view", "Run `hey-axi --help` for all commands"] }, 2);
+}
+
+const resolved = resolveCommand(manifest.commands, first.words);
+if (resolved.error) {
+  const failure = { ok: false, error: resolved.error };
+  if (resolved.path) failure.command = resolved.path;
+  if (resolved.word) failure.word = resolved.word;
+  if (resolved.subcommands) failure.subcommands = resolved.subcommands;
+  let level = manifest.commands;
+  if (resolved.path) for (const word of resolved.path.split(" ")) level = level.find((node) => node.name === word)?.subcommands || [];
+  const close = closestNames(resolved.word, level);
+  failure.help = [
+    ...close.map((name) => `Did you mean \`hey-axi ${resolved.path ? `${resolved.path} ` : ""}${name}\`?`),
+    resolved.path ? `Run \`hey-axi ${resolved.path} --help\`` : "Run `hey-axi --help` for all commands",
+  ];
+  fail(failure, 2);
+}
+const { node, path } = resolved;
+
+// Re-read argv with this command's own value flags, for positionals and flag values.
+let scan = scanArgs(args, nodeValueFlags(node));
+if (scan.words.slice(0, resolved.consumed).join(" ") !== first.words.slice(0, resolved.consumed).join(" ")) scan = first;
+const { flags } = scan;
+const positionals = scan.words.slice(resolved.consumed);
+const usageLines = (node.synopsis || []).filter((line) => !line.includes("<command>") || !node.usage).map((line) => `usage: ${heyToAxi(line)}`);
+
+const invalid = validateFlags(node, flags, { values: scan.values, missingValues: scan.missing });
+if (invalid) {
+  const valid = (node.flags || []).map(flagLabel);
+  const failure = { ok: false, command: path, kind: "usage" };
+  if (invalid.unknown) failure.error = `unknown flag ${invalid.unknown.join(", ")} for \`${path}\``;
+  else if (invalid.missingValue) failure.error = `missing value for ${invalid.missingValue.join(", ")} (use ${invalid.missingValue[0]}=<value> if the value starts with "-")`;
+  else if (invalid.badValue) failure.error = invalid.badValue;
+  else failure.error = `missing required flag ${invalid.missing.join(", ")} for \`${path}\``;
+  failure.help = [
+    valid.length ? `valid flags for \`${path}\`: ${valid.join(", ")}` : `\`${path}\` takes no flags of its own`,
+    `always allowed: ${ALWAYS_ALLOWED}`,
+    ...usageLines,
+  ];
+  fail(failure, 2);
+}
+
+if (flags.has("--help") || flags.has("-h")) {
+  process.stdout.write(`${commandHelp(node)}\n`);
+  process.exit(0);
+}
+
+const arity = checkArity(node, positionals, flags);
+if (arity) {
+  const failure = { ok: false, command: path, kind: "usage", error: arity.error };
+  if (node.subcommands?.length && positionals.length === 0) failure.subcommands = node.subcommands.map((child) => child.name);
+  const close = node.subcommands?.length && positionals.length ? closestNames(positionals[0], node.subcommands) : [];
+  failure.help = [
+    ...close.map((name) => `Did you mean \`hey-axi ${path} ${name}\`?`),...usageLines, ...(node.usage ? [`shortcut: hey-axi ${node.usage}`] : []), ...(arity.hint ? [arity.hint] : []), `example: ${examplesFor(node)[0]}`];
+  fail(failure, 2);
+}
+
+const refusal = checkPolicy(path, flags);
+if (refusal) fail({ ok: false, ...refusal }, 2);
+
+const missingContent = contentProblem(node, flags, positionals);
+if (missingContent) fail({ ok: false, kind: "usage", ...missingContent }, 2);
+
+let heyArgs = stripAxiFlags(args);
+// `--message -` (and --note -, --content -): read the content from stdin.
+const fromStdin = scan.values.filter(([name, value]) => STDIN_VALUE_FLAGS.includes(name) && value === "-").map(([name]) => name);
+if (fromStdin.length) {
+  if (process.stdin.isTTY) fail({ ok: false, kind: "usage", error: `${fromStdin[0]} - reads from stdin, but nothing is piped in`, help: `pipe the text in (e.g. \`cat note.md | hey-axi ${path} ... ${fromStdin[0]} -\`) or pass it as ${fromStdin[0]} "..."` }, 2);
+  const text = readFileSync(0, "utf8");
+  heyArgs = heyArgs.map((arg, index) => {
+    if (arg === "-" && fromStdin.includes(heyArgs[index - 1])) return text;
+    const eq = arg.indexOf("=");
+    return eq !== -1 && arg.slice(eq + 1) === "-" && fromStdin.includes(arg.slice(0, eq)) ? `${arg.slice(0, eq)}=${text}` : arg;
+  });
+}
+
 const json = flags.has("--json");
 const quiet = flags.has("--quiet");
 const full = flags.has("--full");
@@ -202,57 +345,18 @@ const raw = hasAny(flags, RAW_OUTPUT_FLAGS);
 const command = heyArgs.filter((arg) => arg !== "--json" && arg !== "--quiet");
 const fieldsArg = flagValue(args, "fields");
 const fields = fieldsArg === undefined ? null : fieldsArg.trim() === "all" ? "all" : fieldsArg.split(",").map((name) => name.trim()).filter(Boolean);
-// The command as the agent typed it, minus output/shaping flags, for `--full` hints.
+// The command as the agent typed it, minus output/shaping flags, for `--full`/`--all` hints.
 const commandLine = ["hey-axi", ...stripAxiFlags(args).filter((arg) => arg !== "--json" && arg !== "--quiet")].map(shellWord).join(" ");
-
-let resolved = resolveCommand(manifest.commands, words);
-if (resolved.error === "unknown command" || resolved.error === "unknown subcommand") {
-  const live = await discoverCommands();
-  const retry = live && resolveCommand(live, words);
-  if (retry && !retry.error) resolved = retry;
+// Selectors to carry into suggested commands.
+const carry = [];
+for (const name of ["account", "base-url"]) {
+  const value = flagValue(args, name);
+  if (value !== undefined) carry.push(`--${name}`, shellWord(value));
 }
-
-if (resolved.error) {
-  const failure = { ok: false, error: resolved.error };
-  if (resolved.path) failure.command = resolved.path;
-  if (resolved.word) failure.word = resolved.word;
-  if (resolved.subcommands) failure.subcommands = resolved.subcommands;
-  failure.help = resolved.path ? `Run \`hey-axi ${resolved.path} --help\`` : "Run `hey-axi --help` for all commands";
-  output(failure);
-  process.exit(2);
-}
-
-const invalid = validateFlags(resolved.node, flags);
-if (invalid) {
-  const valid = (resolved.node.flags || []).map(flagLabel);
-  const failure = { ok: false, command: resolved.path };
-  if (invalid.unknown) {
-    failure.error = `unknown flag ${invalid.unknown.join(", ")} for \`${resolved.path}\``;
-  } else {
-    failure.error = `missing required flag ${invalid.missing.join(", ")} for \`${resolved.path}\``;
-  }
-  failure.help = [
-    valid.length ? `valid flags for \`${resolved.path}\`: ${valid.join(", ")}` : `\`${resolved.path}\` takes no flags of its own`,
-    "always allowed: --help, --json, --quiet, --fields, --full, --account, --ids-only, --count, --markdown, --html, --styled, --jq, --stats, --verbose, --base-url, --allow-send, --allow-secret",
-    ...(resolved.node.synopsis || []).map((line) => `usage: ${heyToAxi(line)}`),
-  ];
-  output(failure);
-  process.exit(2);
-}
-
-if (flags.has("--help") || flags.has("-h")) {
-  process.stdout.write(`${commandHelp(resolved.node)}\n`);
-  process.exit(0);
-}
-
-const refusal = checkPolicy(resolved.path, flags);
-if (refusal) {
-  output({ ok: false, ...refusal });
-  process.exit(2);
-}
+const pageFlags = (node.flags || []).map((flag) => flag.name).filter((name) => ["all", "page", "limit"].includes(name));
 
 // compose/reply without a send opt-in: save a draft instead of sending.
-const staging = sendStaging(resolved.path, flags);
+const staging = sendStaging(path, flags);
 if (staging) {
   heyArgs.push(staging.flag);
   command.push(staging.flag);
@@ -270,76 +374,90 @@ function markStaged(parsed) {
   return { ...marker, data: parsed };
 }
 
-const mode = runMode(resolved.path, flags);
+function reportFailure(result) {
+  const { failure, exitCode, warnings } = translateFailure(result, { path });
+  for (const line of warnings) process.stderr.write(`${line}\n`);
+  const noop = exitCode !== 0 && noopFor(path, failure, positionals);
+  if (noop) {
+    if (json) process.stdout.write(`${JSON.stringify(noop)}\n`);
+    else output(noop);
+    process.exit(0);
+  }
+  if (json) process.stdout.write(`${JSON.stringify(failure)}\n`);
+  else output(failure);
+  process.exit(exitCode);
+}
+
+const mode = runMode(path, flags);
+if (mode === "interactive") {
+  // Only reached with a terminal on stdin and stdout: a person, not an agent.
+  const result = await runHeyInteractive(heyArgs);
+  if (result.error) reportFailure(result);
+  process.exit(result.status === 0 ? 0 : 1);
+}
 if (raw || mode !== "json") {
-  // interactive: tui, login, setup, mcp, upgrade; stream: watch; raw: scripts, CSV, and
-  // --ids-only/--count/--markdown/--html/--styled/--jq. HEY owns the output.
+  // stream: watch; raw: scripts, CSV, and --ids-only/--count/--markdown/--html/--styled/--jq.
   const result = mode === "stream" ? await runHeyStream(heyArgs) : await runHeyRaw(heyArgs);
-  if (result.error) output(heyFailure(result));
-  process.exit(result.status);
+  // A watch stopped by a signal ended the way the agent asked: not an error.
+  if (result.signal || result.status === 130 || result.status === 143) process.exit(0);
+  if (result.error || result.status !== 0) reportFailure(result);
+  if (result.stderr) process.stderr.write(result.stderr);
+  process.exit(0);
 }
 
 // `hey-axi version`: hey-axi's own version next to HEY's.
-if (resolved.path === "version") {
+if (path === "version") {
   const result = await runHey(command, ["--json"]);
   const versions = { hey_axi: VERSION };
-  if (result.status === 0) {
-    try {
-      const parsed = JSON.parse(result.stdout);
-      const data = parsed && typeof parsed === "object" && "data" in parsed ? parsed.data : parsed;
-      versions.hey = data?.version ?? data;
-      if (data?.commit) versions.hey_commit = data.commit;
-    } catch {
-      versions.hey = result.stdout.trim();
-    }
-  } else {
+  if (result.status !== 0) {
     // hey-axi still knows its own version; the failure says what's wrong with HEY.
-    const failure = { ok: false, hey_axi: VERSION, ...heyFailure(result) };
-    delete failure.ok;
-    output({ ok: false, ...failure });
-    process.exit(result.status);
+    const { failure, exitCode } = translateFailure(result, { path });
+    fail({ ok: false, hey_axi: VERSION, ...failure }, exitCode);
+  }
+  try {
+    const parsed = JSON.parse(result.stdout);
+    const data = parsed && typeof parsed === "object" && "data" in parsed ? parsed.data : parsed;
+    versions.hey = data?.version ?? data;
+    if (data?.commit) versions.hey_commit = data.commit;
+  } catch {
+    versions.hey = cleanLine(result.stdout);
   }
   if (json) process.stdout.write(`${JSON.stringify(versions)}\n`);
   else output(versions);
   process.exit(0);
 }
 
-const result = await runHey(command, quiet ? ["--json", "--quiet"] : ["--json"]);
-if (result.status === 0 && result.stderr) process.stderr.write(result.stderr);
-
-if (result.status !== 0) {
-  // Pass HEY's exit code through: 1 usage, 2 not found, 3 auth, 4 forbidden,
-  // 5 rate limit, 6 network, 7 API, 8 ambiguous (see `hey help exit-codes`).
-  output(heyFailure(result));
-  process.exit(result.status);
-}
+const result = await runHey(command, ["--json"]);
+if (result.status !== 0) reportFailure(result);
+if (result.stderr) process.stderr.write(result.stderr);
 
 let parsed;
 try {
   parsed = JSON.parse(result.stdout);
-} catch (error) {
-  output({ ok: false, error: "HEY returned invalid JSON", detail: error.message });
-  process.exit(1);
+} catch {
+  // HEY succeeded but printed text: show it, cleaned and cut, rather than fail.
+  const text = String(result.stdout || "").trim();
+  parsed = text ? { ok: true, output: text.length > 1000 ? `${text.slice(0, 1000)}… (truncated, ${text.length} chars total)` : text } : { ok: true };
 }
 
 let shaped;
 try {
-  if (full) shaped = parsed;
-  else if (quiet) {
-    const { data, truncated } = shapeData(parsed, { path: resolved.path, fields });
-    shaped = data;
-    if (truncated) process.stderr.write(`hey-axi: long text was truncated; run \`${commandLine} --full\` to see all of it\n`);
-  } else shaped = shapeEnvelope(parsed, { path: resolved.path, fields, commandLine });
+  shaped = full ? parsed : shapeEnvelope(parsed, { path, fields, commandLine, carry, pageFlags, quiet });
 } catch (error) {
   if (!(error instanceof FieldError)) throw error;
-  output({
+  fail({
     ok: false,
-    error: `unknown field ${error.unknown.join(", ")} for \`${resolved.path}\``,
+    kind: "usage",
+    error: `unknown field ${error.unknown.join(", ")} for \`${path}\``,
     help: [`available fields: ${error.available.join(", ")}`, "dotted paths (creator.email_address) and --fields all also work"],
-  });
-  process.exit(2);
+  }, 2);
 }
 shaped = markStaged(shaped);
+
+const { recordActivity } = await import("./activity.js");
+const { findScope } = await import("./scope.js");
+recordActivity({ path, positionals, staged: Boolean(staging), sent: sendCommands().includes(path) && !staging && !flags.has("--draft") && !flags.has("--dry-run"), scopeDir: scopeDirFor(process.cwd(), findScope) });
+
 if (json) process.stdout.write(`${JSON.stringify(shaped)}\n`);
 else output(shaped);
 }

@@ -60,7 +60,8 @@
      "flags": [
       {
        "name": "allow-partial",
-       "desc": "List what could be read of a thread that could only be read in part, with a notice saying what is missing"
+       "desc": "List what could be read of a thread that could only be read in part, with a notice saying what is missing",
+       "default": "false"
       }
      ],
      "synopsis": [
@@ -80,13 +81,16 @@
      "flags": [
       {
        "name": "force",
-       "desc": "Replace an existing destination file"
+       "desc": "Replace an existing destination file",
+       "default": "false"
       },
       {
        "name": "output",
        "shorthand": "o",
        "value": true,
-       "desc": "Destination file or directory"
+       "type": "string",
+       "desc": "Destination file or directory",
+       "default": ""
       }
      ],
      "synopsis": [
@@ -117,16 +121,21 @@
       {
        "name": "cookie",
        "value": true,
-       "desc": "Session cookie value from browser (session_token)"
+       "type": "string",
+       "desc": "Session cookie value from browser (session_token)",
+       "default": ""
       },
       {
        "name": "no-browser",
-       "desc": "Don't open browser, print URL instead"
+       "desc": "Don't open browser, print URL instead",
+       "default": "false"
       },
       {
        "name": "token",
        "value": true,
-       "desc": "Pre-generated Bearer token"
+       "type": "string",
+       "desc": "Pre-generated Bearer token",
+       "default": ""
       }
      ],
      "synopsis": [
@@ -172,7 +181,8 @@
      "flags": [
       {
        "name": "stored",
-       "desc": "Only print stored OAuth token (ignore HEY_TOKEN env var)"
+       "desc": "Only print stored OAuth token (ignore HEY_TOKEN env var)",
+       "default": "false"
       }
      ],
      "synopsis": [
@@ -193,17 +203,22 @@
    "flags": [
     {
      "name": "all",
-     "desc": "Fetch all results (override --limit)"
+     "desc": "Fetch all results (override --limit)",
+     "default": "false"
     },
     {
      "name": "limit",
      "value": true,
-     "desc": "Maximum number of threads to show"
+     "type": "int",
+     "desc": "Maximum number of threads to show",
+     "default": "0"
     },
     {
      "name": "page",
      "value": true,
-     "desc": "Continue from a next_page cursor"
+     "type": "string",
+     "desc": "Continue from a next_page cursor",
+     "default": ""
     }
    ],
    "subcommands": [
@@ -215,12 +230,15 @@
      "flags": [
       {
        "name": "all",
-       "desc": "Fetch all results (override --limit)"
+       "desc": "Fetch all results (override --limit)",
+       "default": "false"
       },
       {
        "name": "limit",
        "value": true,
-       "desc": "Maximum number of boxes to show"
+       "type": "int",
+       "desc": "Maximum number of boxes to show",
+       "default": "0"
       }
      ],
      "synopsis": [
@@ -240,17 +258,22 @@
      "flags": [
       {
        "name": "all",
-       "desc": "Fetch all results (override --limit)"
+       "desc": "Fetch all results (override --limit)",
+       "default": "false"
       },
       {
        "name": "limit",
        "value": true,
-       "desc": "Maximum number of threads to show"
+       "type": "int",
+       "desc": "Maximum number of threads to show",
+       "default": "0"
       },
       {
        "name": "page",
        "value": true,
-       "desc": "Continue from a next_page cursor"
+       "type": "string",
+       "desc": "Continue from a next_page cursor",
+       "default": ""
       }
      ],
      "synopsis": [
@@ -285,12 +308,15 @@
      "flags": [
       {
        "name": "all",
-       "desc": "Fetch all results (override --limit)"
+       "desc": "Fetch all results (override --limit)",
+       "default": "false"
       },
       {
        "name": "limit",
        "value": true,
-       "desc": "Maximum number of threads to show per bucket"
+       "type": "int",
+       "desc": "Maximum number of threads to show per bucket",
+       "default": "0"
       }
      ],
      "synopsis": [
@@ -322,24 +348,30 @@
      "flags": [
       {
        "name": "next-week",
-       "desc": "Bubble the threads up Monday morning"
+       "desc": "Bubble the threads up Monday morning",
+       "default": "false"
       },
       {
        "name": "now",
-       "desc": "Bubble the threads up right away"
+       "desc": "Bubble the threads up right away",
+       "default": "false"
       },
       {
        "name": "on",
        "value": true,
-       "desc": "Bubble the threads up on a date (YYYY-MM-DD)"
+       "type": "string",
+       "desc": "Bubble the threads up on a date (YYYY-MM-DD)",
+       "default": ""
       },
       {
        "name": "tomorrow",
-       "desc": "Bubble the threads up tomorrow morning"
+       "desc": "Bubble the threads up tomorrow morning",
+       "default": "false"
       },
       {
        "name": "weekend",
-       "desc": "Bubble the threads up Saturday morning"
+       "desc": "Bubble the threads up Saturday morning",
+       "default": "false"
       }
      ],
      "synopsis": [
@@ -384,18 +416,24 @@
       {
        "name": "attach",
        "value": true,
-       "desc": "File to attach (repeatable)"
+       "type": "stringArray",
+       "desc": "File to attach (repeatable)",
+       "default": "[]"
       },
       {
        "name": "message",
        "shorthand": "m",
        "value": true,
-       "desc": "Reply message as Markdown (or opens $EDITOR)"
+       "type": "string",
+       "desc": "Reply message as Markdown (or opens $EDITOR)",
+       "default": ""
       },
       {
        "name": "message-html",
        "value": true,
-       "desc": "Reply message as raw HTML instead of Markdown"
+       "type": "string",
+       "desc": "Reply message as raw HTML instead of Markdown",
+       "default": ""
       }
      ],
      "synopsis": [
@@ -432,17 +470,22 @@
    "flags": [
     {
      "name": "all",
-     "desc": "Fetch all results (override --limit)"
+     "desc": "Fetch all results (override --limit)",
+     "default": "false"
     },
     {
      "name": "limit",
      "value": true,
-     "desc": "Maximum number of threads to show"
+     "type": "int",
+     "desc": "Maximum number of threads to show",
+     "default": "0"
     },
     {
      "name": "page",
      "value": true,
-     "desc": "Continue from a next_page cursor"
+     "type": "string",
+     "desc": "Continue from a next_page cursor",
+     "default": ""
     }
    ],
    "subcommands": [
@@ -454,17 +497,22 @@
      "flags": [
       {
        "name": "all",
-       "desc": "Fetch all results (override --limit)"
+       "desc": "Fetch all results (override --limit)",
+       "default": "false"
       },
       {
        "name": "limit",
        "value": true,
-       "desc": "Maximum number of threads to show"
+       "type": "int",
+       "desc": "Maximum number of threads to show",
+       "default": "0"
       },
       {
        "name": "page",
        "value": true,
-       "desc": "Continue from a next_page cursor"
+       "type": "string",
+       "desc": "Continue from a next_page cursor",
+       "default": ""
       }
      ],
      "synopsis": [
@@ -523,7 +571,9 @@
       {
        "name": "content",
        "value": true,
-       "desc": "Text selected from the email entry (required)"
+       "type": "string",
+       "desc": "Text selected from the email entry (required)",
+       "default": ""
       }
      ],
      "synopsis": [
@@ -572,17 +622,22 @@
    "flags": [
     {
      "name": "all",
-     "desc": "Fetch all results (override --limit)"
+     "desc": "Fetch all results (override --limit)",
+     "default": "false"
     },
     {
      "name": "limit",
      "value": true,
-     "desc": "Maximum number of threads to show"
+     "type": "int",
+     "desc": "Maximum number of threads to show",
+     "default": "0"
     },
     {
      "name": "page",
      "value": true,
-     "desc": "Continue from a next_page cursor"
+     "type": "string",
+     "desc": "Continue from a next_page cursor",
+     "default": ""
     }
    ],
    "subcommands": [
@@ -594,7 +649,9 @@
       {
        "name": "to",
        "value": true,
-       "desc": "Collection ID (required)"
+       "type": "string",
+       "desc": "Collection ID (required)",
+       "default": ""
       }
      ],
      "synopsis": [
@@ -613,7 +670,9 @@
       {
        "name": "summary",
        "value": true,
-       "desc": "Description shown with the collection"
+       "type": "string",
+       "desc": "Description shown with the collection",
+       "default": ""
       }
      ],
      "synopsis": [
@@ -632,12 +691,15 @@
      "flags": [
       {
        "name": "all",
-       "desc": "Fetch all results (override --limit)"
+       "desc": "Fetch all results (override --limit)",
+       "default": "false"
       },
       {
        "name": "limit",
        "value": true,
-       "desc": "Maximum number of collections to show"
+       "type": "int",
+       "desc": "Maximum number of collections to show",
+       "default": "0"
       }
      ],
      "synopsis": [
@@ -657,7 +719,9 @@
       {
        "name": "from",
        "value": true,
-       "desc": "Collection ID (required)"
+       "type": "string",
+       "desc": "Collection ID (required)",
+       "default": ""
       }
      ],
      "synopsis": [
@@ -676,12 +740,16 @@
       {
        "name": "name",
        "value": true,
-       "desc": "New collection name"
+       "type": "string",
+       "desc": "New collection name",
+       "default": ""
       },
       {
        "name": "summary",
        "value": true,
-       "desc": "New collection description"
+       "type": "string",
+       "desc": "New collection description",
+       "default": ""
       }
      ],
      "synopsis": [
@@ -700,17 +768,22 @@
      "flags": [
       {
        "name": "all",
-       "desc": "Fetch all results (override --limit)"
+       "desc": "Fetch all results (override --limit)",
+       "default": "false"
       },
       {
        "name": "limit",
        "value": true,
-       "desc": "Maximum number of threads to show"
+       "type": "int",
+       "desc": "Maximum number of threads to show",
+       "default": "0"
       },
       {
        "name": "page",
        "value": true,
-       "desc": "Continue from a next_page cursor"
+       "type": "string",
+       "desc": "Continue from a next_page cursor",
+       "default": ""
       }
      ],
      "synopsis": [
@@ -749,56 +822,76 @@
     {
      "name": "attach",
      "value": true,
-     "desc": "File to attach (repeatable)"
+     "type": "stringArray",
+     "desc": "File to attach (repeatable)",
+     "default": "[]"
     },
     {
      "name": "bcc",
      "value": true,
-     "desc": "BCC recipient email address(es)"
+     "type": "string",
+     "desc": "BCC recipient email address(es)",
+     "default": ""
     },
     {
      "name": "cc",
      "value": true,
-     "desc": "CC recipient email address(es)"
+     "type": "string",
+     "desc": "CC recipient email address(es)",
+     "default": ""
     },
     {
      "name": "draft",
-     "desc": "Save as a draft instead of sending"
+     "desc": "Save as a draft instead of sending",
+     "default": "false"
     },
     {
      "name": "from",
      "value": true,
-     "desc": "Configured sender email or ID (see hey account senders)"
+     "type": "string",
+     "desc": "Configured sender email or ID (see hey account senders)",
+     "default": ""
     },
     {
      "name": "message",
      "shorthand": "m",
      "value": true,
-     "desc": "Message body as Markdown (or opens $EDITOR)"
+     "type": "string",
+     "desc": "Message body as Markdown (or opens $EDITOR)",
+     "default": ""
     },
     {
      "name": "message-html",
      "value": true,
-     "desc": "Message body as raw HTML instead of Markdown"
+     "type": "string",
+     "desc": "Message body as raw HTML instead of Markdown",
+     "default": ""
     },
     {
      "name": "no-name-tag",
-     "desc": "Leave the sender's HEY name tag off a new message"
+     "desc": "Leave the sender's HEY name tag off a new message",
+     "default": "false"
     },
     {
      "name": "subject",
      "value": true,
-     "desc": "Message subject (required for a new message)"
+     "type": "string",
+     "desc": "Message subject (required for a new message)",
+     "default": ""
     },
     {
      "name": "thread-id",
      "value": true,
-     "desc": "Reply to this thread instead of starting a new one"
+     "type": "string",
+     "desc": "Reply to this thread instead of starting a new one",
+     "default": ""
     },
     {
      "name": "to",
      "value": true,
-     "desc": "Recipient email address(es)"
+     "type": "string",
+     "desc": "Recipient email address(es)",
+     "default": ""
     }
    ],
    "synopsis": [
@@ -879,22 +972,30 @@
       {
        "name": "account-user-id",
        "value": true,
-       "desc": "Account user ID for multi-account identities"
+       "type": "int",
+       "desc": "Account user ID for multi-account identities",
+       "default": "0"
       },
       {
        "name": "alias",
        "value": true,
-       "desc": "Alternate email address (repeatable)"
+       "type": "strings",
+       "desc": "Alternate email address (repeatable)",
+       "default": "[]"
       },
       {
        "name": "email",
        "value": true,
-       "desc": "Primary email address (required)"
+       "type": "string",
+       "desc": "Primary email address (required)",
+       "default": ""
       },
       {
        "name": "name",
        "value": true,
-       "desc": "Contact name (required)"
+       "type": "string",
+       "desc": "Contact name (required)",
+       "default": ""
       }
      ],
      "synopsis": [
@@ -937,11 +1038,13 @@
      "flags": [
       {
        "name": "all",
-       "desc": "Fetch up to 100 results pages from --page onward"
+       "desc": "Fetch up to 100 results pages from --page onward",
+       "default": "false"
       },
       {
        "name": "page",
        "value": true,
+       "type": "int",
        "desc": "Results page",
        "default": "1"
       }
@@ -982,12 +1085,16 @@
          "name": "note",
          "shorthand": "n",
          "value": true,
-         "desc": "Private note as Markdown (or opens $EDITOR)"
+         "type": "string",
+         "desc": "Private note as Markdown (or opens $EDITOR)",
+         "default": ""
         },
         {
          "name": "note-html",
          "value": true,
-         "desc": "Private note as raw HTML instead of Markdown"
+         "type": "string",
+         "desc": "Private note as raw HTML instead of Markdown",
+         "default": ""
         }
        ],
        "synopsis": [
@@ -1048,17 +1155,22 @@
      "flags": [
       {
        "name": "all",
-       "desc": "Fetch all results (override --limit)"
+       "desc": "Fetch all results (override --limit)",
+       "default": "false"
       },
       {
        "name": "limit",
        "value": true,
-       "desc": "Maximum number of threads to show"
+       "type": "int",
+       "desc": "Maximum number of threads to show",
+       "default": "0"
       },
       {
        "name": "page",
        "value": true,
-       "desc": "Continue from a next_page cursor"
+       "type": "string",
+       "desc": "Continue from a next_page cursor",
+       "default": ""
       }
      ],
      "synopsis": [
@@ -1091,17 +1203,23 @@
       {
        "name": "alias",
        "value": true,
-       "desc": "Replacement alternate email address (repeatable)"
+       "type": "strings",
+       "desc": "Replacement alternate email address (repeatable)",
+       "default": "[]"
       },
       {
        "name": "email",
        "value": true,
-       "desc": "New primary email address"
+       "type": "string",
+       "desc": "New primary email address",
+       "default": ""
       },
       {
        "name": "name",
        "value": true,
-       "desc": "New contact name"
+       "type": "string",
+       "desc": "New contact name",
+       "default": ""
       }
      ],
      "synopsis": [
@@ -1154,38 +1272,52 @@
       {
        "name": "bcc",
        "value": true,
-       "desc": "Replace the BCC recipients (comma separated; empty clears)"
+       "type": "string",
+       "desc": "Replace the BCC recipients (comma separated; empty clears)",
+       "default": ""
       },
       {
        "name": "cc",
        "value": true,
-       "desc": "Replace the CC recipients (comma separated; empty clears)"
+       "type": "string",
+       "desc": "Replace the CC recipients (comma separated; empty clears)",
+       "default": ""
       },
       {
        "name": "from",
        "value": true,
-       "desc": "Replace the sender with a configured email or ID in this draft account"
+       "type": "string",
+       "desc": "Replace the sender with a configured email or ID in this draft account",
+       "default": ""
       },
       {
        "name": "message",
        "shorthand": "m",
        "value": true,
-       "desc": "Replace the body with this Markdown"
+       "type": "string",
+       "desc": "Replace the body with this Markdown",
+       "default": ""
       },
       {
        "name": "message-html",
        "value": true,
-       "desc": "Replace the body with raw HTML instead of Markdown"
+       "type": "string",
+       "desc": "Replace the body with raw HTML instead of Markdown",
+       "default": ""
       },
       {
        "name": "subject",
        "value": true,
-       "desc": "Replace the subject"
+       "type": "string",
+       "desc": "Replace the subject",
+       "default": ""
       },
       {
        "name": "to",
        "value": true,
-       "desc": "Replace the To recipients (comma separated; empty clears)"
+       "type": "string",
+       "desc": "Replace the To recipients (comma separated; empty clears)",
+       "default": ""
       }
      ],
      "synopsis": [
@@ -1204,17 +1336,22 @@
      "flags": [
       {
        "name": "all",
-       "desc": "Fetch all results (override --limit)"
+       "desc": "Fetch all results (override --limit)",
+       "default": "false"
       },
       {
        "name": "limit",
        "value": true,
-       "desc": "Maximum number of drafts to show"
+       "type": "int",
+       "desc": "Maximum number of drafts to show",
+       "default": "0"
       },
       {
        "name": "page",
        "value": true,
-       "desc": "Continue from a next_page cursor"
+       "type": "string",
+       "desc": "Continue from a next_page cursor",
+       "default": ""
       }
      ],
      "synopsis": [
@@ -1269,98 +1406,133 @@
      "flags": [
       {
        "name": "all-day",
-       "desc": "Make it an all-day event"
+       "desc": "Make it an all-day event",
+       "default": "false"
       },
       {
        "name": "calendar",
        "value": true,
-       "desc": "Calendar ID to file the event on"
+       "type": "int",
+       "desc": "Calendar ID to file the event on",
+       "default": "0"
       },
       {
        "name": "circle",
-       "desc": "Circle the event"
+       "desc": "Circle the event",
+       "default": "false"
       },
       {
        "name": "countdown",
        "value": true,
-       "desc": "Count down this many units to the event"
+       "type": "int",
+       "desc": "Count down this many units to the event",
+       "default": "0"
       },
       {
        "name": "countdown-unit",
        "value": true,
+       "type": "string",
        "desc": "Countdown unit: days, weeks or months",
        "default": "days"
       },
       {
        "name": "end-time",
        "value": true,
-       "desc": "End time (HH:MM, defaults to an hour after the start)"
+       "type": "string",
+       "desc": "End time (HH:MM, defaults to an hour after the start)",
+       "default": ""
       },
       {
        "name": "ends-on",
        "value": true,
-       "desc": "End date (YYYY-MM-DD, defaults to the start date)"
+       "type": "string",
+       "desc": "End date (YYYY-MM-DD, defaults to the start date)",
+       "default": ""
       },
       {
        "name": "invite",
        "value": true,
-       "desc": "Email address to invite (repeatable, replaces the guest list)"
+       "type": "stringArray",
+       "desc": "Email address to invite (repeatable, replaces the guest list)",
+       "default": "[]"
       },
       {
        "name": "link",
        "value": true,
-       "desc": "Meeting or reference URL"
+       "type": "string",
+       "desc": "Meeting or reference URL",
+       "default": ""
       },
       {
        "name": "location",
        "value": true,
-       "desc": "Event location"
+       "type": "string",
+       "desc": "Event location",
+       "default": ""
       },
       {
        "name": "notes",
        "value": true,
-       "desc": "Event notes"
+       "type": "string",
+       "desc": "Event notes",
+       "default": ""
       },
       {
        "name": "remind",
        "value": true,
-       "desc": "Notice before the event, e.g. 10m, 1h, 1d (repeatable)"
+       "type": "stringArray",
+       "desc": "Notice before the event, e.g. 10m, 1h, 1d (repeatable)",
+       "default": "[]"
       },
       {
        "name": "repeat",
        "value": true,
-       "desc": "Repeat: every_day, every_weekday, every_week, every_other_week, every_day_of_month, every_year; custom only copies an opaque schedule in a future occurrence edit"
+       "type": "string",
+       "desc": "Repeat: every_day, every_weekday, every_week, every_other_week, every_day_of_month, every_year; custom only copies an opaque schedule in a future occurrence edit",
+       "default": ""
       },
       {
        "name": "repeat-times",
        "value": true,
-       "desc": "Stop repeating after this many occurrences"
+       "type": "int",
+       "desc": "Stop repeating after this many occurrences",
+       "default": "0"
       },
       {
        "name": "repeat-until",
        "value": true,
-       "desc": "Stop repeating on this date (YYYY-MM-DD)"
+       "type": "string",
+       "desc": "Stop repeating on this date (YYYY-MM-DD)",
+       "default": ""
       },
       {
        "name": "start-time",
        "value": true,
-       "desc": "Start time (HH:MM)"
+       "type": "string",
+       "desc": "Start time (HH:MM)",
+       "default": ""
       },
       {
        "name": "starts-on",
        "value": true,
-       "desc": "Start date (YYYY-MM-DD, defaults to today)"
+       "type": "string",
+       "desc": "Start date (YYYY-MM-DD, defaults to today)",
+       "default": ""
       },
       {
        "name": "time-zone",
        "value": true,
-       "desc": "IANA zone the times are written in (defaults to this machine's)"
+       "type": "string",
+       "desc": "IANA zone the times are written in (defaults to this machine's)",
+       "default": ""
       },
       {
        "name": "title",
        "shorthand": "t",
        "value": true,
-       "desc": "Event title"
+       "type": "string",
+       "desc": "Event title",
+       "default": ""
       }
      ],
      "synopsis": [
@@ -1379,12 +1551,15 @@
      "flags": [
       {
        "name": "all",
-       "desc": "Fetch all results (override --limit)"
+       "desc": "Fetch all results (override --limit)",
+       "default": "false"
       },
       {
        "name": "limit",
        "value": true,
-       "desc": "Maximum number of events to show"
+       "type": "int",
+       "desc": "Maximum number of events to show",
+       "default": "0"
       }
      ],
      "synopsis": [
@@ -1415,112 +1590,152 @@
      "flags": [
       {
        "name": "all-day",
-       "desc": "Make it an all-day event"
+       "desc": "Make it an all-day event",
+       "default": "false"
       },
       {
        "name": "allow-plain-notes",
-       "desc": "Let an --occurrence edit send notes it is not changing back as plain text, losing their formatting"
+       "desc": "Let an --occurrence edit send notes it is not changing back as plain text, losing their formatting",
+       "default": "false"
       },
       {
        "name": "apply-to",
        "value": true,
-       "desc": "How much of the series an --occurrence edit reaches: current (that day alone) or future (that day and every one after it)"
+       "type": "string",
+       "desc": "How much of the series an --occurrence edit reaches: current (that day alone) or future (that day and every one after it)",
+       "default": ""
       },
       {
        "name": "calendar",
        "value": true,
-       "desc": "Calendar ID to file the event on"
+       "type": "int",
+       "desc": "Calendar ID to file the event on",
+       "default": "0"
       },
       {
        "name": "circle",
-       "desc": "Circle the event"
+       "desc": "Circle the event",
+       "default": "false"
       },
       {
        "name": "countdown",
        "value": true,
-       "desc": "Count down this many units to the event"
+       "type": "int",
+       "desc": "Count down this many units to the event",
+       "default": "0"
       },
       {
        "name": "countdown-unit",
        "value": true,
+       "type": "string",
        "desc": "Countdown unit: days, weeks or months",
        "default": "days"
       },
       {
        "name": "end-time",
        "value": true,
-       "desc": "End time (HH:MM, defaults to an hour after the start)"
+       "type": "string",
+       "desc": "End time (HH:MM, defaults to an hour after the start)",
+       "default": ""
       },
       {
        "name": "ends-on",
        "value": true,
-       "desc": "End date (YYYY-MM-DD, defaults to the start date)"
+       "type": "string",
+       "desc": "End date (YYYY-MM-DD, defaults to the start date)",
+       "default": ""
       },
       {
        "name": "invite",
        "value": true,
-       "desc": "Email address to invite (repeatable, replaces the guest list)"
+       "type": "stringArray",
+       "desc": "Email address to invite (repeatable, replaces the guest list)",
+       "default": "[]"
       },
       {
        "name": "link",
        "value": true,
-       "desc": "Meeting or reference URL"
+       "type": "string",
+       "desc": "Meeting or reference URL",
+       "default": ""
       },
       {
        "name": "location",
        "value": true,
-       "desc": "Event location"
+       "type": "string",
+       "desc": "Event location",
+       "default": ""
       },
       {
        "name": "notes",
        "value": true,
-       "desc": "Event notes"
+       "type": "string",
+       "desc": "Event notes",
+       "default": ""
       },
       {
        "name": "occurrence",
        "value": true,
-       "desc": "One day of a repeating event, by the occurrence_id 'hey event day' serves (<series id>_<YYYY-MM-DD>)"
+       "type": "string",
+       "desc": "One day of a repeating event, by the occurrence_id 'hey event day' serves (<series id>_<YYYY-MM-DD>)",
+       "default": ""
       },
       {
        "name": "remind",
        "value": true,
-       "desc": "Notice before the event, e.g. 10m, 1h, 1d (repeatable)"
+       "type": "stringArray",
+       "desc": "Notice before the event, e.g. 10m, 1h, 1d (repeatable)",
+       "default": "[]"
       },
       {
        "name": "repeat",
        "value": true,
-       "desc": "Repeat: every_day, every_weekday, every_week, every_other_week, every_day_of_month, every_year; custom only copies an opaque schedule in a future occurrence edit"
+       "type": "string",
+       "desc": "Repeat: every_day, every_weekday, every_week, every_other_week, every_day_of_month, every_year; custom only copies an opaque schedule in a future occurrence edit",
+       "default": ""
       },
       {
        "name": "repeat-times",
        "value": true,
-       "desc": "Stop repeating after this many occurrences"
+       "type": "int",
+       "desc": "Stop repeating after this many occurrences",
+       "default": "0"
       },
       {
        "name": "repeat-until",
        "value": true,
-       "desc": "Stop repeating on this date (YYYY-MM-DD)"
+       "type": "string",
+       "desc": "Stop repeating on this date (YYYY-MM-DD)",
+       "default": ""
       },
       {
        "name": "start-time",
        "value": true,
-       "desc": "Start time (HH:MM)"
+       "type": "string",
+       "desc": "Start time (HH:MM)",
+       "default": ""
       },
       {
        "name": "starts-on",
        "value": true,
-       "desc": "Start date (YYYY-MM-DD, defaults to today)"
+       "type": "string",
+       "desc": "Start date (YYYY-MM-DD, defaults to today)",
+       "default": ""
       },
       {
        "name": "time-zone",
        "value": true,
-       "desc": "IANA zone the times are written in (defaults to this machine's)"
+       "type": "string",
+       "desc": "IANA zone the times are written in (defaults to this machine's)",
+       "default": ""
       },
       {
        "name": "title",
        "shorthand": "t",
        "value": true,
-       "desc": "Event title"
+       "type": "string",
+       "desc": "Event title",
+       "default": ""
       }
      ],
      "synopsis": [
@@ -1539,27 +1754,36 @@
      "flags": [
       {
        "name": "all",
-       "desc": "Fetch all results (override --limit)"
+       "desc": "Fetch all results (override --limit)",
+       "default": "false"
       },
       {
        "name": "calendar",
        "value": true,
-       "desc": "Calendar ID to read (defaults to every calendar)"
+       "type": "int",
+       "desc": "Calendar ID to read (defaults to every calendar)",
+       "default": "0"
       },
       {
        "name": "ends-on",
        "value": true,
-       "desc": "End date (YYYY-MM-DD)"
+       "type": "string",
+       "desc": "End date (YYYY-MM-DD)",
+       "default": ""
       },
       {
        "name": "limit",
        "value": true,
-       "desc": "Maximum number of events to show"
+       "type": "int",
+       "desc": "Maximum number of events to show",
+       "default": "0"
       },
       {
        "name": "starts-on",
        "value": true,
-       "desc": "Start date (YYYY-MM-DD)"
+       "type": "string",
+       "desc": "Start date (YYYY-MM-DD)",
+       "default": ""
       }
      ],
      "synopsis": [
@@ -1578,12 +1802,15 @@
      "flags": [
       {
        "name": "all",
-       "desc": "Fetch all results (override --limit)"
+       "desc": "Fetch all results (override --limit)",
+       "default": "false"
       },
       {
        "name": "limit",
        "value": true,
-       "desc": "Maximum number of events to show"
+       "type": "int",
+       "desc": "Maximum number of events to show",
+       "default": "0"
       }
      ],
      "synopsis": [
@@ -1609,28 +1836,38 @@
     {
      "name": "bcc",
      "value": true,
-     "desc": "BCC recipient email address(es)"
+     "type": "string",
+     "desc": "BCC recipient email address(es)",
+     "default": ""
     },
     {
      "name": "cc",
      "value": true,
-     "desc": "CC recipient email address(es)"
+     "type": "string",
+     "desc": "CC recipient email address(es)",
+     "default": ""
     },
     {
      "name": "message",
      "shorthand": "m",
      "value": true,
-     "desc": "Optional Markdown note above the forwarded message"
+     "type": "string",
+     "desc": "Optional Markdown note above the forwarded message",
+     "default": ""
     },
     {
      "name": "message-html",
      "value": true,
-     "desc": "The note as raw HTML instead of Markdown"
+     "type": "string",
+     "desc": "The note as raw HTML instead of Markdown",
+     "default": ""
     },
     {
      "name": "to",
      "value": true,
-     "desc": "Recipient email address(es)"
+     "type": "string",
+     "desc": "Recipient email address(es)",
+     "default": ""
     }
    ],
    "synopsis": [
@@ -1655,7 +1892,9 @@
       {
        "name": "date",
        "value": true,
-       "desc": "Date (YYYY-MM-DD, default: today)"
+       "type": "string",
+       "desc": "Date (YYYY-MM-DD, default: today)",
+       "default": ""
       }
      ],
      "synopsis": [
@@ -1674,25 +1913,30 @@
       {
        "name": "color",
        "value": true,
+       "type": "string",
        "desc": "Habit color. Accepted values: blue, red, gold, green, teal, purple, pink, brown",
        "default": "blue"
       },
       {
        "name": "days",
        "value": true,
+       "type": "string",
        "desc": "Weekdays (names or 0-6, comma-separated)",
        "default": "0,1,2,3,4,5,6"
       },
       {
        "name": "icon",
        "value": true,
+       "type": "string",
        "desc": "Habit icon. Accepted values: weights, art, baseball, basketball, bed, bicycle, brain, camera, cat, church, clean, cook, dog, football, fruit, game, garden, guitar, heart, hydrate, meditate, money, music, piano, pill, plant, read, run, smoke, soccer, study, swim, tea, toothbrush, tree, tv, vegetable, walk, water, write, yoga, heat, ice, lotus, breathe, drink, star",
        "default": "weights"
       },
       {
        "name": "name",
        "value": true,
-       "desc": "Habit name"
+       "type": "string",
+       "desc": "Habit name",
+       "default": ""
       }
      ],
      "synopsis": [
@@ -1722,22 +1966,30 @@
       {
        "name": "color",
        "value": true,
-       "desc": "New habit color. Accepted values: blue, red, gold, green, teal, purple, pink, brown"
+       "type": "string",
+       "desc": "New habit color. Accepted values: blue, red, gold, green, teal, purple, pink, brown",
+       "default": ""
       },
       {
        "name": "days",
        "value": true,
-       "desc": "New weekdays (names or 0-6, comma-separated)"
+       "type": "string",
+       "desc": "New weekdays (names or 0-6, comma-separated)",
+       "default": ""
       },
       {
        "name": "icon",
        "value": true,
-       "desc": "New habit icon. Accepted values: weights, art, baseball, basketball, bed, bicycle, brain, camera, cat, church, clean, cook, dog, football, fruit, game, garden, guitar, heart, hydrate, meditate, money, music, piano, pill, plant, read, run, smoke, soccer, study, swim, tea, toothbrush, tree, tv, vegetable, walk, water, write, yoga, heat, ice, lotus, breathe, drink, star"
+       "type": "string",
+       "desc": "New habit icon. Accepted values: weights, art, baseball, basketball, bed, bicycle, brain, camera, cat, church, clean, cook, dog, football, fruit, game, garden, guitar, heart, hydrate, meditate, money, music, piano, pill, plant, read, run, smoke, soccer, study, swim, tea, toothbrush, tree, tv, vegetable, walk, water, write, yoga, heat, ice, lotus, breathe, drink, star",
+       "default": ""
       },
       {
        "name": "name",
        "value": true,
-       "desc": "New habit name"
+       "type": "string",
+       "desc": "New habit name",
+       "default": ""
       }
      ],
      "synopsis": [
@@ -1756,17 +2008,22 @@
      "flags": [
       {
        "name": "all",
-       "desc": "Fetch all results (override --limit)"
+       "desc": "Fetch all results (override --limit)",
+       "default": "false"
       },
       {
        "name": "date",
        "value": true,
-       "desc": "Any day in the week to read (YYYY-MM-DD, defaults to today)"
+       "type": "string",
+       "desc": "Any day in the week to read (YYYY-MM-DD, defaults to today)",
+       "default": ""
       },
       {
        "name": "limit",
        "value": true,
-       "desc": "Maximum number of habits to show"
+       "type": "int",
+       "desc": "Maximum number of habits to show",
+       "default": "0"
       }
      ],
      "synopsis": [
@@ -1786,7 +2043,9 @@
       {
        "name": "date",
        "value": true,
-       "desc": "Date (YYYY-MM-DD, default: today)"
+       "type": "string",
+       "desc": "Date (YYYY-MM-DD, default: today)",
+       "default": ""
       }
      ],
      "synopsis": [
@@ -1828,27 +2087,36 @@
      "flags": [
       {
        "name": "all",
-       "desc": "Fetch all results (override --limit)"
+       "desc": "Fetch all results (override --limit)",
+       "default": "false"
       },
       {
        "name": "calendar",
        "value": true,
-       "desc": "Calendar ID to read (defaults to the personal calendar)"
+       "type": "int",
+       "desc": "Calendar ID to read (defaults to the personal calendar)",
+       "default": "0"
       },
       {
        "name": "ends-on",
        "value": true,
-       "desc": "End date (YYYY-MM-DD)"
+       "type": "string",
+       "desc": "End date (YYYY-MM-DD)",
+       "default": ""
       },
       {
        "name": "limit",
        "value": true,
-       "desc": "Maximum number of entries to show"
+       "type": "int",
+       "desc": "Maximum number of entries to show",
+       "default": "0"
       },
       {
        "name": "starts-on",
        "value": true,
-       "desc": "Start date (YYYY-MM-DD)"
+       "type": "string",
+       "desc": "Start date (YYYY-MM-DD)",
+       "default": ""
       }
      ],
      "synopsis": [
@@ -1882,12 +2150,16 @@
        "name": "content",
        "shorthand": "c",
        "value": true,
-       "desc": "Journal content as Markdown (or opens $EDITOR)"
+       "type": "string",
+       "desc": "Journal content as Markdown (or opens $EDITOR)",
+       "default": ""
       },
       {
        "name": "content-html",
        "value": true,
-       "desc": "Journal content as raw HTML instead of Markdown"
+       "type": "string",
+       "desc": "Journal content as raw HTML instead of Markdown",
+       "default": ""
       }
      ],
      "synopsis": [
@@ -1913,17 +2185,22 @@
    "flags": [
     {
      "name": "all",
-     "desc": "Fetch all results (override --limit)"
+     "desc": "Fetch all results (override --limit)",
+     "default": "false"
     },
     {
      "name": "limit",
      "value": true,
-     "desc": "Maximum number of threads to show"
+     "type": "int",
+     "desc": "Maximum number of threads to show",
+     "default": "0"
     },
     {
      "name": "page",
      "value": true,
-     "desc": "Continue from a next_page cursor"
+     "type": "string",
+     "desc": "Continue from a next_page cursor",
+     "default": ""
     }
    ],
    "subcommands": [
@@ -1935,7 +2212,9 @@
       {
        "name": "to",
        "value": true,
-       "desc": "Label ID (required)"
+       "type": "string",
+       "desc": "Label ID (required)",
+       "default": ""
       }
      ],
      "synopsis": [
@@ -1966,12 +2245,15 @@
      "flags": [
       {
        "name": "all",
-       "desc": "Fetch all results (override --limit)"
+       "desc": "Fetch all results (override --limit)",
+       "default": "false"
       },
       {
        "name": "limit",
        "value": true,
-       "desc": "Maximum number of labels to show"
+       "type": "int",
+       "desc": "Maximum number of labels to show",
+       "default": "0"
       }
      ],
      "synopsis": [
@@ -1991,7 +2273,9 @@
       {
        "name": "from",
        "value": true,
-       "desc": "Label ID, or all to remove every label (required)"
+       "type": "string",
+       "desc": "Label ID, or all to remove every label (required)",
+       "default": ""
       }
      ],
      "synopsis": [
@@ -2010,17 +2294,22 @@
      "flags": [
       {
        "name": "all",
-       "desc": "Fetch all results (override --limit)"
+       "desc": "Fetch all results (override --limit)",
+       "default": "false"
       },
       {
        "name": "limit",
        "value": true,
-       "desc": "Maximum number of threads to show"
+       "type": "int",
+       "desc": "Maximum number of threads to show",
+       "default": "0"
       },
       {
        "name": "page",
        "value": true,
-       "desc": "Continue from a next_page cursor"
+       "type": "string",
+       "desc": "Continue from a next_page cursor",
+       "default": ""
       }
      ],
      "synopsis": [
@@ -2050,16 +2339,21 @@
     {
      "name": "cookie",
      "value": true,
-     "desc": "Session cookie value from browser (session_token)"
+     "type": "string",
+     "desc": "Session cookie value from browser (session_token)",
+     "default": ""
     },
     {
      "name": "no-browser",
-     "desc": "Don't open browser, print URL instead"
+     "desc": "Don't open browser, print URL instead",
+     "default": "false"
     },
     {
      "name": "token",
      "value": true,
-     "desc": "Pre-generated Bearer token"
+     "type": "string",
+     "desc": "Pre-generated Bearer token",
+     "default": ""
     }
    ],
    "synopsis": [
@@ -2091,11 +2385,14 @@
     {
      "name": "domains",
      "value": true,
-     "desc": "Narrow to specific domains (comma-separated; default all)"
+     "type": "strings",
+     "desc": "Narrow to specific domains (comma-separated; default all)",
+     "default": "[]"
     },
     {
      "name": "read-only",
-     "desc": "Serve only read-only actions"
+     "desc": "Serve only read-only actions",
+     "default": "false"
     }
    ],
    "synopsis": [
@@ -2111,7 +2408,9 @@
     {
      "name": "to",
      "value": true,
-     "desc": "Destination box name, kind, or ID (required)"
+     "type": "string",
+     "desc": "Destination box name, kind, or ID (required)",
+     "default": ""
     }
    ],
    "synopsis": [
@@ -2132,45 +2431,60 @@
     {
      "name": "attach",
      "value": true,
-     "desc": "File to attach (repeatable)"
+     "type": "stringArray",
+     "desc": "File to attach (repeatable)",
+     "default": "[]"
     },
     {
      "name": "bcc",
      "value": true,
-     "desc": "BCC recipient email address (repeatable or comma-separated)"
+     "type": "stringArray",
+     "desc": "BCC recipient email address (repeatable or comma-separated)",
+     "default": "[]"
     },
     {
      "name": "cc",
      "value": true,
-     "desc": "CC recipient email address (repeatable or comma-separated)"
+     "type": "stringArray",
+     "desc": "CC recipient email address (repeatable or comma-separated)",
+     "default": "[]"
     },
     {
      "name": "draft",
-     "desc": "Save as a draft instead of sending"
+     "desc": "Save as a draft instead of sending",
+     "default": "false"
     },
     {
      "name": "dry-run",
-     "desc": "Print the resolved reply envelope without sending"
+     "desc": "Print the resolved reply envelope without sending",
+     "default": "false"
     },
     {
      "name": "message",
      "shorthand": "m",
      "value": true,
-     "desc": "Reply message as Markdown (or opens $EDITOR)"
+     "type": "string",
+     "desc": "Reply message as Markdown (or opens $EDITOR)",
+     "default": ""
     },
     {
      "name": "message-html",
      "value": true,
-     "desc": "Reply message as raw HTML instead of Markdown"
+     "type": "string",
+     "desc": "Reply message as raw HTML instead of Markdown",
+     "default": ""
     },
     {
      "name": "replace-recipients",
-     "desc": "Replace HEY's reply recipients with the explicit To, CC and BCC lists"
+     "desc": "Replace HEY's reply recipients with the explicit To, CC and BCC lists",
+     "default": "false"
     },
     {
      "name": "to",
      "value": true,
-     "desc": "To recipient email address (repeatable or comma-separated)"
+     "type": "stringArray",
+     "desc": "To recipient email address (repeatable or comma-separated)",
+     "default": "[]"
     }
    ],
    "synopsis": [
@@ -2197,11 +2511,14 @@
       {
        "name": "box",
        "value": true,
-       "desc": "Deliver their email to this box instead of the Imbox"
+       "type": "string",
+       "desc": "Deliver their email to this box instead of the Imbox",
+       "default": ""
       },
       {
        "name": "seen",
-       "desc": "Mark what they already sent as seen"
+       "desc": "Mark what they already sent as seen",
+       "default": "false"
       }
      ],
      "synopsis": [
@@ -2234,7 +2551,8 @@
      "flags": [
       {
        "name": "spam",
-       "desc": "Also mark what they sent as spam and train the filter"
+       "desc": "Also mark what they sent as spam and train the filter",
+       "default": "false"
       }
      ],
      "synopsis": [
@@ -2254,12 +2572,15 @@
      "flags": [
       {
        "name": "all",
-       "desc": "Fetch all results (up to 100 pages)"
+       "desc": "Fetch all results (up to 100 pages)",
+       "default": "false"
       },
       {
        "name": "page",
        "value": true,
-       "desc": "Continue from a next_page cursor"
+       "type": "string",
+       "desc": "Continue from a next_page cursor",
+       "default": ""
       }
      ],
      "synopsis": [
@@ -2279,12 +2600,15 @@
      "flags": [
       {
        "name": "all",
-       "desc": "Fetch all results (up to 100 pages)"
+       "desc": "Fetch all results (up to 100 pages)",
+       "default": "false"
       },
       {
        "name": "page",
        "value": true,
-       "desc": "Continue from a next_page cursor"
+       "type": "string",
+       "desc": "Continue from a next_page cursor",
+       "default": ""
       }
      ],
      "synopsis": [
@@ -2309,68 +2633,92 @@
    "flags": [
     {
      "name": "all",
-     "desc": "Fetch up to 100 results pages from --page onward"
+     "desc": "Fetch up to 100 results pages from --page onward",
+     "default": "false"
     },
     {
      "name": "any",
      "value": true,
-     "desc": "Words where at least one must appear"
+     "type": "string",
+     "desc": "Words where at least one must appear",
+     "default": ""
     },
     {
      "name": "attachment",
      "value": true,
-     "desc": "Attachment kind: any, images, pdfs, calendar_invites, documents, spreadsheets, presentations, media, or zip_files"
+     "type": "string",
+     "desc": "Attachment kind: any, images, pdfs, calendar_invites, documents, spreadsheets, presentations, media, or zip_files",
+     "default": ""
     },
     {
      "name": "date",
      "value": true,
-     "desc": "Date range: last_7_days, last_30_days, last_90_days, or year"
+     "type": "string",
+     "desc": "Date range: last_7_days, last_30_days, last_90_days, or year",
+     "default": ""
     },
     {
      "name": "exact",
      "value": true,
-     "desc": "Exact phrase that must appear"
+     "type": "string",
+     "desc": "Exact phrase that must appear",
+     "default": ""
     },
     {
      "name": "from",
      "value": true,
-     "desc": "Sender name or email address"
+     "type": "string",
+     "desc": "Sender name or email address",
+     "default": ""
     },
     {
      "name": "in",
      "value": true,
-     "desc": "Box: imbox, feed, papertrail, or trash"
+     "type": "string",
+     "desc": "Box: imbox, feed, papertrail, or trash",
+     "default": ""
     },
     {
      "name": "label",
      "value": true,
-     "desc": "Label name"
+     "type": "string",
+     "desc": "Label name",
+     "default": ""
     },
     {
      "name": "none",
      "value": true,
-     "desc": "Words that must not appear"
+     "type": "string",
+     "desc": "Words that must not appear",
+     "default": ""
     },
     {
      "name": "page",
      "value": true,
+     "type": "int",
      "desc": "Results page",
      "default": "1"
     },
     {
      "name": "required",
      "value": true,
-     "desc": "Words that must all appear"
+     "type": "string",
+     "desc": "Words that must all appear",
+     "default": ""
     },
     {
      "name": "subject",
      "value": true,
-     "desc": "Words in the subject"
+     "type": "string",
+     "desc": "Words in the subject",
+     "default": ""
     },
     {
      "name": "to",
      "value": true,
-     "desc": "Recipient name or email address"
+     "type": "string",
+     "desc": "Recipient name or email address",
+     "default": ""
     }
    ],
    "subcommands": [
@@ -2426,7 +2774,9 @@
         {
          "name": "to",
          "value": true,
-         "desc": "Group ID (required)"
+         "type": "string",
+         "desc": "Group ID (required)",
+         "default": ""
         }
        ],
        "synopsis": [
@@ -2496,17 +2846,22 @@
        "flags": [
         {
          "name": "all",
-         "desc": "Fetch all results (override --limit)"
+         "desc": "Fetch all results (override --limit)",
+         "default": "false"
         },
         {
          "name": "limit",
          "value": true,
-         "desc": "Maximum number of threads to show"
+         "type": "int",
+         "desc": "Maximum number of threads to show",
+         "default": "0"
         },
         {
          "name": "page",
          "value": true,
-         "desc": "Continue from a next_page cursor"
+         "type": "string",
+         "desc": "Continue from a next_page cursor",
+         "default": ""
         }
        ],
        "synopsis": [
@@ -2537,17 +2892,22 @@
      "flags": [
       {
        "name": "all",
-       "desc": "Fetch all results (override --limit)"
+       "desc": "Fetch all results (override --limit)",
+       "default": "false"
       },
       {
        "name": "limit",
        "value": true,
-       "desc": "Maximum number of threads to show"
+       "type": "int",
+       "desc": "Maximum number of threads to show",
+       "default": "0"
       },
       {
        "name": "page",
        "value": true,
-       "desc": "Continue from a next_page cursor"
+       "type": "string",
+       "desc": "Continue from a next_page cursor",
+       "default": ""
       }
      ],
      "synopsis": [
@@ -2578,15 +2938,18 @@
    "flags": [
     {
      "name": "silent-success",
-     "desc": "Show setup activity and end a successful run with SETUP COMPLETE"
+     "desc": "Show setup activity and end a successful run with SETUP COMPLETE",
+     "default": "false"
     },
     {
      "name": "skip-agents",
-     "desc": "Leave coding-agent integrations unchanged"
+     "desc": "Leave coding-agent integrations unchanged",
+     "default": "false"
     },
     {
      "name": "skip-omarchy",
-     "desc": "Leave the Omarchy integration unchanged"
+     "desc": "Leave the Omarchy integration unchanged",
+     "default": "false"
     }
    ],
    "subcommands": [
@@ -2598,7 +2961,8 @@
      "flags": [
       {
        "name": "remove",
-       "desc": "Remove HEY coding-agent integrations"
+       "desc": "Remove HEY coding-agent integrations",
+       "default": "false"
       }
      ],
      "synopsis": [
@@ -2631,15 +2995,18 @@
      "flags": [
       {
        "name": "no-notify",
-       "desc": "Turn new-mail toasts back off"
+       "desc": "Turn new-mail toasts back off",
+       "default": "false"
       },
       {
        "name": "notify",
-       "desc": "Turn on the bar plugin's new-mail toasts"
+       "desc": "Turn on the bar plugin's new-mail toasts",
+       "default": "false"
       },
       {
        "name": "remove",
-       "desc": "Remove everything hey setup omarchy installed"
+       "desc": "Remove everything hey setup omarchy installed",
+       "default": "false"
       }
      ],
      "synopsis": [
@@ -2696,7 +3063,8 @@
      "flags": [
       {
        "name": "force",
-       "desc": "Write even over a packaged or foreign completion file"
+       "desc": "Write even over a packaged or foreign completion file",
+       "default": "false"
       }
      ],
      "synopsis": [
@@ -2746,17 +3114,23 @@
       {
        "name": "content",
        "value": true,
-       "desc": "Snippet content as Markdown"
+       "type": "string",
+       "desc": "Snippet content as Markdown",
+       "default": ""
       },
       {
        "name": "content-html",
        "value": true,
-       "desc": "Snippet content as raw HTML instead of Markdown"
+       "type": "string",
+       "desc": "Snippet content as raw HTML instead of Markdown",
+       "default": ""
       },
       {
        "name": "name",
        "value": true,
-       "desc": "Snippet name (required)"
+       "type": "string",
+       "desc": "Snippet name (required)",
+       "default": ""
       }
      ],
      "synopsis": [
@@ -2800,17 +3174,23 @@
       {
        "name": "content",
        "value": true,
-       "desc": "New snippet content as Markdown"
+       "type": "string",
+       "desc": "New snippet content as Markdown",
+       "default": ""
       },
       {
        "name": "content-html",
        "value": true,
-       "desc": "New snippet content as raw HTML instead of Markdown"
+       "type": "string",
+       "desc": "New snippet content as raw HTML instead of Markdown",
+       "default": ""
       },
       {
        "name": "name",
        "value": true,
-       "desc": "New snippet name"
+       "type": "string",
+       "desc": "New snippet name",
+       "default": ""
       }
      ],
      "synopsis": [
@@ -2866,7 +3246,8 @@
      "flags": [
       {
        "name": "allow-partial",
-       "desc": "Take a thread that could only be read in part, with a notice saying what is missing"
+       "desc": "Take a thread that could only be read in part, with a notice saying what is missing",
+       "default": "false"
       }
      ],
      "synopsis": [
@@ -2975,22 +3356,30 @@
       {
        "name": "category",
        "value": true,
-       "desc": "Category title to file the track under, created if HEY has none by that title"
+       "type": "string",
+       "desc": "Category title to file the track under, created if HEY has none by that title",
+       "default": ""
       },
       {
        "name": "end",
        "value": true,
-       "desc": "New end, as YYYY-MM-DDTHH:MM in your time zone"
+       "type": "string",
+       "desc": "New end, as YYYY-MM-DDTHH:MM in your time zone",
+       "default": ""
       },
       {
        "name": "notes",
        "value": true,
-       "desc": "New notes"
+       "type": "string",
+       "desc": "New notes",
+       "default": ""
       },
       {
        "name": "start",
        "value": true,
-       "desc": "New start, as YYYY-MM-DDTHH:MM in your time zone"
+       "type": "string",
+       "desc": "New start, as YYYY-MM-DDTHH:MM in your time zone",
+       "default": ""
       }
      ],
      "synopsis": [
@@ -3010,13 +3399,16 @@
      "flags": [
       {
        "name": "force",
-       "desc": "Replace an existing output file"
+       "desc": "Replace an existing output file",
+       "default": "false"
       },
       {
        "name": "output",
        "shorthand": "o",
        "value": true,
-       "desc": "Save CSV to this file instead of stdout"
+       "type": "string",
+       "desc": "Save CSV to this file instead of stdout",
+       "default": ""
       }
      ],
      "synopsis": [
@@ -3036,17 +3428,22 @@
      "flags": [
       {
        "name": "all",
-       "desc": "Fetch all results (override --limit)"
+       "desc": "Fetch all results (override --limit)",
+       "default": "false"
       },
       {
        "name": "category",
        "value": true,
-       "desc": "Only tracks filed under this category ID"
+       "type": "int",
+       "desc": "Only tracks filed under this category ID",
+       "default": "0"
       },
       {
        "name": "limit",
        "value": true,
-       "desc": "Maximum number of time tracks to show"
+       "type": "int",
+       "desc": "Maximum number of time tracks to show",
+       "default": "0"
       }
      ],
      "synopsis": [
@@ -3078,7 +3475,9 @@
       {
        "name": "category",
        "value": true,
-       "desc": "Category title to file the stopped track under, created if HEY has none by that title"
+       "type": "string",
+       "desc": "Category title to file the stopped track under, created if HEY has none by that title",
+       "default": ""
       }
      ],
      "synopsis": [
@@ -3109,13 +3508,17 @@
       {
        "name": "date",
        "value": true,
-       "desc": "Due date (YYYY-MM-DD)"
+       "type": "string",
+       "desc": "Due date (YYYY-MM-DD)",
+       "default": ""
       },
       {
        "name": "title",
        "shorthand": "t",
        "value": true,
-       "desc": "Todo title"
+       "type": "string",
+       "desc": "Todo title",
+       "default": ""
       }
      ],
      "synopsis": [
@@ -3156,27 +3559,36 @@
      "flags": [
       {
        "name": "all",
-       "desc": "Fetch all results (override --limit)"
+       "desc": "Fetch all results (override --limit)",
+       "default": "false"
       },
       {
        "name": "calendar",
        "value": true,
-       "desc": "Calendar ID to read (defaults to the personal calendar)"
+       "type": "int",
+       "desc": "Calendar ID to read (defaults to the personal calendar)",
+       "default": "0"
       },
       {
        "name": "ends-on",
        "value": true,
-       "desc": "End date (YYYY-MM-DD)"
+       "type": "string",
+       "desc": "End date (YYYY-MM-DD)",
+       "default": ""
       },
       {
        "name": "limit",
        "value": true,
-       "desc": "Maximum number of todos to show"
+       "type": "int",
+       "desc": "Maximum number of todos to show",
+       "default": "0"
       },
       {
        "name": "starts-on",
        "value": true,
-       "desc": "Start date (YYYY-MM-DD)"
+       "type": "string",
+       "desc": "Start date (YYYY-MM-DD)",
+       "default": ""
       }
      ],
      "synopsis": [
@@ -3225,25 +3637,33 @@
     {
      "name": "instance",
      "value": true,
-     "desc": "Name this TUI for remote open requests"
+     "type": "string",
+     "desc": "Name this TUI for remote open requests",
+     "default": ""
     },
     {
      "name": "remote",
-     "desc": "Open the destination in a running TUI and exit"
+     "desc": "Open the destination in a running TUI and exit",
+     "default": "false"
     },
     {
      "name": "screener",
-     "desc": "Open The Screener"
+     "desc": "Open The Screener",
+     "default": "false"
     },
     {
      "name": "topic",
      "value": true,
-     "desc": "Open a thread by topic ID"
+     "type": "int",
+     "desc": "Open a thread by topic ID",
+     "default": "0"
     },
     {
      "name": "topic-title",
      "value": true,
-     "desc": "Set the title of a directly opened thread"
+     "type": "string",
+     "desc": "Set the title of a directly opened thread",
+     "default": ""
     }
    ],
    "synopsis": [
@@ -3310,36 +3730,47 @@
     {
      "name": "box",
      "value": true,
-     "desc": "Box whose changes to report, by name or ID (repeatable, defaults to all; every box is followed either way, so new mail is judged across all of them)"
+     "type": "stringArray",
+     "desc": "Box whose changes to report, by name or ID (repeatable, defaults to all; every box is followed either way, so new mail is judged across all of them)",
+     "default": "[]"
     },
     {
      "name": "events",
      "value": true,
+     "type": "strings",
      "desc": "Changes to report: added, updated, deleted, resync and new for mail; recording_added, recording_updated, recording_deleted, calendar_added, calendar_updated, calendar_deleted and calendar_resync for the calendars",
      "default": "[added,updated,deleted,resync,recording_added,recording_updated,recording_deleted,calendar_added,calendar_updated,calendar_deleted,calendar_resync]"
     },
     {
      "name": "exit-on-first",
-     "desc": "Exit after the first change"
+     "desc": "Exit after the first change",
+     "default": "false"
     },
     {
      "name": "run-async",
      "value": true,
-     "desc": "Shell command to spawn per change, without waiting for it"
+     "type": "string",
+     "desc": "Shell command to spawn per change, without waiting for it",
+     "default": ""
     },
     {
      "name": "run-sync",
      "value": true,
-     "desc": "Shell command to run per change, one at a time, waiting for each"
+     "type": "string",
+     "desc": "Shell command to run per change, one at a time, waiting for each",
+     "default": ""
     },
     {
      "name": "since",
      "value": true,
-     "desc": "Report changes since this time first (RFC 3339 or YYYY-MM-DD)"
+     "type": "string",
+     "desc": "Report changes since this time first (RFC 3339 or YYYY-MM-DD)",
+     "default": ""
     },
     {
      "name": "timeout",
      "value": true,
+     "type": "duration",
      "desc": "Give up waiting after this long (for example 30m)",
      "default": "0s"
     }
@@ -3368,12 +3799,16 @@
       {
        "name": "stage",
        "value": true,
-       "desc": "Stage ID (required)"
+       "type": "string",
+       "desc": "Stage ID (required)",
+       "default": ""
       },
       {
        "name": "to",
        "value": true,
-       "desc": "Workflow ID (required)"
+       "type": "string",
+       "desc": "Workflow ID (required)",
+       "default": ""
       }
      ],
      "synopsis": [
@@ -3415,12 +3850,15 @@
      "flags": [
       {
        "name": "all",
-       "desc": "Show every workflow (override --limit)"
+       "desc": "Show every workflow (override --limit)",
+       "default": "false"
       },
       {
        "name": "limit",
        "value": true,
-       "desc": "Maximum number of workflows to show"
+       "type": "int",
+       "desc": "Maximum number of workflows to show",
+       "default": "0"
       }
      ],
      "synopsis": [
@@ -3440,12 +3878,16 @@
       {
        "name": "to",
        "value": true,
-       "desc": "Destination stage ID (required)"
+       "type": "string",
+       "desc": "Destination stage ID (required)",
+       "default": ""
       },
       {
        "name": "workflow",
        "value": true,
-       "desc": "Workflow ID (required)"
+       "type": "string",
+       "desc": "Workflow ID (required)",
+       "default": ""
       }
      ],
      "synopsis": [
@@ -3464,7 +3906,9 @@
       {
        "name": "from",
        "value": true,
-       "desc": "Workflow ID (required)"
+       "type": "string",
+       "desc": "Workflow ID (required)",
+       "default": ""
       }
      ],
      "synopsis": [
@@ -3511,7 +3955,9 @@
         {
          "name": "name",
          "value": true,
-         "desc": "New stage name (required)"
+         "type": "string",
+         "desc": "New stage name (required)",
+         "default": ""
         }
        ],
        "synopsis": [
@@ -3534,7 +3980,9 @@
       {
        "name": "name",
        "value": true,
-       "desc": "New workflow name (required)"
+       "type": "string",
+       "desc": "New workflow name (required)",
+       "default": ""
       }
      ],
      "synopsis": [

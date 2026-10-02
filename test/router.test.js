@@ -13,8 +13,9 @@ test("bundled manifest is a v1.7.0 snapshot of `hey commands --json` + per-comma
 
 test("every runnable command in the manifest resolves to itself", () => {
   const runnable = listCommands(manifest.commands);
-  // 144 canonical commands + 2 aliases (login, logout) + 5 shortcut groups.
-  assert.equal(runnable.length, 151);
+  // 144 canonical commands + 2 aliases (login, logout) + 5 shortcut groups
+  // + 3 groups HEY also runs on their own (set-aside, set-aside group, skill).
+  assert.equal(runnable.length, 154);
   for (const node of runnable) {
     const result = resolve(node.path);
     assert.equal(result.error, undefined, node.path);
@@ -58,10 +59,21 @@ test("reports incomplete and unknown subcommands with suggestions", () => {
   assert.equal(resolve("wat").error, "unknown command");
 });
 
-test("normalizeCatalog marks value-taking flags from their defaults", () => {
+test("normalizeCatalog marks value-taking flags and keeps every default, including zero/false/empty", () => {
   const [node] = normalizeCatalog([{ name: "x", flags: [
     { name: "all", default: "false" }, { name: "limit", default: "0" }, { name: "to", default: "[]", shorthand: "t" }, { name: "help", default: "false" },
   ] }]);
-  assert.deepEqual(node.flags, [{ name: "all" }, { name: "limit", value: true }, { name: "to", shorthand: "t", value: true }]);
+  assert.deepEqual(node.flags, [{ name: "all", default: "false" }, { name: "limit", value: true, type: "string", default: "0" }, { name: "to", shorthand: "t", value: true, type: "string", default: "[]" }]);
   assert.equal(isRunnable(node), true);
+  const [typed] = normalizeCatalog([{ name: "y", flags: [{ name: "limit", default: "0" }, { name: "verbose", default: "0" }] }], { "y --limit": "int", "y --verbose": "count" });
+  assert.deepEqual(typed.flags, [{ name: "limit", value: true, type: "int", default: "0" }, { name: "verbose", type: "count", default: "0" }]);
+});
+
+test("every manifest flag states its default and value type", () => {
+  for (const node of listCommands(manifest.commands)) {
+    for (const flag of node.flags || []) {
+      assert.notEqual(flag.default, undefined, `${node.path} --${flag.name}`);
+      if (flag.value) assert.ok(flag.type, `${node.path} --${flag.name} has no type`);
+    }
+  }
 });
