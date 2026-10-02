@@ -40,9 +40,10 @@ hey-axi workflow --help                    # per-command help from the manifest 
 
 ### Safety rails
 
-- **Sending email is opt-in.** `compose`, `reply`, `forward`, `draft send` and `bulk-reply send` are refused (exit 2) unless:
-  - they're staged (`compose --draft`, `reply --draft` or `reply --dry-run`), or
-  - you pass `--allow-send` or set `HEY_AXI_ALLOW_SEND=1`.
+- **Nothing is sent without an opt-in** (`--allow-send` or `HEY_AXI_ALLOW_SEND=1`):
+  - `compose` and `reply` are **saved as drafts**. hey-axi adds `--draft`, and the output starts with `sent: false`, `saved_as: draft` and an `axi_notice` (also printed to stderr).
+  - `forward`, `draft send` and `bulk-reply send` have no draft mode in HEY, so they're refused (exit 2) with the safe alternative (`reply … --to`, `draft show`, `bulk-reply preview`).
+  - If you pass `--draft` or `--dry-run` yourself, hey-axi adds and marks nothing.
 - **Credentials stay out of agent context.** `auth token` needs `--allow-secret` or `HEY_AXI_ALLOW_SECRETS=1`.
 - hey-axi's own flags (`--allow-send`, `--allow-secret`) are never forwarded to HEY.
 

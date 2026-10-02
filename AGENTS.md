@@ -17,7 +17,7 @@ A thin Node (ESM, Node 20+) wrapper around the HEY CLI (`hey`, github.com/baseca
 
 ## Rules
 1. **Never run the real HEY CLI against a mailbox in tests, and never send email.** Every test uses the fake `hey` through `HEY_BIN`. The only real-`hey` calls anywhere are `hey version` and `hey commands` in `refresh-manifest`.
-2. Commands that deliver email (`compose`, `reply`, `forward`, `draft send`, `bulk-reply send`) must stay behind the opt-in gate in `src/policy.js`. Don't loosen the gate without the owner's sign-off.
+2. Commands that deliver email must never send without `--allow-send`/`HEY_AXI_ALLOW_SEND=1`. Without it, `compose`/`reply` are auto-staged with `--draft` (and marked `sent: false`, `saved_as: draft`), and `forward`/`draft send`/`bulk-reply send` are refused (`src/policy.js`). Don't loosen this without the owner's sign-off.
 3. Forward argv to HEY **in its original order**. Strip only hey-axi's own flags (`AXI_FLAGS`) and the `--json`/`--quiet` that hey-axi adds itself.
 4. Output: TOON on stdout for both success and errors (`ok: false`). Raw, stream and interactive modes hand stdout to HEY untouched.
 5. Exit codes: pass HEY's through; hey-axi's own refusals use 2; a missing binary uses 127.
