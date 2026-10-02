@@ -38,7 +38,9 @@ test("token benchmark runs on the checked-in synthetic captures", async () => {
     for (const encoding of ["o200k_base", "cl100k_base"]) {
       const t = row.tokens[encoding];
       for (const value of Object.values(t)) assert.ok(value > 0, `${row.command} ${encoding}`);
-      assert.ok(t.axi_toon < t.hey_json, `${row.command}: TOON should beat pretty hey --json`);
+      // Errors gain an actionable `help` line, so they may be a few tokens larger.
+      if (!row.command.startsWith("error")) assert.ok(t.axi_toon < t.hey_json, `${row.command}: TOON should beat pretty hey --json`);
+      assert.ok(t.axi_toon <= t.axi_full, `${row.command}: default should not exceed --full`);
     }
   }
   const error = rows.find((row) => row.command.startsWith("error"));

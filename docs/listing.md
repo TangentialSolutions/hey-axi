@@ -19,22 +19,23 @@ Source: https://github.com/kunchenguid/axi. The catalog in [`catalog.yaml`](http
 4. `git push no-mistakes`, then run `no-mistakes`. It runs its review/test pipeline and opens the PR.
 5. Questions go to repo issues or the Discord linked from CONTRIBUTING.md.
 
-**Admission review.** [VISION.md](https://github.com/kunchenguid/axi/blob/main/VISION.md) says a new package gets a positive admission verdict only after an independent reviewer inspects its source at a pinned revision against **all applicable AXI principles**. Entries end up `admitted`, `exception` (listed with documented deviations) or inconclusive. See the `admission:` blocks in `catalog.yaml`. Gaps a reviewer would probably flag in hey-axi today (from the [AXI skill](https://github.com/kunchenguid/axi/blob/main/.agents/skills/axi/SKILL.md)):
+**Admission review.** [VISION.md](https://github.com/kunchenguid/axi/blob/main/VISION.md) says a new package gets a positive admission verdict only after an independent reviewer inspects its source at a pinned revision against **all applicable AXI principles**. Entries end up `admitted`, `exception` (listed with documented deviations) or inconclusive. See the `admission:` blocks in `catalog.yaml`. Status against the AXI principles after the 0.2.0 changes (from the [AXI skill](https://github.com/kunchenguid/axi/blob/main/.agents/skills/axi/SKILL.md)):
 
-| AXI principle | hey-axi today |
-|---|---|
-| 1 TOON output | ✅ |
-| 2 Minimal default schemas / `--fields` | ❌ relays HEY's full `data` objects |
-| 3 Content truncation (`--full`) | ❌ `thread read` returns full bodies |
-| 4 Pre-computed aggregates | ⚠️ only what HEY's envelope carries |
-| 5 Definitive empty states | ⚠️ not explicitly rendered |
-| 6 Structured errors / exit codes / no prompts | ✅ TOON errors, HEY exit codes, refusals exit 2; interactive commands are passthrough-only |
-| 7 Ambient context (session hook) | ❌ none (this skill is the secondary path) |
-| 8 Content first (no-arg home view) | ❌ no-arg prints the command list |
-| 9 Contextual disclosure | ✅ HEY breadcrumbs/next hints kept |
-| 10 Help + `--version` fast path | ⚠️ per-command `--help` yes; `hey-axi --version` currently errors (exit 2) |
+| AXI principle | hey-axi 0.2.0 | Where |
+|---|---|---|
+| 1 TOON output | ✅ | `src/cli.js` `output()` |
+| 2 Minimal default schemas / `--fields` | ✅ 3–6 columns per list command, `--fields a,b` / dotted paths / `--fields all`; unknown field → exit 2 | `src/shape.js` `LIST_FIELDS` |
+| 3 Content truncation (`--full`) | ✅ >1000 chars (120 in list cells) cut with `… (truncated, N chars total)`; `--full` hint only when something was cut | `src/shape.js` `truncateDeep` |
+| 4 Pre-computed aggregates | ⚠️ `count: N of T total` when HEY reports a total (e.g. screener). HEY's mailbox lists don't expose totals, so those keep HEY's `summary`/`notice` ("More available") | `shapeEnvelope` |
+| 5 Definitive empty states | ✅ ``empty: 0 results for `<command>` ``; home view says "the Imbox is empty" | `shapeEnvelope`, `src/home.js` |
+| 6 Structured errors / exit codes / no prompts / fail loud | ✅ TOON errors with a `help` next step per exit code; unknown flags and missing `(required)` flags rejected before HEY runs (exit 2, valid flags listed); suggestions rewritten to `hey-axi …`. ⚠️ idempotency of mutations is HEY's behavior (not re-verified); positional arguments are validated by HEY, not hey-axi | `src/args.js` `validateFlags`, `src/errors.js` |
+| 7 Ambient context (session hook) | ✅ `hey-axi setup hooks` for Claude Code, Codex and OpenCode (user or `--project` scope, idempotent, path repair, `--status`, `--remove`) via axi-sdk-js. ⚠️ not directory-scoped (a mailbox isn't per-repo); no session-end capture | `src/hooks.js` |
+| 8 Content first (no-arg home view) | ✅ the Imbox's 10 newest threads plus next commands; `status` + fix when HEY is missing or signed out | `src/home.js` |
+| 9 Contextual disclosure | ✅ HEY's breadcrumbs → ``help: Run `hey-axi …` ``. ⚠️ HEY also suggests `forward`, which hey-axi refuses without `--allow-send` (the refusal explains) | `shapeEnvelope` |
+| 10 Help + `--version` fast path | ✅ `-v`/`-V`/`--version` answered from a leaf module before the CLI loads (latency test); home view shows `bin` + `description`; per-command `--help` has usage, flag descriptions/defaults, examples, notes | `src/hey-axi.js`, `src/version.js` |
+| Skill (secondary path) | ✅ SKILL.md's home block generated from the home-view text, `npm run skill:check` in CI. ⚠️ examples use `hey-axi …`, not `npx -y hey-axi …` (not on npm yet) | `scripts/gen-skill.js` |
 
-Fixing 8, 10 (`--version`) and 2/3 before submitting would make an `admitted` verdict more likely. Otherwise expect `exception` or a request for changes.
+Remaining risk for an `admitted` verdict: the ⚠️ items above. Also, the per-command default fields for less common lists (screener history, account list, clip list, timetrack list) come from HEY's own table columns and the hey-sdk schema, not from real responses. Missing fields drop out automatically.
 
 ### Draft `catalog.yaml` entry
 
@@ -43,7 +44,7 @@ Fixing 8, 10 (`--version`) and 2/3 before submitting would make an `admitted` ve
     url: https://github.com/TangentialSolutions/hey-axi
     author: TangentialSolutions
     domain: Email
-    description: "HEY email, calendars, todos, habits, journal, and time tracking from the shell - wraps Basecamp's official `hey` CLI with TOON output, structured errors, and send safety: compose and reply are saved as drafts unless `--allow-send`."
+    description: "HEY email, calendars, todos, habits, journal, and time tracking from the shell - wraps Basecamp's official `hey` CLI with a live Imbox home view and session hook, minimal TOON fields, truncation with `--full`, and send safety: compose and reply are saved as drafts unless `--allow-send`."
 ```
 
 (Don't add an `admission:` block yourself. Reviewers add it.)

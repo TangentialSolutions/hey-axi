@@ -6,7 +6,7 @@ import { readFileSync, existsSync } from "node:fs";
 import { dirname, join, basename } from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadBundledManifest, resolveCommand } from "../src/router.js";
-import { renderReference, REFERENCE_PATH } from "../scripts/gen-skill-reference.js";
+import { renderReference, renderSkill, REFERENCE_PATH } from "../scripts/gen-skill.js";
 
 const SKILL_DIR = fileURLToPath(new URL("../skills/hey-axi/", import.meta.url));
 const SKILL_MD = join(SKILL_DIR, "SKILL.md");
@@ -81,5 +81,6 @@ test("every hey-axi command shown in the skill is a real command", () => {
 });
 
 test("references/commands.md is up to date with the manifest", () => {
-  assert.equal(readFileSync(REFERENCE_PATH, "utf8"), renderReference(), "run `npm run skill:reference`");
+  assert.equal(readFileSync(REFERENCE_PATH, "utf8"), renderReference(), "run `npm run skill:gen`");
+  assert.equal(text, renderSkill(text), "SKILL.md home block is stale: run `npm run skill:gen`");
 });

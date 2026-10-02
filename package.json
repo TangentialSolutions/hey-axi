@@ -1,6 +1,6 @@
 {
   "name": "hey-axi",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Agent-ergonomic AXI wrapper for Basecamp's HEY CLI: TOON output, send-to-draft safety, and a shareable agent skill",
   "keywords": [
@@ -43,10 +43,12 @@
     "bench:tokens": "node bench/tokens.mjs",
     "bench:capture": "node bench/capture.mjs",
     "bench:fixtures": "node bench/generate-api-fixtures.mjs",
-    "skill:reference": "node scripts/gen-skill-reference.js"
+    "skill:gen": "node scripts/gen-skill.js",
+    "skill:check": "node scripts/gen-skill.js --check"
   },
   "dependencies": {
-    "@toon-format/toon": "^4.1.1"
+    "@toon-format/toon": "^4.1.1",
+    "axi-sdk-js": "^0.1.12"
   },
   "engines": {
     "node": ">=20"

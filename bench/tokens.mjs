@@ -9,8 +9,9 @@
 // For each captured command it measures:
 //   (a) `hey … --json`    raw envelope as HEY prints it (pretty-printed JSON)
 //   (b) `hey … --styled`  HEY's human/terminal output (ANSI stripped)
-//   (c) `hey-axi …`       default TOON output
-//   (d) `hey-axi … --json` compact JSON envelope
+//   (c) `hey-axi … --full` HEY's complete envelope as TOON (hey-axi 0.1's default)
+//   (d) `hey-axi …`       default TOON output (minimal fields, truncated long text)
+//   (e) `hey-axi … --json` the same shaped envelope as compact JSON
 // hey-axi runs for real (src/hey-axi.js) against a replay of the captured HEY response.
 // For error commands, HEY writes its envelope to stderr; that's what gets counted.
 
@@ -54,7 +55,7 @@ const rows = files.map((name) => {
   const capture = JSON.parse(readFileSync(file, "utf8"));
   const heyJSON = capture.json.exit_code === 0 ? capture.json.stdout : capture.json.stderr;
   const styled = stripAnsi(capture.styled.exit_code === 0 ? capture.styled.stdout : capture.styled.stdout + capture.styled.stderr);
-  const outputs = { hey_json: heyJSON, hey_styled: styled, axi_toon: runAxi(capture, file), axi_json: runAxi(capture, file, ["--json"]) };
+  const outputs = { hey_json: heyJSON, hey_styled: styled, axi_full: runAxi(capture, file, ["--full"]), axi_toon: runAxi(capture, file), axi_json: runAxi(capture, file, ["--json"]) };
   const tokens = Object.fromEntries(ENCODINGS.map((encoding) => [encoding, Object.fromEntries(Object.entries(outputs).map(([key, text]) => [key, encoders[encoding].encode(text).length]))]));
   return { command: capture.command, argv: capture.argv, synthetic: capture.synthetic, hey_version: capture.hey_version, bytes: Object.fromEntries(Object.entries(outputs).map(([key, text]) => [key, Buffer.byteLength(text)])), tokens };
 }).sort((a, b) => ORDER.indexOf(a.command) - ORDER.indexOf(b.command));
@@ -64,16 +65,16 @@ const fmt = (n) => n.toLocaleString("en-US");
 
 function table(encoding) {
   const lines = [
-    `| Command | \`hey --json\` | \`hey --styled\` | **hey-axi (TOON)** | hey-axi \`--json\` | TOON vs \`hey --json\` | TOON vs \`--styled\` |`,
-    "|---|---:|---:|---:|---:|---:|---:|",
+    `| Command | \`hey --json\` | \`hey --styled\` | hey-axi \`--full\` | **hey-axi (default)** | hey-axi \`--json\` | default vs \`hey --json\` | default vs \`--full\` | default vs \`--styled\` |`,
+    "|---|---:|---:|---:|---:|---:|---:|---:|---:|",
   ];
-  const total = { hey_json: 0, hey_styled: 0, axi_toon: 0, axi_json: 0 };
+  const total = { hey_json: 0, hey_styled: 0, axi_full: 0, axi_toon: 0, axi_json: 0 };
   for (const row of rows) {
     const t = row.tokens[encoding];
     for (const key of Object.keys(total)) total[key] += t[key];
-    lines.push(`| ${row.command} | ${fmt(t.hey_json)} | ${fmt(t.hey_styled)} | **${fmt(t.axi_toon)}** | ${fmt(t.axi_json)} | ${pct(t.hey_json, t.axi_toon)} | ${pct(t.hey_styled, t.axi_toon)} |`);
+    lines.push(`| ${row.command} | ${fmt(t.hey_json)} | ${fmt(t.hey_styled)} | ${fmt(t.axi_full)} | **${fmt(t.axi_toon)}** | ${fmt(t.axi_json)} | ${pct(t.hey_json, t.axi_toon)} | ${pct(t.axi_full, t.axi_toon)} | ${pct(t.hey_styled, t.axi_toon)} |`);
   }
-  lines.push(`| **Total** | **${fmt(total.hey_json)}** | **${fmt(total.hey_styled)}** | **${fmt(total.axi_toon)}** | **${fmt(total.axi_json)}** | **${pct(total.hey_json, total.axi_toon)}** | **${pct(total.hey_styled, total.axi_toon)}** |`);
+  lines.push(`| **Total** | **${fmt(total.hey_json)}** | **${fmt(total.hey_styled)}** | **${fmt(total.axi_full)}** | **${fmt(total.axi_toon)}** | **${fmt(total.axi_json)}** | **${pct(total.hey_json, total.axi_toon)}** | **${pct(total.axi_full, total.axi_toon)}** | **${pct(total.hey_styled, total.axi_toon)}** |`);
   return lines.join("\n");
 }
 

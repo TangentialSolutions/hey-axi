@@ -67,14 +67,16 @@ test("default output keeps the envelope (notices, next_page) and renders TOON", 
   await fake.cleanup();
 });
 
-test("--json prints the full envelope as compact JSON", async () => {
+test("--json prints the shaped envelope as compact JSON; --full keeps HEY's untouched", async () => {
   const envelope = { ok: true, data: [{ id: 1 }], summary: "1 thread", breadcrumbs: [{ action: "read", command: "hey thread read 1", description: "Read" }] };
   const fake = await makeFakeHey({ stdout: JSON.stringify(envelope, null, 2) });
   const result = await runAxi(["box", "view", "imbox", "--json"], { fake });
   assert.equal(result.code, 0);
-  assert.deepEqual(JSON.parse(result.stdout), envelope);
+  assert.deepEqual(JSON.parse(result.stdout), { ok: true, summary: "1 thread", data: [{ id: 1 }], help: ["Run `hey-axi thread read 1` to read"] });
   assert.equal(result.stdout.trim().split("\n").length, 1);
-  assert.deepEqual(await fake.calls(), ["box view imbox --json"]);
+  const untouched = await runAxi(["box", "view", "imbox", "--json", "--full"], { fake });
+  assert.deepEqual(JSON.parse(untouched.stdout), envelope);
+  assert.deepEqual(await fake.calls(), ["box view imbox --json", "box view imbox --json"]);
   await fake.cleanup();
 });
 

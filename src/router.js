@@ -14,12 +14,15 @@ export function normalizeCatalog(nodes) {
   return (nodes || []).map((node) => {
     const out = { name: node.name, path: node.path || node.name, short: node.short || "" };
     if (node.compatibility_usage) out.usage = node.compatibility_usage;
+    if (node.agent_notes) out.notes = node.agent_notes;
     const flags = (node.flags || [])
       .filter((flag) => flag.name !== "help")
       .map((flag) => {
         const entry = { name: flag.name };
         if (flag.shorthand) entry.shorthand = flag.shorthand;
         if (!BOOLEAN_DEFAULTS.has(String(flag.default))) entry.value = true;
+        if (flag.usage) entry.desc = flag.usage;
+        if (flag.default !== undefined && !["", "false", "[]", "0"].includes(String(flag.default))) entry.default = String(flag.default);
         return entry;
       });
     if (flags.length) out.flags = flags;

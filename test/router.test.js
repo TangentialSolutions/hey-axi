@@ -5,8 +5,8 @@ import { loadBundledManifest, resolveCommand, listCommands, normalizeCatalog, is
 const manifest = loadBundledManifest();
 const resolve = (line) => resolveCommand(manifest.commands, line.split(" "));
 
-test("bundled manifest is a v1.7.0 snapshot of `hey commands --json`", () => {
-  assert.equal(manifest.source, "hey commands --json");
+test("bundled manifest is a v1.7.0 snapshot of `hey commands --json` + per-command help", () => {
+  assert.equal(manifest.source, "hey commands --json + hey <command> --help");
   assert.equal(manifest.hey_version, "1.7.0");
   assert.equal(manifest.commands.length, 49);
 });

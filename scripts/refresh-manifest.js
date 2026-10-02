@@ -4,8 +4,8 @@
 //   npm run refresh-manifest              # uses HEY_BIN or `hey` on PATH
 //   HEY_BIN=/path/to/hey npm run refresh-manifest
 //
-// Only `hey version --json` and `hey commands --json` are run. Neither needs a login
-// or touches a mailbox.
+// Only `hey version --json`, `hey commands --json` and `hey <command> --help` are run.
+// None of them needs a login or touches a mailbox.
 
 import { execFileSync } from "node:child_process";
 import { writeFileSync } from "node:fs";
@@ -21,13 +21,35 @@ function heyJSON(args) {
   return parsed && typeof parsed === "object" && "data" in parsed ? parsed.data : parsed;
 }
 
+// USAGE and EXAMPLES only exist in each command's --help text. `--help` is answered
+// locally by HEY (no login, no network).
+function parseHelp(text) {
+  const section = (name) => {
+    const match = text.match(new RegExp(`^${name}\\n((?:  .*\\n?)+)`, "m"));
+    return match ? match[1].split("\n").map((line) => line.trim()).filter(Boolean) : [];
+  };
+  return { synopsis: section("USAGE"), examples: section("EXAMPLES").filter((line) => line.startsWith("hey ")).slice(0, 3) };
+}
+
+function addHelp(nodes) {
+  for (const node of nodes) {
+    const help = execFileSync(HEY, [...node.path.split(" "), "--help"], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
+    const { synopsis, examples } = parseHelp(help);
+    if (synopsis.length) node.synopsis = synopsis;
+    if (examples.length) node.examples = examples;
+    if (node.subcommands) addHelp(node.subcommands);
+  }
+}
+
 const version = heyJSON(["version"]);
 const catalog = heyJSON(["commands"]);
+const commands = normalizeCatalog(catalog);
+addHelp(commands);
 const manifest = {
-  source: "hey commands --json",
+  source: "hey commands --json + hey <command> --help",
   hey_version: version.version,
   hey_commit: version.commit,
-  commands: normalizeCatalog(catalog),
+  commands,
 };
 writeFileSync(target, `${JSON.stringify(manifest, null, 1)}\n`);
 process.stdout.write(`wrote ${target} from hey ${version.version} (${manifest.commands.length} top-level commands)\n`);

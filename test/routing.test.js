@@ -15,12 +15,17 @@ test("routes every non-blocked manifest command to HEY with its argv intact", as
   const expected = [];
   for (let i = 0; i < runnable.length; i += 16) {
     const batch = runnable.slice(i, i + 16);
-    const results = await Promise.all(batch.map((node) => runAxi([...node.path.split(" "), "123", "--limit", "5"], { fake })));
+    // --limit where the command has it, plus a value for every required flag.
+    const extra = (node) => [
+      ...((node.flags || []).some((flag) => flag.name === "limit") ? ["--limit", "5"] : []),
+      ...(node.flags || []).filter((flag) => /\(required\)$/.test(flag.desc || "")).flatMap((flag) => [`--${flag.name}`, "x"]),
+    ];
+    const results = await Promise.all(batch.map((node) => runAxi([...node.path.split(" "), "123", ...extra(node)], { fake })));
     results.forEach((result, index) => {
       assert.equal(result.code, 0, `${batch[index].path}: ${result.stdout}`);
       assert.match(result.stdout, /done: true/, batch[index].path);
     });
-    expected.push(...batch.map((node) => `${node.path} 123 --limit 5 --json`));
+    expected.push(...batch.map((node) => [node.path, "123", ...extra(node), "--json"].join(" ")));
   }
   assert.deepEqual((await fake.calls()).sort(), expected.sort());
   await fake.cleanup();
@@ -63,7 +68,7 @@ test("incomplete group commands fail with the available subcommands", async () =
 test("discovers commands newer than the bundled manifest from the installed HEY", async () => {
   const fake = await makeFakeHey({
     stdout: '{"ok":true,"data":[{"id":1}]}',
-    catalog: [{ name: "newsletter", path: "newsletter", short: "x", subcommands: [{ name: "list", path: "newsletter list", short: "List" }] }],
+    catalog: [{ name: "newsletter", path: "newsletter", short: "x", subcommands: [{ name: "list", path: "newsletter list", short: "List", flags: [{ name: "all", default: "false" }] }] }],
   });
   const result = await runAxi(["newsletter", "list", "--all"], { fake });
   assert.equal(result.code, 0, result.stdout);

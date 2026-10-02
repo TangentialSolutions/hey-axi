@@ -11,41 +11,56 @@ Measured on **synthetic** captures from hey 1.7.0, tokenizers from js-tiktoken. 
 
 ### o200k_base (GPT-4o / GPT-4.1 / o-series)
 
-| Command | `hey --json` | `hey --styled` | **hey-axi (TOON)** | hey-axi `--json` | TOON vs `hey --json` | TOON vs `--styled` |
-|---|---:|---:|---:|---:|---:|---:|
-| box list | 768 | 62 | **503** | 588 | 34.5% | -711.3% |
-| box view imbox | 20,598 | 857 | **15,591** | 15,310 | 24.3% | -1719.3% |
-| thread read (long thread) | 2,811 | 1,506 | **2,409** | 2,308 | 14.3% | -60.0% |
-| label list | 379 | 58 | **214** | 246 | 43.5% | -269.0% |
-| screener list | 784 | 162 | **465** | 553 | 40.7% | -187.0% |
-| event week | 5,573 | 471 | **4,629** | 4,234 | 16.9% | -882.8% |
-| todo list | 1,684 | 136 | **1,373** | 1,226 | 18.5% | -909.6% |
-| search (paged) | 6,634 | 864 | **5,024** | 4,959 | 24.3% | -481.5% |
-| error (thread not found) | 25 | 6 | **21** | 21 | 16.0% | -250.0% |
-| **Total** | **39,256** | **4,122** | **30,229** | **29,445** | **23.0%** | **-633.4%** |
+| Command | `hey --json` | `hey --styled` | hey-axi `--full` | **hey-axi (default)** | hey-axi `--json` | default vs `hey --json` | default vs `--full` | default vs `--styled` |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| box list | 768 | 62 | 503 | **110** | 127 | 85.7% | 78.1% | -77.4% |
+| box view imbox | 20,598 | 857 | 15,591 | **1,059** | 1,328 | 94.9% | 93.2% | -23.6% |
+| thread read (long thread) | 2,811 | 1,506 | 2,409 | **1,183** | 1,225 | 57.9% | 50.9% | 21.4% |
+| label list | 379 | 58 | 214 | **110** | 120 | 71.0% | 48.6% | -89.7% |
+| screener list | 784 | 162 | 465 | **279** | 349 | 64.4% | 40.0% | -72.2% |
+| event week | 5,573 | 471 | 4,629 | **706** | 833 | 87.3% | 84.7% | -49.9% |
+| todo list | 1,684 | 136 | 1,373 | **274** | 305 | 83.7% | 80.0% | -101.5% |
+| search (paged) | 6,634 | 864 | 5,024 | **701** | 870 | 89.4% | 86.0% | 18.9% |
+| error (thread not found) | 25 | 6 | 49 | **49** | 49 | -96.0% | 0.0% | -716.7% |
+| **Total** | **39,256** | **4,122** | **30,257** | **4,471** | **5,206** | **88.6%** | **85.2%** | **-8.5%** |
 
 ### cl100k_base (GPT-4 / GPT-3.5)
 
-| Command | `hey --json` | `hey --styled` | **hey-axi (TOON)** | hey-axi `--json` | TOON vs `hey --json` | TOON vs `--styled` |
-|---|---:|---:|---:|---:|---:|---:|
-| box list | 761 | 62 | **497** | 580 | 34.7% | -701.6% |
-| box view imbox | 20,563 | 862 | **15,565** | 15,192 | 24.3% | -1705.7% |
-| thread read (long thread) | 2,852 | 1,559 | **2,454** | 2,327 | 14.0% | -57.4% |
-| label list | 380 | 58 | **214** | 245 | 43.7% | -269.0% |
-| screener list | 787 | 163 | **468** | 553 | 40.5% | -187.1% |
-| event week | 5,552 | 471 | **4,633** | 4,167 | 16.6% | -883.7% |
-| todo list | 1,685 | 136 | **1,373** | 1,217 | 18.5% | -909.6% |
-| search (paged) | 6,647 | 869 | **5,031** | 4,929 | 24.3% | -478.9% |
-| error (thread not found) | 25 | 6 | **21** | 21 | 16.0% | -250.0% |
-| **Total** | **39,252** | **4,186** | **30,256** | **29,231** | **22.9%** | **-622.8%** |
+| Command | `hey --json` | `hey --styled` | hey-axi `--full` | **hey-axi (default)** | hey-axi `--json` | default vs `hey --json` | default vs `--full` | default vs `--styled` |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| box list | 761 | 62 | 497 | **111** | 127 | 85.4% | 77.7% | -79.0% |
+| box view imbox | 20,563 | 862 | 15,565 | **1,056** | 1,332 | 94.9% | 93.2% | -22.5% |
+| thread read (long thread) | 2,852 | 1,559 | 2,454 | **1,206** | 1,243 | 57.7% | 50.9% | 22.6% |
+| label list | 380 | 58 | 214 | **111** | 121 | 70.8% | 48.1% | -91.4% |
+| screener list | 787 | 163 | 468 | **282** | 350 | 64.2% | 39.7% | -73.0% |
+| event week | 5,552 | 471 | 4,633 | **709** | 837 | 87.2% | 84.7% | -50.5% |
+| todo list | 1,685 | 136 | 1,373 | **277** | 307 | 83.6% | 79.8% | -103.7% |
+| search (paged) | 6,647 | 869 | 5,031 | **703** | 870 | 89.4% | 86.0% | 19.1% |
+| error (thread not found) | 25 | 6 | 50 | **50** | 50 | -100.0% | 0.0% | -733.3% |
+| **Total** | **39,252** | **4,186** | **30,285** | **4,505** | **5,237** | **88.5%** | **85.1%** | **-7.6%** |
 <!-- bench:results:end -->
+
+### Before and after the AXI defaults (hey-axi 0.1.0 → 0.2.0), o200k_base
+
+| Output | Total tokens | vs `hey --json` |
+|---|---:|---:|
+| `hey --json` | 39,256 | — |
+| `hey --styled` (human table) | 4,122 | 89.5% |
+| hey-axi 0.1.0 default (TOON of the full envelope) | 30,229 | 23.0% |
+| hey-axi 0.1.0 `--json` | 29,445 | 25.0% |
+| **hey-axi 0.2.0 default** | **4,471** | **88.6%** |
+| hey-axi 0.2.0 `--json` | 5,206 | 86.7% |
+| hey-axi 0.2.0 `--full` (old default + help on errors) | 30,257 | 22.9% |
+
+The 0.1.0 rows were measured on the same checked-in captures before this change. `--full` reproduces the 0.1.0 default exactly, except that errors now carry a `help` line (21 → 49 tokens on the error case).
 
 ### What the numbers say
 
-- **hey-axi's TOON output is about 23% smaller than `hey --json`** across these commands. Most of that is dropping the pretty-printed whitespace and repeated keys. Flat, uniform lists (labels, screener, box list) shrink most (35–44%).
-- **On deeply nested payloads, TOON is about the same size as compact JSON, and sometimes a little bigger.** Examples: postings with nested contacts (`box view`), calendar recordings (`event week`, `todo list`), thread entries. TOON only folds an array into a table when its items share one flat shape. Nested objects fall back to indented key/value lines, and the indentation costs tokens.
-- **HEY's human output (`--styled`) is roughly 5–24× smaller than any JSON form for listings.** That's because it shows a handful of columns rather than every field. It keeps IDs, but truncates long fields (Imbox summaries are cut at about 60 characters), drops nested data like recipients, and is a display format rather than a stable thing to parse. hey-axi doesn't try to beat it today.
-- **The biggest remaining win is field selection, not encoding.** A hey-axi mode that keeps only the fields an agent usually needs (id, subject/title, sender, date, seen) would likely land close to `--styled` sizes while staying structured. Until then, HEY's own `--jq` (passed through by hey-axi) can do the same per call, e.g. `hey-axi box view imbox --jq '.data.postings[] | {id, name, summary}'`.
+- **Field selection is where the savings come from.** hey-axi 0.2.0's default output is about **89% smaller than `hey --json`** and **85% smaller than hey-axi 0.1.0**. Lists keep a few columns (e.g. `box view`: `id, topic_id, from, subject, seen, at`) instead of every nested contact, URL and avatar. `box view imbox` drops from 15,591 to 1,059 tokens.
+- **It's now in the same range as HEY's human table output** (4,471 vs 4,122 in total) while staying structured and complete per row: full subjects, full IDs, ISO dates. `--styled` truncates subjects and summaries to about 40–60 characters.
+- **Detail views shrink less, by design.** `thread read` keeps each message body up to 1000 characters and marks the rest (`… (truncated, 1500 chars total)`, plus a `--full` hint). It drops URLs, avatars and the duplicated `summary`, for a 51% saving over 0.1.0.
+- **Errors grow slightly** (21 → 49 tokens) because they now include an actionable `help` line. AXI prefers that over a bare error that costs a follow-up call.
+- `--json` prints the same shaped result. It's a bit larger than TOON for uniform tables (TOON writes each column name once).
 
 ## Methodology
 
@@ -60,7 +75,7 @@ Measured on **synthetic** captures from hey 1.7.0, tokenizers from js-tiktoken. 
    - For each command it records `hey <cmd> --json` (stdout, stderr, exit code) and `hey <cmd> --styled`. These are HEY's actual formatting code paths, not hand-written approximations. Checked in under `bench/captures/synthetic/`.
 3. **Measurement** comes from `bench/tokens.mjs`.
    - It runs the real `src/hey-axi.js` against `bench/lib/replay-hey.mjs`, which replays the captured `--json` response (hey-axi always calls `hey … --json`).
-   - It counts tokens in four outputs: `hey --json` (as printed: pretty JSON), `hey --styled` (ANSI stripped), hey-axi default TOON, and hey-axi `--json` (compact).
+   - It counts tokens in five outputs: `hey --json` (as printed: pretty JSON), `hey --styled` (ANSI stripped), hey-axi `--full` (HEY's complete envelope as TOON, i.e. the 0.1.0 default), hey-axi's default output, and hey-axi `--json` (compact).
    - Tokenizers: OpenAI `o200k_base` and `cl100k_base` via `js-tiktoken`, pinned in `package-lock.json`.
    - For the error case, HEY's JSON envelope goes to stderr, so that's what is counted.
 
@@ -72,6 +87,7 @@ Commands: `box list`, `box view imbox`, `thread read <id>` (4-message thread wit
 - **No Anthropic (Claude) tokenizer.** There is no reliable offline tokenizer for Claude 3+ models. `@anthropic-ai/tokenizer` on npm is the legacy Claude 2 tokenizer and Anthropic says it isn't accurate for current models. For exact Claude counts, send the outputs to Anthropic's `messages/count_tokens` API yourself (that sends the text to Anthropic, so only do it with synthetic or non-sensitive captures). Claude token counts for the same text can differ noticeably from o200k/cl100k, so treat these as a proxy; the *relative* differences between output formats are what carry over.
 - `--styled` output was captured with stdout not attached to a terminal, so table widths use HEY's default rather than your terminal width.
 - Only one page of each listing is measured. hey-axi doesn't change how many items HEY returns.
+- Truncation savings depend on body length. The synthetic thread has 1,500-character bodies, so real long emails save more and short ones save nothing.
 
 ## Reproduce
 
