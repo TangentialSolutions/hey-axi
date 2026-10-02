@@ -1,0 +1,57 @@
+{
+ "calendars": [
+  {
+   "calendar": {
+    "id": 1000037,
+    "name": "Priya Natarajan",
+    "kind": "topic",
+    "created_at": "2026-09-14T12:28:00Z",
+    "updated_at": "2026-09-15T13:35:00Z",
+    "owned": false,
+    "color": "#5B8DEF",
+    "personal": true,
+    "external": false,
+    "url": "https://app.hey.com/calendars/1000010.json",
+    "recordings_url": "https://app.hey.com/calendars/1000011/recordings",
+    "occurrences_url": "https://app.hey.com/calendars/1000012/occurrences",
+    "owner_email_address": "marcus.lee@globex.example"
+   },
+   "recording_changes_url": "https://app.hey.com/calendar_with_recording_changes_urls/1000014/recording-changes",
+   "id": 3000,
+   "name": "Personal",
+   "kind": "personal",
+   "owned": true,
+   "personal": true,
+   "external": false
+  },
+  {
+   "calendar": {
+    "id": 1000555,
+    "name": "Dana Whitfield",
+    "kind": "topic",
+    "created_at": "2026-09-10T16:06:00Z",
+    "updated_at": "2026-09-11T17:13:00Z",
+    "owned": true,
+    "color": "#5B8DEF",
+    "personal": false,
+    "external": false,
+    "url": "https://app.hey.com/calendars/1000024.json",
+    "recordings_url": "https://app.hey.com/calendars/1000025/recordings",
+    "occurrences_url": "https://app.hey.com/calendars/1000026/occurrences",
+    "owner_email_address": "notifications@linear.example"
+   },
+   "recording_changes_url": "https://app.hey.com/calendar_with_recording_changes_urls/1000028/recording-changes",
+   "id": 3001,
+   "name": "Family",
+   "kind": "personal",
+   "owned": true,
+   "personal": false,
+   "external": false
+  }
+ ],
+ "calendar_changes_url": "https://app.hey.com/list_calendars_response_contents/1000029/calendar-changes",
+ "selected_calendar_ids": [
+  3000,
+  3001
+ ]
+}

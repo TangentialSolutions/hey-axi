@@ -1,0 +1,20 @@
+{
+ "synthetic": true,
+ "command": "error (thread not found)",
+ "argv": [
+  "thread",
+  "read",
+  "999999"
+ ],
+ "hey_version": "1.7.0",
+ "json": {
+  "exit_code": 2,
+  "stdout": "",
+  "stderr": "{\n  \"ok\": false,\n  \"error\": \"resource not found\",\n  \"code\": \"not_found\"\n}\n"
+ },
+ "styled": {
+  "exit_code": 2,
+  "stdout": "",
+  "stderr": "Error: resource not found\n"
+ }
+}

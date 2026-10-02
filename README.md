@@ -67,4 +67,6 @@ If the snapshot doesn't know a command, hey-axi asks the installed `hey commands
 npm test     # node:test; every test uses a fake `hey` (test/helpers.js), never the real CLI
 ```
 
+Token benchmark (HEY CLI vs hey-axi output): [docs/benchmarks.md](docs/benchmarks.md), with `npm run bench:tokens`.
+
 See [AGENTS.md](AGENTS.md) for the code map and conventions, and [SCHEDULED_HEY_CLI.md](SCHEDULED_HEY_CLI.md) for running triage on a schedule.

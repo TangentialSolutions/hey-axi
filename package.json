@@ -9,12 +9,18 @@
   },
   "scripts": {
     "test": "node --test test/*.test.js",
-    "refresh-manifest": "node scripts/refresh-manifest.js"
+    "refresh-manifest": "node scripts/refresh-manifest.js",
+    "bench:tokens": "node bench/tokens.mjs",
+    "bench:capture": "node bench/capture.mjs",
+    "bench:fixtures": "node bench/generate-api-fixtures.mjs"
   },
   "dependencies": {
     "@toon-format/toon": "^4.1.1"
   },
   "engines": {
     "node": ">=20"
+  },
+  "devDependencies": {
+    "js-tiktoken": "^1.0.21"
   }
 }
