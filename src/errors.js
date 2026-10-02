@@ -35,10 +35,26 @@ const ANSI = /\u001b\[[0-9;?]*[ -/]*[@-~]/g;
 const NOISE = /^(warning:|panic:|fatal error:|\[signal |runtime error|\s+at |goroutine \d|\s*[\w./-]+\.go:\d+|exit status \d+$|\[\w+\]\s)/i;
 
 // The one line of HEY's plain-text output worth showing an agent.
+// Programming-language errors from inside HEY or its libraries say nothing an agent can
+// act on: they are dropped, and the failure's own message (by kind) stands alone.
+const INTERNAL = /^(Uncaught )?(TypeError|ReferenceError|SyntaxError|RangeError|InternalError|AssertionError|panic|fatal|runtime error|invalid memory address|nil pointer|unexpected end of JSON|json: |SIGSEGV)\b/i;
+// Low-level network codes become plain words.
+const NETWORK = [
+  [/\bECONNRESET\b/, "the connection was reset"], [/\bECONNREFUSED\b/, "the connection was refused"],
+  [/\bETIMEDOUT\b|\bi\/o timeout\b|context deadline exceeded/i, "the request timed out"], [/\bENOTFOUND\b|no such host/i, "the server name could not be resolved"],
+  [/\bEAI_AGAIN\b/, "DNS lookup failed"], [/\bcertificate\b|\bx509\b|\bTLS\b/i, "a TLS/certificate problem"],
+];
+
 export function cleanLine(text) {
   const lines = String(text || "").replace(ANSI, "").split(/\r?\n/).map((line) => line.trimEnd()).filter((line) => line.trim() && !NOISE.test(line));
   if (!lines.length) return "";
-  const line = lines[0].trim().replace(/^(error|Error|ERROR):\s*/, "");
+  let line = lines[0].trim().replace(/^(error|Error|ERROR):\s*/, "");
+  const network = NETWORK.find(([pattern]) => pattern.test(line));
+  if (network) return network[1];
+  if (INTERNAL.test(line)) return "";
+  // Library prefixes ("axios:", "fetch failed:", "Get \"https://…\":") and raw URLs add nothing.
+  line = line.replace(/^(axios|undici|fetch failed|request failed|(get|post|put|patch|delete) "[^"]*"):?\s*/i, "").replace(/\bhttps?:\/\/\S+/g, "the HEY server").trim();
+  if (!line) return "";
   return heyToAxi(line.length > 200 ? `${line.slice(0, 200)}…` : line);
 }
 

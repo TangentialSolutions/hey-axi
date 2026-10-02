@@ -489,3 +489,32 @@ test("fourth review: partial failures, multi-list fields, selector forms, empty-
   assert.match(labels.stdout, /hey-axi label create --help/);
   await fake.cleanup();
 });
+
+test("0.3.0 edge cases: container and batch no-ops, page hints, scope quoting, nested plain lists, setup defaults, error cleaning", async () => {
+  const { noopFor } = await import("../src/policy.js");
+  assert.equal(noopFor("label add", { error: "Already in label Other", kind: "command_error" }, ["1"], { to: "Requested" }), null);
+  assert.equal(noopFor("label add", { error: "Thread is already labeled", kind: "command_error" }, ["1"], { to: "7" }).noop, true);
+  assert.equal(noopFor("seen", { error: "1 already seen", kind: "command_error" }, ["1", "2"]), null);
+  assert.equal(noopFor("seen", { error: "Threads are already seen", kind: "command_error" }, ["1", "2"]).noop, true);
+
+  const paged = shapeEnvelope({ ok: true, data: [{ id: 1 }], meta: { next_page: "2" } }, { path: "x", commandLine: "hey-axi search foo --page 1", pageFlags: ["page"] });
+  assert.ok(paged.help.includes("Run `hey-axi search foo --page 2` for the next page"), JSON.stringify(paged.help));
+
+  const { scopeQuery } = await import("../src/scope.js");
+  const query = scopeQuery({ config: { search: "$(date)", account: "a b" }, path: "/x/.hey-axi.json" });
+  assert.equal(query.base, "hey-axi search '$(date)' --account 'a b'");
+
+  const nested = shapeEnvelope({ ok: true, data: { items: ["a", "b"], has_more: true, total_count: 40 } }, { path: "x", commandLine: "hey-axi x", pageFlags: ["all"] });
+  assert.equal(nested.count, "2 of 40 total");
+  assert.ok(nested.help.some((line) => /--all` for all 40/.test(line)));
+
+  for (const args of [["setup", "hooks", "--help"], ["setup", "scope", "--help"]]) {
+    const help = await runAxi(args);
+    for (const line of help.stdout.split("\n").filter((text) => /^\s+--/.test(text))) assert.match(line, /default/, line);
+  }
+
+  const { cleanLine } = await import("../src/errors.js");
+  assert.equal(cleanLine("TypeError: Cannot read properties of undefined"), "");
+  assert.equal(cleanLine("Error: axios ECONNRESET at https://internal.example"), "the connection was reset");
+  assert.equal(cleanLine('Get "https://app.hey.com/x": label not found'), "label not found");
+});

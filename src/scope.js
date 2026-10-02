@@ -77,13 +77,15 @@ export function scopeQuery(scope) {
     what = box === "imbox" ? "Imbox" : `box ${box}`;
   }
   const words = argv.filter((word, index) => !(word === "--limit" || argv[index - 1] === "--limit"));
-  const shell = (word) => (/^[\w@%+=:,./-]+$/.test(word) ? word : `"${word.replace(/"/g, '\\"')}"`);
-  const base = ["hey-axi", ...words.map(shell), ...carry].join(" ");
+  // Single quotes: a search like $(date) or an account with spaces is shown literally.
+  const shell = (word) => (/^[\w@%+=:,./-]+$/.test(word) ? word : `'${String(word).replace(/'/g, "'\\''")}'`);
+  const shownCarry = carry.map((word, index) => (index % 2 ? shell(word) : word));
+  const base = ["hey-axi", ...words.map(shell), ...shownCarry].join(" ");
   const account = config.account ? `, account ${config.account}` : "";
   const label = scope
     ? `${what}${account} (from ${collapse(scope.path)})`
     : `account-wide ${what} (no ${SCOPE_FILE} here; \`hey-axi setup scope --label <name>\` focuses this directory)`;
-  return { argv: [...argv, ...carry], base, carry, label, limit, path: argv[0] === "search" ? "search" : `${argv[0]} view` };
+  return { argv: [...argv, ...carry], base, carry: shownCarry, label, limit, path: argv[0] === "search" ? "search" : `${argv[0]} view` };
 }
 
 export const SCOPE_HELP = [
@@ -94,12 +96,12 @@ export const SCOPE_HELP = [
   "",
   "flags:",
   "  --box <name|id>     show this box (default imbox)",
-  "  --label <name|id>   show threads with this label",
-  "  --search <query>    show threads matching this search",
+  "  --label <name|id>   show threads with this label (default: none)",
+  "  --search <query>    show threads matching this search (default: none)",
   "  --account <id>      use this linked account (default: HEY's default account)",
   "  --limit <n>         threads to show, 1-100 (default 10)",
-  "  --status            show the scope that applies here; writes nothing",
-  "  --remove            delete ./.hey-axi.json",
+  "  --status            show the scope that applies here; writes nothing (default false)",
+  "  --remove            delete ./.hey-axi.json (default false)",
   "",
   `Writes ./${SCOPE_FILE}; subdirectories inherit it. Re-running with the same settings changes nothing.`,
   "",

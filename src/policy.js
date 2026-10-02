@@ -146,6 +146,13 @@ export const END_STATES = {
 
 // Commands whose end state names a destination: the failure must name the same one.
 const DESTINATION = { move: "to" };
+// Commands that add to / remove from a container given by a flag: a failure that names a
+// different container ("Already in label Other") is not a no-op for this one.
+const CONTAINER = {
+  "label add": "to", "collection add": "to", "set-aside group add": "to", "workflow add": "to",
+  "label remove": "from", "collection remove": "from", "set-aside group remove": "from", "workflow remove": "from",
+};
+const NAMED_CONTAINER = /\b(?:label|collection|group|workflow|box)\s+["'“]?([^\s"'”;,.]+)/gi;
 
 export function noopFor(path, failure, positionals = [], values = {}) {
   const text = `${failure.error || ""} ${failure.hint || ""}`;
@@ -154,6 +161,18 @@ export function noopFor(path, failure, positionals = [], values = {}) {
     return { ok: true, noop: true, command: path, result: `nothing to delete:${target || " it"} is already gone (no-op)`, note: "if you expected it to exist, check the id with the matching list command" };
   }
   const endState = END_STATES[path];
+  // Several targets: if HEY names some of them, it must name all of them.
+  const ids = positionals.filter((word) => /^\d+$/.test(word));
+  if (ids.length > 1) {
+    const named = ids.filter((id) => new RegExp(`\\b${id}\\b`).test(text));
+    if (named.length && named.length < ids.length) return null;
+  }
+  if (CONTAINER[path]) {
+    const wanted = String(values[CONTAINER[path]] ?? "").toLowerCase();
+    for (const match of text.matchAll(NAMED_CONTAINER)) {
+      if (!wanted || match[1].toLowerCase() !== wanted) return null;
+    }
+  }
   const destination = DESTINATION[path] ? values[DESTINATION[path]] : undefined;
   if (DESTINATION[path] && (!destination || !text.toLowerCase().includes(String(destination).toLowerCase()))) return null;
   // A failure that also reports a failed part ("1 already seen; 2 failed") is not a no-op.

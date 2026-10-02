@@ -147,6 +147,9 @@ export function findList(data) {
     const keys = Object.keys(data).filter((key) => isObjectList(data[key]));
     if (keys.length === 1) return { list: data[keys[0]], key: keys[0], container: data };
     if (keys.length > 1) return { lists: keys.map((key) => ({ key, list: data[key] })), container: data, list: keys.flatMap((key) => data[key]) };
+    // One list of plain values next to other fields ({items: ["a","b"], total_count: 40}).
+    const plain = Object.keys(data).filter((key) => Array.isArray(data[key]));
+    if (keys.length === 0 && plain.length === 1) return { list: data[plain[0]], key: plain[0], container: data, primitive: true };
   }
   return null;
 }
@@ -181,8 +184,16 @@ export function shapeData(data, { path, fields = null }) {
   if (!found) {
     return { data: truncateDeep(data, DETAIL_TEXT_LIMIT, mark), truncated, empty: false };
   }
-  if (found.primitive) {
+  if (found.primitive && !found.container) {
     return { data: truncateDeep(found.list, LIST_TEXT_LIMIT, mark, true), truncated, empty: found.list.length === 0 };
+  }
+  if (found.primitive) {
+    const shaped = {};
+    for (const [name, value] of Object.entries(found.container)) {
+      if (name === found.key) shaped[name] = truncateDeep(value, LIST_TEXT_LIMIT, mark, true);
+      else if (fields === "all" || !DROP_CONTAINER_KEY(name)) shaped[name] = truncateDeep(value, DETAIL_TEXT_LIMIT, mark);
+    }
+    return { data: shaped, truncated, empty: found.list.length === 0 };
   }
   if (found.lists) {
     // Several collections side by side: each gets the minimal schema of its own items.
@@ -301,12 +312,19 @@ function breadcrumbHelp(crumb, carry) {
 }
 
 // The help line that reveals the rest of a truncated list (AXI principle 9).
-export function moreHelp(size, { commandLine, pageFlags = [] }) {
+// The command line without one flag and its value (`--page 1`, `--page=1`).
+function dropFlag(commandLine, name) {
+  return commandLine.replace(new RegExp(`\\s--${name}(=\\S+|\\s+(?!-)\\S+)?(?=\\s|$)`, "g"), "");
+}
+
+export function moreHelp(size, { commandLine: line, pageFlags = [] }) {
   if (!size.more) return null;
+  // The hint replaces paging flags already on the line instead of repeating them.
+  const commandLine = dropFlag(dropFlag(line, "page"), "all");
   const all = size.total !== undefined ? `all ${size.total}` : "all of them";
   if (pageFlags.includes("all")) return `Run \`${commandLine} --all\` for ${all}`;
   if (size.next && pageFlags.includes("page")) return `Run \`${commandLine} --page ${size.next}\` for the next page`;
-  if (pageFlags.includes("limit")) return `Run \`${commandLine} --limit <n>\` to show more`;
+  if (pageFlags.includes("limit")) return `Run \`${dropFlag(commandLine, "limit")} --limit <n>\` to show more`;
   return null;
 }
 

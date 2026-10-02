@@ -469,7 +469,7 @@ function reportFailure(result) {
     else if (failure[key]) failure[key] = carrySelectors(failure[key], carry);
   }
   for (const line of warnings) process.stderr.write(`${line}\n`);
-  const noop = exitCode !== 0 && noopFor(path, failure, positionals, { to: flagValue(args, "to") });
+  const noop = exitCode !== 0 && noopFor(path, failure, positionals, { to: flagValue(args, "to"), from: flagValue(args, "from") });
   if (noop) {
     if (json) process.stdout.write(`${JSON.stringify(noop)}\n`);
     else output(noop);
