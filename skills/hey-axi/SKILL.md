@@ -1,6 +1,7 @@
 ---
 name: hey-axi
 description: Read, triage and draft HEY email (and HEY calendars, todos, habits, journal, time tracking) from the shell through hey-axi, a token-efficient TOON wrapper around Basecamp's HEY CLI that saves outgoing mail as drafts unless sending is explicitly allowed. Use when the user asks you to check, search, read, summarize, sort, label, screen, archive or reply to their HEY (hey.com) email, watch for new mail, or manage HEY todos, events, habits, journal entries or time tracks.
+license: MIT
 compatibility: Requires Node.js 20+, the HEY CLI (`hey`, v1.7.0 or newer) signed in to a HEY account, and network access to app.hey.com.
 metadata:
   author: TangentialSolutions
@@ -29,7 +30,7 @@ Next steps the home view suggests:
 <!-- generated:home:end -->
 
 Problems:
-- `hey-axi: command not found`: install it (see "Install" below), or run `node <repo>/src/hey-axi.js`.
+- `hey-axi: command not found`: run it as `npx -y hey-axi …`, or install it (see "Install" below).
 - `status: HEY CLI not found` / exit **127**: install `hey`, or set `HEY_BIN=/path/to/hey` (cron/launchd jobs usually need `HEY_BIN=$HOME/.local/bin/hey`).
 - `status: not signed in` / exit **3**: ask the **user** to run `hey auth login` in their own terminal. It opens a browser. Don't try to sign in for them, and never print tokens (`auth token` is blocked unless `--allow-secret` is passed).
 - `hey-axi doctor` finds other login and config problems. `hey-axi version` shows both versions.
@@ -114,9 +115,10 @@ curl -fsSL https://hey.com/install-cli | bash        # or: brew install --cask b
 hey auth login                                      # the user runs this once, interactively
 
 # hey-axi
-git clone https://github.com/TangentialSolutions/hey-axi && cd hey-axi
-npm ci && npm link                                  # puts `hey-axi` on PATH
+npm i -g hey-axi                                    # puts `hey-axi` on PATH
 ```
+
+No global install? Prefix any command with `npx -y`, e.g. `npx -y hey-axi box view imbox`. It's slower on the first run, so install it if you'll run many commands.
 
 Optional: `hey-axi setup hooks` (user-invoked) shows the home view at the start of every Claude Code, Codex and OpenCode session. `--project` limits it to one directory, and `--remove` undoes it.
 

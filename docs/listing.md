@@ -1,12 +1,14 @@
-# Listing hey-axi (draft, nothing submitted)
+# Listing hey-axi
 
-This is the prep for getting hey-axi listed on [axi.md](https://axi.md) and the agent-skill directories. **None of these steps has been taken.** Every one of them needs the repo to be public first. Research was done on 2026-10-01; directory rules change, so re-check the linked sources before you submit.
+This is the prep for getting hey-axi listed on [axi.md](https://axi.md) and the agent-skill directories. Every step needs the repo to be public first. Research was done on 2026-10-01; directory rules change, so re-check the linked sources before you submit.
 
 ## Prerequisites (owner decisions)
 
+Status: MIT license ✅, package.json ready for `npm publish` ✅ (no `private`, `license: MIT`). Making the repo public, publishing to npm and adding topics are the owner's steps.
+
 1. **Make the repo public.** Every directory below reads public GitHub repos. skills.sh telemetry is only sent for public repos ([vercel-labs/skills `src/add.ts`](https://github.com/vercel-labs/skills/blob/main/src/add.ts) sends it only when `isPrivate === false`).
-2. **Add a license.** The repo has none today, which legally means "all rights reserved", so nobody may reuse it. HEY CLI is MIT, as are most AXI catalog entries, so MIT is the natural fit, but it's the owner's choice. Once chosen, add `LICENSE`, the `"license"` field in `package.json`, and optionally `license:` in `skills/hey-axi/SKILL.md`.
-3. **npm publish (optional, recommended).** The name `hey-axi` is unclaimed on npm (checked 2026-10-01). Publishing allows `npm i -g hey-axi` / `npx -y hey-axi` instead of clone + `npm link`. To publish, drop `"private": true` from `package.json` and run `npm publish`. `files` is already set: the tarball has `src/`, `skills/` and `README.md`.
+2. **License:** done. MIT (`LICENSE`, `package.json` `license`, `license:` in SKILL.md).
+3. **npm publish.** The name `hey-axi` was unclaimed on npm (re-checked 2026-10-02). `npm login`, then `npm publish` from a clean `main`. The tarball has `src/`, `skills/`, `README.md`, `LICENSE` and `package.json`.
 4. **GitHub topics** (help SkillsMP and GitHub search): `agent-skills`, `claude-skills`, `axi`, `hey`, `email`, `cli`.
 
 ## axi.md (community catalog)
@@ -33,7 +35,7 @@ Source: https://github.com/kunchenguid/axi. The catalog in [`catalog.yaml`](http
 | 8 Content first (no-arg home view) | ✅ the Imbox's 10 newest threads plus next commands; `status` + fix when HEY is missing or signed out | `src/home.js` |
 | 9 Contextual disclosure | ✅ HEY's breadcrumbs → ``help: Run `hey-axi …` ``. ⚠️ HEY also suggests `forward`, which hey-axi refuses without `--allow-send` (the refusal explains) | `shapeEnvelope` |
 | 10 Help + `--version` fast path | ✅ `-v`/`-V`/`--version` answered from a leaf module before the CLI loads (latency test); home view shows `bin` + `description`; per-command `--help` has usage, flag descriptions/defaults, examples, notes | `src/hey-axi.js`, `src/version.js` |
-| Skill (secondary path) | ✅ SKILL.md's home block generated from the home-view text, `npm run skill:check` in CI. ⚠️ examples use `hey-axi …`, not `npx -y hey-axi …` (not on npm yet) | `scripts/gen-skill.js` |
+| Skill (secondary path) | ✅ SKILL.md's home block generated from the home-view text, `npm run skill:check` in CI. Install section offers `npm i -g hey-axi` and the `npx -y hey-axi …` fallback (works once published) | `scripts/gen-skill.js` |
 
 Remaining risk for an `admitted` verdict: the ⚠️ items above. Also, the per-command default fields for less common lists (screener history, account list, clip list, timetrack list) come from HEY's own table columns and the hey-sdk schema, not from real responses. Missing fields drop out automatically.
 
