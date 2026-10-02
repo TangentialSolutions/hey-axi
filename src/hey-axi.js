@@ -3,7 +3,9 @@
 import { spawn } from "node:child_process";
 import { encode } from "@toon-format/toon";
 
-const HEY = process.env.HEY_BIN || "/Users/trevorbroaddus/.local/bin/hey";
+// Resolve the HEY CLI: an explicit HEY_BIN wins, otherwise `hey` is looked up on PATH
+// by spawn(), the same way a shell would find it.
+const HEY = process.env.HEY_BIN || "hey";
 
 function usage() {
   return [
@@ -56,6 +58,15 @@ function output(value) {
   process.stdout.write(`${encode(value)}\n`);
 }
 
+function spawnErrorMessage(error) {
+  if (error.code === "ENOENT") {
+    return process.env.HEY_BIN
+      ? `HEY CLI not found at HEY_BIN=${process.env.HEY_BIN}`
+      : "HEY CLI not found on PATH; install it (https://github.com/basecamp/hey-cli) or set HEY_BIN";
+  }
+  return error.message;
+}
+
 function runHey(args) {
   return new Promise((resolve) => {
     const child = spawn(HEY, [...args, "--json", "--quiet"], { stdio: ["inherit", "pipe", "pipe"] });
@@ -63,7 +74,7 @@ function runHey(args) {
     let stderr = "";
     child.stdout.on("data", (chunk) => { stdout += chunk; });
     child.stderr.on("data", (chunk) => { stderr += chunk; });
-    child.on("error", (error) => resolve({ status: 1, error: error.message }));
+    child.on("error", (error) => resolve({ status: 127, error: spawnErrorMessage(error) }));
     child.on("close", (status) => resolve({ status, stdout, stderr }));
   });
 }
