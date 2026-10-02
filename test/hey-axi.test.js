@@ -28,7 +28,7 @@ printf '%s' '{"version":"1.4.0","commit":"abc123","source":"release"}'
   assert.match(result.stdout, /1\.4\.0/);
   assert.match(result.stdout, /abc123/);
   const forwarded = await import("node:fs/promises").then(({ readFile }) => readFile(argsFile, "utf8"));
-  assert.equal(forwarded.trim(), "version --json --quiet");
+  assert.equal(forwarded.trim(), "version --json");
   await rm(directory, { recursive: true, force: true });
 });
 
@@ -41,10 +41,10 @@ test("rejects unknown commands with a structured error and exit 2", async () => 
 
 test("delegates supported triage mutations and preserves their arguments", async () => {
   const cases = [
-    ["label", "add", "123", "--to", "789", "label add 123 --to 789 --json --quiet"],
-    ["seen", "123", "456", "seen 123 456 --json --quiet"],
-    ["move", "123", "--to", "feed", "move 123 --to feed --json --quiet"],
-    ["trash", "123", "456", "trash 123 456 --json --quiet"],
+    ["label", "add", "123", "--to", "789", "label add 123 --to 789 --json"],
+    ["seen", "123", "456", "seen 123 456 --json"],
+    ["move", "123", "--to", "feed", "move 123 --to feed --json"],
+    ["trash", "123", "456", "trash 123 456 --json"],
   ];
 
   for (const command of cases) {
@@ -83,7 +83,7 @@ printf '%s' '{"ok":true,"data":[{"id":123,"name":"Imbox"}]}'
   assert.match(result.stdout, /data\[1\]\{id,name\}/);
   assert.match(result.stdout, /123,Imbox/);
   const forwarded = await import("node:fs/promises").then(({ readFile }) => readFile(argsFile, "utf8"));
-  assert.equal(forwarded.trim(), "box list --limit 5 --json --quiet");
+  assert.equal(forwarded.trim(), "box list --limit 5 --json");
   await rm(directory, { recursive: true, force: true });
 });
 
@@ -104,7 +104,7 @@ printf '%s' '{"authenticated":true,"expires_at":"2030-01-01T00:00:00Z"}'
   assert.match(result.stdout, /2030-01-01/);
   assert.doesNotMatch(result.stdout, /token|secret|cookie/i);
   const forwarded = await import("node:fs/promises").then(({ readFile }) => readFile(argsFile, "utf8"));
-  assert.equal(forwarded.trim(), "auth status --json --quiet");
+  assert.equal(forwarded.trim(), "auth status --json");
   await rm(directory, { recursive: true, force: true });
 });
 
@@ -123,7 +123,7 @@ printf '%s' '{"ok":true,"data":[{"id":321,"topic_id":654,"subject":"Grouped mess
   assert.equal(result.error, null);
   assert.match(result.stdout, /Grouped message/);
   const forwarded = await import("node:fs/promises").then(({ readFile }) => readFile(argsFile, "utf8"));
-  assert.equal(forwarded.trim(), "bundle view 321 --page cursor-2 --limit 5 --json --quiet");
+  assert.equal(forwarded.trim(), "bundle view 321 --page cursor-2 --limit 5 --json");
   await rm(directory, { recursive: true, force: true });
 });
 
@@ -143,7 +143,7 @@ printf '%s' '{"ok":true,"data":{"bubbled_up":[{"id":321,"subject":"Bubbled messa
   assert.match(result.stdout, /Bubbled message/);
   assert.match(result.stdout, /Scheduled message/);
   const forwarded = await import("node:fs/promises").then(({ readFile }) => readFile(argsFile, "utf8"));
-  assert.equal(forwarded.trim(), "bubble list --limit 5 --all --json --quiet");
+  assert.equal(forwarded.trim(), "bubble list --limit 5 --all --json");
   await rm(directory, { recursive: true, force: true });
 });
 
@@ -163,7 +163,7 @@ printf '%s' '{"ok":true,"data":[{"box_item_id":321,"topic_id":654,"to":["jane@ex
   assert.match(result.stdout, /Reply preview/);
   assert.match(result.stdout, /jane@example\.com/);
   const forwarded = await import("node:fs/promises").then(({ readFile }) => readFile(argsFile, "utf8"));
-  assert.equal(forwarded.trim(), "bulk-reply preview 321 654 --json --quiet");
+  assert.equal(forwarded.trim(), "bulk-reply preview 321 654 --json");
   await rm(directory, { recursive: true, force: true });
 });
 
@@ -182,7 +182,7 @@ printf '%s' '{"ok":true,"data":{"id":123,"subject":"Hello"}}'
   assert.equal(result.error, null);
   assert.match(result.stdout, /subject/);
   const forwarded = await import("node:fs/promises").then(({ readFile }) => readFile(argsFile, "utf8"));
-  assert.equal(forwarded.trim(), "thread read 123 --allow-partial --json --quiet");
+  assert.equal(forwarded.trim(), "thread read 123 --allow-partial --json");
   await rm(directory, { recursive: true, force: true });
 });
 
@@ -201,7 +201,7 @@ printf '%s' '{"ok":true,"data":[{"id":987,"filename":"agenda.pdf","content_type"
   assert.equal(result.error, null);
   assert.match(result.stdout, /agenda\.pdf/);
   const forwarded = await import("node:fs/promises").then(({ readFile }) => readFile(argsFile, "utf8"));
-  assert.equal(forwarded.trim(), "attachment list 123 --allow-partial --json --quiet");
+  assert.equal(forwarded.trim(), "attachment list 123 --allow-partial --json");
   await rm(directory, { recursive: true, force: true });
 });
 
@@ -221,7 +221,7 @@ printf '%s' '[{"id":250908,"content":"854093","topic":{"id":1464700104,"name":"P
   assert.match(result.stdout, /Passcode for access/);
   assert.match(result.stdout, /854093/);
   const forwarded = await import("node:fs/promises").then(({ readFile }) => readFile(argsFile, "utf8"));
-  assert.equal(forwarded.trim(), "clip list --json --quiet");
+  assert.equal(forwarded.trim(), "clip list --json");
   await rm(directory, { recursive: true, force: true });
 });
 
@@ -240,7 +240,7 @@ printf '%s' '{"ok":true,"data":[{"id":654,"subject":"Review later","group_id":12
   assert.equal(result.error, null);
   assert.match(result.stdout, /Review later/);
   const forwarded = await import("node:fs/promises").then(({ readFile }) => readFile(argsFile, "utf8"));
-  assert.equal(forwarded.trim(), "set-aside view --page cursor-2 --all --json --quiet");
+  assert.equal(forwarded.trim(), "set-aside view --page cursor-2 --all --json");
   await rm(directory, { recursive: true, force: true });
 });
 
@@ -259,7 +259,7 @@ printf '%s' '{"ok":true,"data":[{"id":456,"subject":"Quarterly planning"}]}'
   assert.equal(result.error, null);
   assert.match(result.stdout, /Quarterly planning/);
   const forwarded = await import("node:fs/promises").then(({ readFile }) => readFile(argsFile, "utf8"));
-  assert.equal(forwarded.trim(), "search quarterly planning --from jane@example.com --date last_30_days --json --quiet");
+  assert.equal(forwarded.trim(), "search quarterly planning --from jane@example.com --date last_30_days --json");
   await rm(directory, { recursive: true, force: true });
 });
 
@@ -278,7 +278,7 @@ printf '%s' '{"ok":true,"data":{"from":["jane@example.com"],"date":["today"]}}'
   assert.equal(result.error, null);
   assert.match(result.stdout, /jane@example\.com/);
   const forwarded = await import("node:fs/promises").then(({ readFile }) => readFile(argsFile, "utf8"));
-  assert.equal(forwarded.trim(), "search filters --json --quiet");
+  assert.equal(forwarded.trim(), "search filters --json");
   await rm(directory, { recursive: true, force: true });
 });
 
@@ -297,7 +297,7 @@ printf '%s' '{"ok":true,"data":{"labels":[{"id":789,"name":"Travel"}],"next_page
   assert.equal(result.error, null);
   assert.match(result.stdout, /Travel/);
   const forwarded = await import("node:fs/promises").then(({ readFile }) => readFile(argsFile, "utf8"));
-  assert.equal(forwarded.trim(), "label view 789 --page cursor-1 --json --quiet");
+  assert.equal(forwarded.trim(), "label view 789 --page cursor-1 --json");
   await rm(directory, { recursive: true, force: true });
 });
 
@@ -316,7 +316,7 @@ printf '%s' '{"ok":true,"data":[{"id":42,"name":"Personal"}]}'
   assert.equal(result.error, null);
   assert.match(result.stdout, /Personal/);
   const forwarded = await import("node:fs/promises").then(({ readFile }) => readFile(argsFile, "utf8"));
-  assert.equal(forwarded.trim(), "calendar list --json --quiet");
+  assert.equal(forwarded.trim(), "calendar list --json");
   await rm(directory, { recursive: true, force: true });
 });
 
@@ -335,7 +335,7 @@ printf '%s' '{"ok":true,"data":[{"id":314,"title":"Planning","starts_on":"2026-0
   assert.equal(result.error, null);
   assert.match(result.stdout, /Planning/);
   const forwarded = await import("node:fs/promises").then(({ readFile }) => readFile(argsFile, "utf8"));
-  assert.equal(forwarded.trim(), "event list --calendar 42 --starts-on 2026-09-01 --ends-on 2026-09-30 --limit 10 --json --quiet");
+  assert.equal(forwarded.trim(), "event list --calendar 42 --starts-on 2026-09-01 --ends-on 2026-09-30 --limit 10 --json");
   await rm(directory, { recursive: true, force: true });
 });
 
@@ -354,7 +354,7 @@ printf '%s' '{"ok":true,"data":[{"id":2718,"title":"Review inbox","due_on":"2026
   assert.equal(result.error, null);
   assert.match(result.stdout, /Review inbox/);
   const forwarded = await import("node:fs/promises").then(({ readFile }) => readFile(argsFile, "utf8"));
-  assert.equal(forwarded.trim(), "todo list --calendar 42 --starts-on 2026-09-01 --ends-on 2026-09-30 --limit 10 --json --quiet");
+  assert.equal(forwarded.trim(), "todo list --calendar 42 --starts-on 2026-09-01 --ends-on 2026-09-30 --limit 10 --json");
   await rm(directory, { recursive: true, force: true });
 });
 
@@ -373,7 +373,7 @@ printf '%s' '{"ok":true,"data":[{"id":314,"name":"Jane Doe","email":"jane@exampl
   assert.equal(result.error, null);
   assert.match(result.stdout, /Jane Doe/);
   const forwarded = await import("node:fs/promises").then(({ readFile }) => readFile(argsFile, "utf8"));
-  assert.equal(forwarded.trim(), "contact list --page 2 --all --json --quiet");
+  assert.equal(forwarded.trim(), "contact list --page 2 --all --json");
   await rm(directory, { recursive: true, force: true });
 });
 
@@ -392,7 +392,7 @@ printf '%s' '{"ok":true,"data":[{"id":314,"topic_id":2718,"subject":"All contact
   assert.equal(result.error, null);
   assert.match(result.stdout, /All contact mail/);
   const forwarded = await import("node:fs/promises").then(({ readFile }) => readFile(argsFile, "utf8"));
-  assert.equal(forwarded.trim(), "contact threads 314 --page cursor-2 --limit 5 --all --json --quiet");
+  assert.equal(forwarded.trim(), "contact threads 314 --page cursor-2 --limit 5 --all --json");
   await rm(directory, { recursive: true, force: true });
 });
 
@@ -411,7 +411,7 @@ printf '%s' '{"ok":true,"data":[{"date":"2026-09-03","content":"Today notes"}]}'
   assert.equal(result.error, null);
   assert.match(result.stdout, /Today/);
   const forwarded = await import("node:fs/promises").then(({ readFile }) => readFile(argsFile, "utf8"));
-  assert.equal(forwarded.trim(), "journal list --calendar 42 --starts-on 2026-09-01 --ends-on 2026-09-30 --limit 10 --all --json --quiet");
+  assert.equal(forwarded.trim(), "journal list --calendar 42 --starts-on 2026-09-01 --ends-on 2026-09-30 --limit 10 --all --json");
   await rm(directory, { recursive: true, force: true });
 });
 
@@ -430,7 +430,7 @@ printf '%s' '{"ok":true,"data":{"date":"2026-09-03","content":"Today notes"}}'
   assert.equal(result.error, null);
   assert.match(result.stdout, /Today notes/);
   const forwarded = await import("node:fs/promises").then(({ readFile }) => readFile(argsFile, "utf8"));
-  assert.equal(forwarded.trim(), "journal read 2026-09-03 --json --quiet");
+  assert.equal(forwarded.trim(), "journal read 2026-09-03 --json");
   await rm(directory, { recursive: true, force: true });
 });
 
@@ -449,7 +449,7 @@ printf '%s' '{"ok":true,"data":[{"id":20671,"name":"AWS Bounce"}]}'
   assert.equal(result.error, null);
   assert.match(result.stdout, /AWS Bounce/);
   const forwarded = await import("node:fs/promises").then(({ readFile }) => readFile(argsFile, "utf8"));
-  assert.equal(forwarded.trim(), "collection list --limit 5 --all --json --quiet");
+  assert.equal(forwarded.trim(), "collection list --limit 5 --all --json");
   await rm(directory, { recursive: true, force: true });
 });
 
@@ -468,7 +468,7 @@ printf '%s' '{"ok":true,"data":[{"id":812,"topic_id":456,"subject":"Quarterly pl
   assert.equal(result.error, null);
   assert.match(result.stdout, /Quarterly planning/);
   const forwarded = await import("node:fs/promises").then(({ readFile }) => readFile(argsFile, "utf8"));
-  assert.equal(forwarded.trim(), "collection view 20671 --page cursor-2 --limit 5 --json --quiet");
+  assert.equal(forwarded.trim(), "collection view 20671 --page cursor-2 --limit 5 --json");
   await rm(directory, { recursive: true, force: true });
 });
 
@@ -487,7 +487,7 @@ printf '%s' '{"ok":true,"data":[{"id":17,"name":"Follow up","account_id":3}]}'
   assert.equal(result.error, null);
   assert.match(result.stdout, /Follow up/);
   const forwarded = await import("node:fs/promises").then(({ readFile }) => readFile(argsFile, "utf8"));
-  assert.equal(forwarded.trim(), "workflow list --limit 5 --all --json --quiet");
+  assert.equal(forwarded.trim(), "workflow list --limit 5 --all --json");
   await rm(directory, { recursive: true, force: true });
 });
 
@@ -506,7 +506,7 @@ printf '%s' '{"ok":true,"data":{"id":17,"name":"Follow up","stages":[{"id":4,"na
   assert.equal(result.error, null);
   assert.match(result.stdout, /Waiting/);
   const forwarded = await import("node:fs/promises").then(({ readFile }) => readFile(argsFile, "utf8"));
-  assert.equal(forwarded.trim(), "workflow view 17 --json --quiet");
+  assert.equal(forwarded.trim(), "workflow view 17 --json");
   await rm(directory, { recursive: true, force: true });
 });
 
@@ -526,7 +526,7 @@ printf '%s' '{"ok":true,"data":[{"id":51,"name":"Meeting follow-up","content":"T
   assert.match(result.stdout, /Meeting follow-up/);
   assert.match(result.stdout, /Thanks for meeting/);
   const forwarded = await import("node:fs/promises").then(({ readFile }) => readFile(argsFile, "utf8"));
-  assert.equal(forwarded.trim(), "snippet list --json --quiet");
+  assert.equal(forwarded.trim(), "snippet list --json");
   await rm(directory, { recursive: true, force: true });
 });
 
@@ -545,7 +545,7 @@ printf '%s' '{"ok":true,"data":[{"id":812,"subject":"Unsent note","to":"jane@exa
   assert.equal(result.error, null);
   assert.match(result.stdout, /Unsent note/);
   const forwarded = await import("node:fs/promises").then(({ readFile }) => readFile(argsFile, "utf8"));
-  assert.equal(forwarded.trim(), "draft list --limit 5 --all --json --quiet");
+  assert.equal(forwarded.trim(), "draft list --limit 5 --all --json");
   await rm(directory, { recursive: true, force: true });
 });
 
@@ -565,6 +565,6 @@ printf '%s' '{"ok":true,"data":{"id":789,"name":"Jane Example","email":"jane@exa
   assert.match(result.stdout, /Jane Example/);
   assert.match(result.stdout, /jane@example\.com/);
   const forwarded = await import("node:fs/promises").then(({ readFile }) => readFile(argsFile, "utf8"));
-  assert.equal(forwarded.trim(), "contact show 789 --json --quiet");
+  assert.equal(forwarded.trim(), "contact show 789 --json");
   await rm(directory, { recursive: true, force: true });
 });

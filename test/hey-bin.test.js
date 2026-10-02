@@ -30,7 +30,7 @@ printf '%s' '{"version":"1.7.0","source":"release"}'
   const result = await runAxi(["version"], env);
   assert.equal(result.error, null, result.stdout);
   assert.match(result.stdout, /1\.7\.0/);
-  assert.equal((await readFile(argsFile, "utf8")).trim(), "version --json --quiet");
+  assert.equal((await readFile(argsFile, "utf8")).trim(), "version --json");
   await rm(directory, { recursive: true, force: true });
 });
 

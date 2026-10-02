@@ -19,7 +19,7 @@ test("routes every non-blocked manifest command to HEY with its argv intact", as
       assert.equal(result.code, 0, `${batch[index].path}: ${result.stdout}`);
       assert.match(result.stdout, /done: true/, batch[index].path);
     });
-    expected.push(...batch.map((node) => `${node.path} 123 --limit 5 --json --quiet`));
+    expected.push(...batch.map((node) => `${node.path} 123 --limit 5 --json`));
   }
   assert.deepEqual((await fake.calls()).sort(), expected.sort());
   await fake.cleanup();
@@ -42,8 +42,8 @@ test("shortcut forms forward exactly what was typed", async () => {
     assert.equal((await runAxi(line.split(" "), { fake })).code, 0, line);
   }
   assert.deepEqual(await fake.calls(), [
-    "box imbox --json --quiet", "label 9 --all --json --quiet", "workflow 65 --json --quiet",
-    "collection 3 --json --quiet", "bundle 12 --json --quiet",
+    "box imbox --json", "label 9 --all --json", "workflow 65 --json",
+    "collection 3 --json", "bundle 12 --json",
   ]);
   await fake.cleanup();
 });
@@ -54,8 +54,8 @@ test("account list, auth status, commands and version keep user flags", async ()
     assert.equal((await runAxi(line.split(" "), { fake })).code, 0, line);
   }
   assert.deepEqual(await fake.calls(), [
-    "account list --account 2 --json --quiet", "auth status --account 2 --json --quiet",
-    "commands --stats --json --quiet", "version --stats --json --quiet",
+    "account list --account 2 --json", "auth status --account 2 --json",
+    "commands --stats --json", "version --stats --json",
   ]);
   await fake.cleanup();
 });
@@ -77,7 +77,7 @@ test("discovers commands newer than the bundled manifest from the installed HEY"
   });
   const result = await runAxi(["newsletter", "list", "--all"], { fake });
   assert.equal(result.code, 0, result.stdout);
-  assert.deepEqual(await fake.calls(), ["commands --json --quiet", "newsletter list --all --json --quiet"]);
+  assert.deepEqual(await fake.calls(), ["commands --json", "newsletter list --all --json"]);
   const unknown = await runAxi(["nonsense"], { fake });
   assert.equal(unknown.code, 2);
   assert.match(unknown.stdout, /unknown command/);
