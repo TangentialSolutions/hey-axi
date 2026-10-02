@@ -4,6 +4,7 @@ import { spawn } from "node:child_process";
 import { encode } from "@toon-format/toon";
 import { loadBundledManifest, normalizeCatalog, resolveCommand } from "./router.js";
 import { blockedReason } from "./policy.js";
+import { RAW_OUTPUT_FLAGS, hasAny, scanArgs, valueFlagSet } from "./args.js";
 
 // Resolve the HEY CLI: an explicit HEY_BIN wins, otherwise `hey` is looked up on PATH
 // by spawn(), the same way a shell would find it.
@@ -26,9 +27,14 @@ function usage(manifest) {
   }
   lines.push(
     "",
-    "flags:",
-    "  --json                Print HEY's JSON instead of TOON",
-    "  --help                Show this help",
+    "output (HEY's global flags may go anywhere on the line):",
+    "  default               HEY's JSON envelope (data, summary, notice, breadcrumbs, meta) rendered as TOON",
+    "  --json                Print HEY's JSON envelope as compact JSON instead of TOON",
+    "  --quiet               Drop the envelope: just the data (HEY then writes notices to stderr)",
+    "  --ids-only, --count, --markdown, --html, --styled, --jq <expr>",
+    "                        Passed to HEY untouched; HEY's output is printed as-is",
+    "  --account <id|email>, --base-url <url>, --stats, -v   Forwarded to HEY",
+    "  --help                Show this help (or `hey-axi <command> --help`)",
   );
   return lines.join("\n");
 }
@@ -62,15 +68,25 @@ function spawnErrorMessage(error) {
   return error.message;
 }
 
-function runHey(args) {
+// Run HEY with captured output. `extra` holds the format flags hey-axi adds.
+function runHey(args, extra = ["--json"]) {
   return new Promise((resolve) => {
-    const child = spawn(HEY, [...args, "--json", "--quiet"], { stdio: ["inherit", "pipe", "pipe"] });
+    const child = spawn(HEY, [...args, ...extra], { stdio: ["inherit", "pipe", "pipe"] });
     let stdout = "";
     let stderr = "";
     child.stdout.on("data", (chunk) => { stdout += chunk; });
     child.stderr.on("data", (chunk) => { stderr += chunk; });
     child.on("error", (error) => resolve({ status: 127, error: spawnErrorMessage(error) }));
     child.on("close", (status) => resolve({ status, stdout, stderr }));
+  });
+}
+
+// Run HEY exactly as typed, with stdout/stderr going straight to the terminal.
+function runHeyRaw(args) {
+  return new Promise((resolve) => {
+    const child = spawn(HEY, args, { stdio: "inherit" });
+    child.on("error", (error) => resolve({ status: 127, error: spawnErrorMessage(error) }));
+    child.on("close", (status, signal) => resolve({ status: status ?? (signal ? 1 : 0) }));
   });
 }
 
@@ -94,13 +110,11 @@ if (args.length === 0 || args[0] === "--help" || args[0] === "-h") {
   process.exit(0);
 }
 
-const json = args.includes("--json");
-const command = args.filter((arg) => arg !== "--json");
-const words = [];
-for (const arg of command) {
-  if (arg.startsWith("-")) break;
-  words.push(arg);
-}
+const { words, flags } = scanArgs(args, valueFlagSet(manifest.commands));
+const json = flags.has("--json");
+const quiet = flags.has("--quiet");
+const raw = hasAny(flags, RAW_OUTPUT_FLAGS);
+const command = args.filter((arg) => arg !== "--json" && arg !== "--quiet");
 
 let resolved = resolveCommand(manifest.commands, words);
 if (resolved.error === "unknown command" || resolved.error === "unknown subcommand") {
@@ -119,7 +133,7 @@ if (resolved.error) {
   process.exit(2);
 }
 
-if (command.includes("--help") || command.includes("-h")) {
+if (flags.has("--help") || flags.has("-h")) {
   process.stdout.write(`${commandHelp(resolved.node)}\n`);
   process.exit(0);
 }
@@ -130,7 +144,18 @@ if (blocked) {
   process.exit(2);
 }
 
-const result = await runHey(command);
+if (raw) {
+  // --ids-only, --count, --markdown, --html, --styled, --jq: HEY owns the output format.
+  const result = await runHeyRaw(args);
+  if (result.error) {
+    output({ ok: false, error: result.error, exit_code: result.status });
+    process.exit(1);
+  }
+  process.exit(result.status);
+}
+
+const result = await runHey(command, quiet ? ["--json", "--quiet"] : ["--json"]);
+if (result.status === 0 && result.stderr) process.stderr.write(result.stderr);
 
 if (result.status !== 0) {
   output({ ok: false, error: result.error || result.stdout.trim() || result.stderr.trim() || "hey command failed", exit_code: result.status });
