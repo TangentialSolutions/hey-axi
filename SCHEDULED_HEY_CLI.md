@@ -33,4 +33,4 @@ The processing script can inspect each new thread, apply labels with `hey label 
 
 ## Through hey-axi
 
-Every command above also works as `hey-axi …`. JSON commands come back as compact TOON. `--ids-only` and `--count` are passed to HEY untouched. `hey-axi watch …` streams NDJSON line by line, just like `hey watch`. Under launchd/cron, set `HEY_BIN=$HOME/.local/bin/hey`, because the scheduler's PATH usually doesn't include `~/.local/bin`.
+Every command above also works as `hey-axi …`. JSON commands come back as compact TOON. `--ids-only` and `--count` are passed to HEY untouched. `hey-axi watch …` streams one TOON block per event; `hey-axi watch --json …` streams NDJSON line by line, just like `hey watch`. Under launchd/cron, set `HEY_BIN=$HOME/.local/bin/hey`, because the scheduler's PATH usually doesn't include `~/.local/bin`.

@@ -21,20 +21,34 @@ function heyJSON(args) {
   return parsed && typeof parsed === "object" && "data" in parsed ? parsed.data : parsed;
 }
 
-// USAGE and EXAMPLES only exist in each command's --help text. `--help` is answered
-// locally by HEY (no login, no network).
+// USAGE, EXAMPLES and flag value types only exist in each command's --help text.
+// `--help` is answered locally by HEY (no login, no network).
 function parseHelp(text) {
   const section = (name) => {
     const match = text.match(new RegExp(`^${name}\\n((?:  .*\\n?)+)`, "m"));
     return match ? match[1].split("\n").map((line) => line.trim()).filter(Boolean) : [];
   };
-  return { synopsis: section("USAGE"), examples: section("EXAMPLES").filter((line) => line.startsWith("hey ")).slice(0, 3) };
+  const types = {};
+  for (const line of section("FLAGS")) {
+    const match = line.match(/^(?:-\w, )?--([\w-]+)(?: (\w+))?(?:\s{2,}|$)/);
+    if (match && match[2]) types[match[1]] = match[2];
+  }
+  return { synopsis: section("USAGE"), examples: section("EXAMPLES").filter((line) => line.startsWith("hey ")).slice(0, 3), types };
+}
+
+const help = new Map();
+function readHelp(nodes) {
+  for (const node of nodes || []) {
+    const path = node.path || node.name;
+    const text = execFileSync(HEY, [...path.split(" "), "--help"], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
+    help.set(path, parseHelp(text));
+    readHelp(node.subcommands);
+  }
 }
 
 function addHelp(nodes) {
   for (const node of nodes) {
-    const help = execFileSync(HEY, [...node.path.split(" "), "--help"], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
-    const { synopsis, examples } = parseHelp(help);
+    const { synopsis, examples } = help.get(node.path);
     if (synopsis.length) node.synopsis = synopsis;
     if (examples.length) node.examples = examples;
     if (node.subcommands) addHelp(node.subcommands);
@@ -43,7 +57,10 @@ function addHelp(nodes) {
 
 const version = heyJSON(["version"]);
 const catalog = heyJSON(["commands"]);
-const commands = normalizeCatalog(catalog);
+readHelp(catalog);
+const types = {};
+for (const [path, { types: flagTypes }] of help) for (const [flag, type] of Object.entries(flagTypes)) types[`${path} --${flag}`] = type;
+const commands = normalizeCatalog(catalog, types);
 addHelp(commands);
 const manifest = {
   source: "hey commands --json + hey <command> --help",

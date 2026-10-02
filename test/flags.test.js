@@ -49,11 +49,15 @@ test("raw output selectors are passed through untouched and printed as-is", asyn
   await fake.cleanup();
 });
 
-test("raw mode propagates HEY's exit code and stderr", async () => {
-  const fake = await makeFakeHey({ stdout: "", stderr: "Error: --ids-only requires list data\n", exitCode: 1 });
+test("raw mode failures become a structured error on stdout with an AXI exit code", async () => {
+  const fake = await makeFakeHey({ stdout: "", stderr: "warning: keyring unavailable\nError: --ids-only requires list data\n  at main.go:12\n", exitCode: 7 });
   const result = await runAxi(["version", "--ids-only"], { fake });
   assert.equal(result.code, 1);
-  assert.match(result.stderr, /requires list data/);
+  assert.match(result.stdout, /^ok: false$/m);
+  assert.match(result.stdout, /error: "HEY's API returned an error: --ids-only requires list data"/);
+  assert.match(result.stdout, /kind: api_error/);
+  assert.doesNotMatch(result.stdout, /main\.go|keyring/);
+  assert.match(result.stderr, /warning: keyring unavailable/);
   await fake.cleanup();
 });
 
@@ -62,6 +66,8 @@ test("default output keeps the envelope (notices, next_page) and renders TOON", 
   const result = await runAxi(["box", "view", "imbox"], { fake });
   assert.equal(result.code, 0);
   assert.match(result.stdout, /notice: Showing 1 of 9/);
+  assert.match(result.stdout, /^count: 1 of 9 total$/m);
+  assert.match(result.stdout, /Run `hey-axi box view imbox --all` for all 9/);
   assert.match(result.stdout, /ok: true/);
   assert.deepEqual(await fake.calls(), ["box view imbox --json"]);
   await fake.cleanup();
@@ -72,7 +78,7 @@ test("--json prints the shaped envelope as compact JSON; --full keeps HEY's unto
   const fake = await makeFakeHey({ stdout: JSON.stringify(envelope, null, 2) });
   const result = await runAxi(["box", "view", "imbox", "--json"], { fake });
   assert.equal(result.code, 0);
-  assert.deepEqual(JSON.parse(result.stdout), { ok: true, summary: "1 thread", data: [{ id: 1 }], help: ["Run `hey-axi thread read 1` to read"] });
+  assert.deepEqual(JSON.parse(result.stdout), { ok: true, summary: "1 thread", count: "1 shown; no more pages reported", data: [{ id: 1 }], help: ["Run `hey-axi thread read 1` to read"] });
   assert.equal(result.stdout.trim().split("\n").length, 1);
   const untouched = await runAxi(["box", "view", "imbox", "--json", "--full"], { fake });
   assert.deepEqual(JSON.parse(untouched.stdout), envelope);
@@ -80,12 +86,23 @@ test("--json prints the shaped envelope as compact JSON; --full keeps HEY's unto
   await fake.cleanup();
 });
 
-test("--quiet is honored when the user asks for data only", async () => {
-  const fake = await makeFakeHey({ stdout: '[{"id":1}]' });
-  const result = await runAxi(["box", "view", "imbox", "--quiet"], { fake });
+test("--quiet drops HEY's summary, notice, breadcrumbs and meta but keeps count, empty state and hints", async () => {
+  const envelope = { ok: true, summary: "2 threads", notice: "Showing 2 of 5 results.", data: [{ id: 1, name: "s".repeat(200) }, { id: 2 }], breadcrumbs: [{ command: "hey thread read <id>" }], meta: { page: 1 } };
+  const fake = await makeFakeHey({ stdout: JSON.stringify(envelope) });
+  const result = await runAxi(["box", "view", "imbox", "--quiet", "--json"], { fake });
   assert.equal(result.code, 0);
-  assert.deepEqual(await fake.calls(), ["box view imbox --json --quiet"]);
+  const out = JSON.parse(result.stdout);
+  assert.deepEqual(Object.keys(out), ["ok", "count", "data", "help"]);
+  assert.equal(out.count, "2 of 5 total");
+  assert.deepEqual(out.help, ["Run `hey-axi box view imbox --all` for all 5", "Run `hey-axi box view imbox --full` to see complete content"]);
+  const empty = await makeFakeHey({ stdout: '{"ok":true,"summary":"0 threads","data":[]}' });
+  const none = await runAxi(["box", "view", "imbox", "--quiet"], { fake: empty });
+  assert.match(none.stdout, /empty: 0 results for `hey-axi box view imbox`/);
+  assert.match(none.stdout, /count: 0 total/);
+  // HEY always gets --json alone: the envelope is needed for the count.
+  assert.deepEqual([...await fake.calls(), ...await empty.calls()], ["box view imbox --json", "box view imbox --json"]);
   await fake.cleanup();
+  await empty.cleanup();
 });
 
 test("HEY's stderr notices are surfaced on success", async () => {
@@ -99,6 +116,7 @@ test("HEY's stderr notices are surfaced on success", async () => {
 test("help documents the real --json/--quiet behavior", async () => {
   const result = await runAxi(["--help"]);
   assert.doesNotMatch(result.stdout, /Preserve the upstream JSON envelope/);
-  assert.match(result.stdout, /--json\s+Print HEY's JSON envelope/);
+  assert.match(result.stdout, /--json\s+The same shaped result as compact JSON/);
+  assert.match(result.stdout, /--quiet\s+Drop HEY's summary\/notice\/breadcrumbs\/meta; keep data, count, empty state and hints/);
   assert.match(result.stdout, /--ids-only, --count, --markdown, --html, --styled, --jq/);
 });

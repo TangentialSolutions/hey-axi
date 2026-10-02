@@ -218,7 +218,9 @@ printf '%s' '[{"id":4242,"content":"See you at 10","topic":{"id":9001,"name":"Sa
     env: { ...process.env, HEY_BIN: fakeHey, HEY_ARGS_FILE: argsFile },
   }, (error, stdout, stderr) => resolve({ error, stdout, stderr })));
   assert.equal(result.error, null);
-  assert.match(result.stdout, /Saved snippet/);
+  // A bare (non-envelope) list is shaped like any other: default fields and a count.
+  assert.match(result.stdout, /^count: 1 shown; no more pages reported$/m);
+  assert.match(result.stdout, /data\[1\]\{id,content\}:/);
   assert.match(result.stdout, /See you at 10/);
   const forwarded = await import("node:fs/promises").then(({ readFile }) => readFile(argsFile, "utf8"));
   assert.equal(forwarded.trim(), "clip list --json");

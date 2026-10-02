@@ -61,16 +61,19 @@ test("skill body stays small and its relative links resolve", () => {
 test("every hey-axi command shown in the skill is a real command", () => {
   const { commands } = loadBundledManifest();
   const blocks = [...body.matchAll(/```bash\n([\s\S]*?)```/g)].map((m) => m[1]).join("\n");
-  const inline = [...body.matchAll(/`(hey-axi [^`]+)`/g)].map((m) => m[1]).join("\n");
+  const inline = [...body.matchAll(/`((?:npx -y )?hey-axi [^`]+)`/g)].map((m) => m[1]).join("\n");
   const invocations = `${blocks}\n${inline}`
     .split("\n")
     .flatMap((line) => line.split(/\s{2,}|\s\|\s/))
-    .map((part) => part.trim())
-    .filter((part) => part.startsWith("hey-axi "));
+    .map((part) => part.trim().replace(/^cat \S+ \| /, ""))
+    .filter((part) => part.startsWith("npx -y hey-axi ") || part.startsWith("hey-axi "));
+  // AXI: skill examples must run without a global install.
+  const bare = invocations.filter((part) => part.startsWith("hey-axi "));
+  assert.deepEqual(bare, [], "skill examples should use `npx -y hey-axi`");
   assert.ok(invocations.length >= 20, `found ${invocations.length} examples`);
   for (const invocation of invocations) {
     const words = [];
-    for (const word of invocation.split(/\s+/).slice(1)) {
+    for (const word of invocation.replace(/^npx -y /, "").split(/\s+/).slice(1)) {
       if (/^(-|<|"|#|\.\.\.)/.test(word)) break;
       words.push(word);
     }

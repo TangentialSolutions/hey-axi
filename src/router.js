@@ -1,16 +1,17 @@
 // Data-driven command routing for hey-axi.
 //
-// The command tree comes from HEY's own `hey commands --json` catalog: a bundled
-// snapshot (src/manifest.json, refreshed with `npm run refresh-manifest`), plus
-// discovery from the installed binary at runtime when the snapshot doesn't know a
-// command.
+// The command tree comes from HEY's own `hey commands --json` catalog, bundled as
+// src/manifest.json (refreshed with `npm run refresh-manifest`). Routing never calls
+// HEY: an unknown command is rejected before any dependency runs.
 
 import { readFileSync } from "node:fs";
 
 const BOOLEAN_DEFAULTS = new Set(["true", "false"]);
 
-// Reduce HEY's catalog to what routing and help need.
-export function normalizeCatalog(nodes) {
+// Reduce HEY's catalog to what routing and help need. Every flag keeps its default,
+// including zero/false/empty ones, so `--help` can state each flag's default.
+// `types` maps "path --flag" to the value type HEY's --help prints (int, string, ...).
+export function normalizeCatalog(nodes, types = {}) {
   return (nodes || []).map((node) => {
     const out = { name: node.name, path: node.path || node.name, short: node.short || "" };
     if (node.compatibility_usage) out.usage = node.compatibility_usage;
@@ -20,13 +21,19 @@ export function normalizeCatalog(nodes) {
       .map((flag) => {
         const entry = { name: flag.name };
         if (flag.shorthand) entry.shorthand = flag.shorthand;
-        if (!BOOLEAN_DEFAULTS.has(String(flag.default))) entry.value = true;
+        const type = types[`${node.path || node.name} --${flag.name}`];
+        if (type ? type !== "count" : !BOOLEAN_DEFAULTS.has(String(flag.default))) {
+          entry.value = true;
+          // Flags HEY hides from --help have no printed type; they take a string.
+          entry.type = type || "string";
+        }
+        if (type === "count") entry.type = "count";
         if (flag.usage) entry.desc = flag.usage;
-        if (flag.default !== undefined && !["", "false", "[]", "0"].includes(String(flag.default))) entry.default = String(flag.default);
+        if (flag.default !== undefined) entry.default = String(flag.default);
         return entry;
       });
     if (flags.length) out.flags = flags;
-    if (node.subcommands?.length) out.subcommands = normalizeCatalog(node.subcommands);
+    if (node.subcommands?.length) out.subcommands = normalizeCatalog(node.subcommands, types);
     return out;
   });
 }
@@ -36,9 +43,11 @@ export function loadBundledManifest() {
 }
 
 // A group node can be invoked by itself when HEY documents a shortcut form for it
-// (`box <name|id>`, `label <id>`, ...) or when it takes flags of its own (`search`).
+// (`box <name|id>`, `label <id>`, ...), when it takes flags of its own (`search`), or
+// when its USAGE has a form without a subcommand (`hey set-aside [flags]`).
 export function isRunnable(node) {
-  return !node.subcommands?.length || Boolean(node.usage) || Boolean(node.flags?.length);
+  return !node.subcommands?.length || Boolean(node.usage) || Boolean(node.flags?.length)
+    || (node.synopsis || []).some((line) => !line.includes("<command>"));
 }
 
 // Resolve leading positional words to a command node.
@@ -79,4 +88,29 @@ export function listCommands(commands) {
   };
   walk(commands);
   return paths;
+}
+
+function distance(a, b) {
+  const row = Array.from({ length: b.length + 1 }, (_, index) => index);
+  for (let i = 1; i <= a.length; i += 1) {
+    let previous = row[0];
+    row[0] = i;
+    for (let j = 1; j <= b.length; j += 1) {
+      const current = row[j];
+      row[j] = Math.min(row[j] + 1, row[j - 1] + 1, previous + (a[i - 1] === b[j - 1] ? 0 : 1));
+      previous = current;
+    }
+  }
+  return row[b.length];
+}
+
+// Up to three command names close to a mistyped word, for "did you mean" help.
+export function closestNames(word, nodes) {
+  if (!word) return [];
+  return (nodes || [])
+    .map((node) => ({ name: node.name, score: node.name.startsWith(word) || word.startsWith(node.name) ? 0 : distance(word, node.name) }))
+    .filter(({ score }) => score <= Math.max(2, Math.floor(word.length / 3)))
+    .sort((a, b) => a.score - b.score || a.name.localeCompare(b.name))
+    .slice(0, 3)
+    .map(({ name }) => name);
 }
