@@ -1,0 +1,44 @@
+name: manifest drift
+
+# Weekly check that src/manifest.json still matches the latest HEY CLI release.
+# Only `hey version` and `hey commands` are run; no login, no mailbox access.
+on:
+  schedule:
+    - cron: "17 13 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Install latest HEY CLI release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag=$(gh release view -R basecamp/hey-cli --json tagName -q .tagName)
+          version=${tag#v}
+          mkdir -p "$RUNNER_TEMP/hey"
+          cd "$RUNNER_TEMP/hey"
+          gh release download "$tag" -R basecamp/hey-cli -p "hey_${version}_linux_amd64.tar.gz" -p checksums.txt
+          grep " hey_${version}_linux_amd64.tar.gz\$" checksums.txt | sha256sum -c -
+          tar xzf "hey_${version}_linux_amd64.tar.gz" hey
+          echo "HEY_BIN=$RUNNER_TEMP/hey/hey" >> "$GITHUB_ENV"
+      - run: npm run refresh-manifest
+        env:
+          HOME: ${{ runner.temp }}/hey-home
+      - name: Fail if the manifest is out of date
+        run: |
+          if ! git diff --exit-code -- src/manifest.json; then
+            echo "::error::src/manifest.json is stale. Run 'npm run refresh-manifest' with the latest hey and commit the result."
+            exit 1
+          fi

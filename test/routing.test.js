@@ -1,16 +1,16 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { loadBundledManifest, listCommands } from "../src/router.js";
-import { blockedPaths, sendCommands } from "../src/policy.js";
+import { runMode, sendCommands } from "../src/policy.js";
 import { makeFakeHey, runAxi } from "./helpers.js";
 
 const manifest = loadBundledManifest();
-const blocked = new Set(blockedPaths());
+const special = (path) => runMode(path, new Set()) !== "json";
 const gated = new Set([...sendCommands(), "auth token"]);
 
 test("routes every non-blocked manifest command to HEY with its argv intact", async () => {
   const fake = await makeFakeHey({ stdout: '{"ok":true,"data":{"done":true}}' });
-  const runnable = listCommands(manifest.commands).filter((node) => !blocked.has(node.path) && !gated.has(node.path));
+  const runnable = listCommands(manifest.commands).filter((node) => !special(node.path) && !gated.has(node.path));
   assert.ok(runnable.length >= 125, `only ${runnable.length} routable`);
   const expected = [];
   for (let i = 0; i < runnable.length; i += 16) {
@@ -23,17 +23,6 @@ test("routes every non-blocked manifest command to HEY with its argv intact", as
     expected.push(...batch.map((node) => `${node.path} 123 --limit 5 --json`));
   }
   assert.deepEqual((await fake.calls()).sort(), expected.sort());
-  await fake.cleanup();
-});
-
-test("blocked commands are refused without invoking HEY", async () => {
-  const fake = await makeFakeHey();
-  for (const path of blocked) {
-    const result = await runAxi([...path.split(" "), "--to", "someone@example.com", "-m", "hi"], { fake });
-    assert.equal(result.code, 2, path);
-    assert.match(result.stdout, /unsupported command/, path);
-  }
-  assert.deepEqual(await fake.calls(), []);
   await fake.cleanup();
 });
 

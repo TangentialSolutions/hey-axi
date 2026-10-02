@@ -30,3 +30,7 @@ hey watch --box imbox --events new --run-sync './triage-hey-message.sh'
 ```
 
 The processing script can inspect each new thread, apply labels with `hey label add`, mark selected threads as read with `hey seen`, and do nothing for messages that should remain untouched.
+
+## Through hey-axi
+
+Every command above also works as `hey-axi …`. JSON commands come back as compact TOON. `--ids-only` and `--count` are passed to HEY untouched. `hey-axi watch …` streams NDJSON line by line, just like `hey watch`. Under launchd/cron, set `HEY_BIN=$HOME/.local/bin/hey`, because the scheduler's PATH usually doesn't include `~/.local/bin`.
