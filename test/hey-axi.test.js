@@ -39,6 +39,34 @@ test("rejects unknown commands with a structured error and exit 2", async () => 
   assert.equal(result.stderr, "");
 });
 
+test("delegates supported triage mutations and preserves their arguments", async () => {
+  const cases = [
+    ["label", "add", "123", "--to", "789", "label add 123 --to 789 --json --quiet"],
+    ["seen", "123", "456", "seen 123 456 --json --quiet"],
+    ["move", "123", "--to", "feed", "move 123 --to feed --json --quiet"],
+    ["trash", "123", "456", "trash 123 456 --json --quiet"],
+  ];
+
+  for (const command of cases) {
+    const directory = await mkdtemp(join(tmpdir(), "hey-axi-"));
+    const fakeHey = join(directory, "hey");
+    await writeFile(fakeHey, `#!/bin/sh
+printf '%s\\n' "$*" > "$HEY_ARGS_FILE"
+printf '%s' '{"ok":true,"data":{"changed":true}}'
+`);
+    await execFile(process.env.SHELL || "/bin/sh", ["-c", `chmod +x "$1"`, "sh", fakeHey]);
+    const argsFile = join(directory, "args");
+    const result = await new Promise((resolve) => execFile(process.execPath, ["src/hey-axi.js", ...command.slice(0, -1)], {
+      env: { ...process.env, HEY_BIN: fakeHey, HEY_ARGS_FILE: argsFile },
+    }, (error, stdout, stderr) => resolve({ error, stdout, stderr })));
+    assert.equal(result.error, null, command.join(" "));
+    assert.match(result.stdout, /changed/);
+    const forwarded = await import("node:fs/promises").then(({ readFile }) => readFile(argsFile, "utf8"));
+    assert.equal(forwarded.trim(), command.at(-1), command.join(" "));
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
 test("delegates read-only box commands and renders the JSON envelope as TOON", async () => {
   const directory = await mkdtemp(join(tmpdir(), "hey-axi-"));
   const fakeHey = join(directory, "hey");

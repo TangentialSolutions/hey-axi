@@ -19,6 +19,10 @@ function usage() {
     "  bulk-reply preview <id> Preview threads and recipients without sending",
     "  label list            List email labels",
     "  label view <id>       List threads with a label",
+    "  label add <id>...     Add a label to email threads",
+    "  seen <id>...          Mark email threads as seen",
+    "  move <id>...          Move email threads to another box",
+    "  trash <id>...         Move email threads to Trash",
     "  collection list       List email collections",
     "  collection view <id>  List threads in a collection",
     "  workflow list         List email workflows",
@@ -92,6 +96,14 @@ if (commandName === "account list") {
 } else if (commandName === "label list") {
   result = await runHey(command);
 } else if (commandName === "label view") {
+  result = await runHey(command);
+} else if (commandName === "label add") {
+  result = await runHey(command);
+} else if (command[0] === "seen") {
+  result = await runHey(command);
+} else if (command[0] === "move") {
+  result = await runHey(command);
+} else if (command[0] === "trash") {
   result = await runHey(command);
 } else if (commandName === "collection list") {
   result = await runHey(command);
