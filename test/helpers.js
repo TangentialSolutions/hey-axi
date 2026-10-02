@@ -47,7 +47,10 @@ exit ${Number(options.exitCode || 0)}
 const STATE_DIR = join(tmpdir(), `hey-axi-test-state-${process.pid}`);
 
 export function runAxi(args, { env = {}, fake, cwd } = {}) {
-  const fullEnv = { ...process.env, HEY_AXI_STATE_DIR: STATE_DIR, ...env };
+  // Tests may themselves run inside an agent session: don't inherit its session id.
+  const inherited = { ...process.env };
+  for (const name of ["HEY_AXI_SESSION_ID", "CLAUDE_CODE_SESSION_ID", "CODEX_THREAD_ID", "CODEX_SESSION_ID", "OPENCODE_SESSION_ID"]) delete inherited[name];
+  const fullEnv = { ...inherited, HEY_AXI_STATE_DIR: STATE_DIR, ...env };
   if (fake) fullEnv.HEY_BIN = fake.bin;
   return new Promise((resolve) => execFile(process.execPath, [join(ROOT, "src/hey-axi.js"), ...args], { env: fullEnv, cwd: cwd || ROOT },
     (error, stdout, stderr) => resolve({ code: error ? error.code : 0, stdout, stderr })));

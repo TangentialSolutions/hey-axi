@@ -57,7 +57,7 @@ export async function homeView(runHey, { execPath = process.argv[1], cwd = proce
   }
   const body = envelope && typeof envelope === "object" && "data" in envelope ? envelope.data : envelope;
   const found = findList(body);
-  const size = listSize(envelope, found ? found.list.length : 0);
+  const size = listSize(envelope, found ? found.list.length : 0, found?.container);
   // search has no --limit: keep the first `limit` rows here.
   if (found && found.list.length > query.limit) {
     if (size.total === undefined && !size.more) size.total = found.list.length;

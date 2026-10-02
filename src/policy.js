@@ -28,20 +28,22 @@ const STREAM = new Set(["watch"]);
 const RAW = new Set(["shell-completion generate"]);
 
 // Commands that only work with a person at a terminal (a full-screen UI, a browser
-// sign-in, a wizard, a long-running stdio server). Without a terminal on both stdin and
-// stdout (an agent's shell) hey-axi refuses them before HEY runs, naming the command
-// the user can run themselves or the non-interactive form. With a terminal (a person),
-// HEY gets the terminal.
+// sign-in, a wizard) or that hand stdio to another program (an MCP server). hey-axi never
+// runs them by default, TTY or not, so nothing can stop and wait for input. They run
+// only with the explicit `--interactive` opt-in, which hands HEY the terminal; the
+// person-facing ones also need a real terminal on stdin and stdout.
 const USER_ONLY = {
-  tui: { reason: "it is a full-screen terminal UI", hint: "ask the user to run `hey-axi tui` in their own terminal" },
-  mcp: { reason: "it is a long-running MCP server for agent harnesses, not a shell command", hint: "ask the user to add `hey-axi mcp` as an MCP server in the agent's settings" },
-  setup: { reason: "it is the first-run wizard (browser sign-in and prompts)", hint: "ask the user to run `hey-axi setup` in their terminal; `hey-axi setup agents`, `setup claude` and `setup codex` run without prompts" },
-  "auth login": { reason: "it opens a browser and waits for the user", hint: "ask the user to run `hey-axi auth login` in their terminal, or pass --token <token>", unless: ["--token", "--cookie"] },
-  login: { reason: "it opens a browser and waits for the user", hint: "ask the user to run `hey-axi login` in their terminal, or pass --token <token>", unless: ["--token", "--cookie"] },
+  tui: { reason: "it is a full-screen terminal UI", hint: "ask the user to run `hey-axi tui --interactive` in their own terminal" },
+  mcp: { reason: "it is a long-running MCP server that takes over stdin/stdout", hint: "to use it as an MCP server, register `hey-axi mcp --interactive` in the agent's MCP settings", tty: false },
+  setup: { reason: "it is the first-run wizard (browser sign-in and prompts)", hint: "ask the user to run `hey-axi setup --interactive` in their terminal; `hey-axi setup agents`, `setup claude` and `setup codex` run without prompts" },
+  "auth login": { reason: "it opens a browser and waits for the user", hint: "pass --token <token>, or ask the user to run `hey-axi auth login --interactive` in their terminal", unless: ["--token", "--cookie"] },
+  login: { reason: "it opens a browser and waits for the user", hint: "pass --token <token>, or ask the user to run `hey-axi login --interactive` in their terminal", unless: ["--token", "--cookie"] },
 };
 
+const personCommand = (path, flags) => Boolean(USER_ONLY[path]) && !USER_ONLY[path].unless?.some((flag) => flags.has(flag));
+
 export function runMode(path, flags) {
-  if (USER_ONLY[path] && !USER_ONLY[path].unless?.some((flag) => flags.has(flag))) return "interactive";
+  if (personCommand(path, flags) && flags.has("--interactive")) return "interactive";
   if (STREAM.has(path)) return "stream";
   if (RAW.has(path)) return "raw";
   // CSV goes to stdout unless --output names a file (then HEY answers with JSON).
@@ -50,9 +52,16 @@ export function runMode(path, flags) {
 }
 
 export function userOnly(path, flags = new Set(), io = { stdin: process.stdin.isTTY, stdout: process.stdout.isTTY }) {
+  if (!personCommand(path, flags)) {
+    if (!flags.has("--interactive")) return null;
+    return { error: "--interactive does not apply here", command: path, reason: `only ${Object.keys(USER_ONLY).join(", ")} (without --token) take over the terminal`, hint: `run \`hey-axi ${path}\` without --interactive` };
+  }
   const rule = USER_ONLY[path];
-  if (!rule || rule.unless?.some((flag) => flags.has(flag)) || (io.stdin && io.stdout)) return null;
-  return { error: "needs the user", command: path, reason: rule.reason, hint: rule.hint };
+  if (!flags.has("--interactive")) return { error: "needs the user", command: path, reason: rule.reason, hint: rule.hint };
+  if (rule.tty !== false && !(io.stdin && io.stdout)) {
+    return { error: "needs the user", command: path, reason: `${rule.reason}, and --interactive needs a terminal on stdin and stdout`, hint: rule.hint };
+  }
+  return null;
 }
 
 export function userOnlyPaths() {
@@ -85,20 +94,56 @@ export function contentProblem(node, flags, positionals = []) {
   return { error: `missing ${rule.what} for \`${node.path}\``, command: node.path, reason: "without it HEY would open an editor and wait", hint: rule.hint };
 }
 
-// Mutations whose desired end state may already hold. When HEY reports that (an
-// "already ..." failure), hey-axi answers with a no-op success instead of an error.
-// Deletes are idempotent too: deleting something that is not there is a no-op.
+// Mutations whose desired end state may already hold. Only these commands can become a
+// no-op, and only when HEY's failure says that exact end state already holds (each
+// command has its own pattern; a generic "conflict" is not enough). Send, reply and read
+// commands never become no-ops. Deletes are idempotent too: deleting something that
+// is not there is a no-op.
 const DELETES = new Set(["draft delete", "event delete", "todo delete", "habit delete", "clip delete", "snippet delete", "timetrack delete", "timetrack category delete", "workflow delete", "workflow stage delete", "set-aside group delete", "contact note delete"]);
-const ALREADY = /\balready\b|\bno changes?\b|\bnot changed\b|\bunchanged\b|\bnothing to\b/i;
-const NOT_RUNNING = { "timetrack stop": /no (time ?track|timer|track)[^.]*running|not running/i };
+const EXISTS = /\balready (exists|taken|in use|been taken)\b|\bname has already been taken\b/i;
+const ADDED = /\balready (in|on|has|have|added|labell?ed|a member|part of|belongs?)\b/i;
+const REMOVED = /\b(not (in|on|labell?ed|a member|part of)|already removed|isn'?t (in|on|labell?ed))\b/i;
+export const END_STATES = {
+  "todo complete": /\balready (been )?completed?\b/i,
+  "habit complete": /\balready (been )?completed?\b/i,
+  "todo uncomplete": /\b(already (incomplete|uncompleted|not completed?)|not (yet )?completed?)\b/i,
+  "habit uncomplete": /\b(already (incomplete|uncompleted|not completed?)|not (yet )?completed?)\b/i,
+  seen: /\balready (seen|read|marked (as )?(seen|read))\b/i,
+  unseen: /\balready (unseen|unread|marked (as )?(unseen|unread))\b/i,
+  move: /\balready in\b/i,
+  "label add": ADDED, "collection add": ADDED, "set-aside group add": ADDED, "workflow add": ADDED,
+  "label remove": REMOVED, "collection remove": REMOVED, "set-aside group remove": REMOVED, "workflow remove": REMOVED,
+  "screener approve": /\balready (screened in|approved)\b/i,
+  "screener deny": /\balready (screened out|denied)\b/i,
+  "screener clear": /\b(already cleared|not screened)\b/i,
+  "contact hide": /\balready hidden\b/i,
+  "contact show-again": /\b(already (shown|visible)|not hidden)\b/i,
+  "contact bundle": /\balready bundled\b/i,
+  "contact unbundle": /\b(already unbundled|not bundled)\b/i,
+  ignore: /\balready ignor/i,
+  "stop-ignoring": /\b(not ignor|already (unignored|not ignored))/i,
+  spam: /\balready (in |marked (as )?)?spam\b/i,
+  trash: /\balready (in (the )?)?trash(ed)?\b/i,
+  "bubble up": /\balready bubbled\b/i,
+  "bubble pop": /\b(already popped|not bubbled)\b/i,
+  "timetrack start": /\balready (running|started|tracking)\b/i,
+  "timetrack stop": /\bno (time ?track|timer|track)[^.]*running\b|\bnot running\b|\balready stopped\b/i,
+  "account use": /\balready (using|the default|selected)\b/i,
+  "config trust-local": /\balready trusted\b/i,
+  "config untrust-local": /\b(not trusted|already untrusted)\b/i,
+  share: /\balready shared\b/i,
+  unshare: /\b(not shared|already unshared)\b/i,
+  "label create": EXISTS, "collection create": EXISTS, "workflow create": EXISTS, "set-aside group create": EXISTS, "timetrack category create": EXISTS, "contact add": EXISTS,
+};
 
 export function noopFor(path, failure, positionals = []) {
   const text = `${failure.error || ""} ${failure.hint || ""}`;
   const target = positionals.length ? ` ${positionals.join(" ")}` : "";
-  if (DELETES.has(path) && (failure.kind === "not_found")) {
+  if (DELETES.has(path) && failure.kind === "not_found") {
     return { ok: true, noop: true, command: path, result: `nothing to delete:${target || " it"} is already gone (no-op)`, note: "if you expected it to exist, check the id with the matching list command" };
   }
-  if (failure.code === "conflict" || failure.code === "already_exists" || ALREADY.test(text) || NOT_RUNNING[path]?.test(text)) {
+  const endState = END_STATES[path];
+  if (endState && failure.kind !== "auth" && failure.kind !== "forbidden" && failure.kind !== "not_found" && endState.test(text)) {
     return { ok: true, noop: true, command: path, result: `already done${target ? ` for${target}` : ""} (no-op)`, detail: failure.error };
   }
   return null;

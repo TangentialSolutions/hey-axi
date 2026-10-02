@@ -8,7 +8,7 @@ export const GLOBAL_BOOLEAN_FLAGS = ["json", "quiet", "ids-only", "count", "mark
 export const GLOBAL_SHORTHANDS = ["-v", "-h"];
 
 // hey-axi's own flags. Never forwarded to HEY.
-export const AXI_BOOLEAN_FLAGS = ["allow-send", "allow-secret", "full"];
+export const AXI_BOOLEAN_FLAGS = ["allow-send", "allow-secret", "full", "interactive"];
 export const AXI_VALUE_FLAGS = ["fields"];
 
 // Output selectors that make HEY print something other than a JSON envelope. When any is
@@ -49,9 +49,20 @@ export function scanArgs(argv, valueFlags) {
     if (arg.startsWith("-") && arg !== "-") {
       // Shorthand with its value attached (`-mhi`) or stacked shorthands (`-vv`).
       if (/^-[A-Za-z]./.test(arg) && !arg.startsWith("--")) {
-        const name = arg.slice(0, 2);
-        flags.add(name);
-        if (valueFlags.has(name)) values.push([name, arg.slice(arg[2] === "=" ? 3 : 2)]);
+        // Each letter is a shorthand until one takes a value; the rest is its value.
+        // Every letter is recorded, so an unknown one (`-vZ`) is rejected by name.
+        for (let j = 1; j < arg.length; j += 1) {
+          const name = `-${arg[j]}`;
+          if (arg[j] === "=") {
+            values.push([`-${arg[j - 1]}`, arg.slice(j + 1)]);
+            break;
+          }
+          flags.add(name);
+          if (valueFlags.has(name)) {
+            values.push([name, arg.slice(arg[j + 1] === "=" ? j + 2 : j + 1)]);
+            break;
+          }
+        }
         continue;
       }
       const eq = arg.indexOf("=");
@@ -126,13 +137,15 @@ export function flagLabel(flag) {
 }
 
 const GLOBAL_TYPES = { "--account": "string", "--jq": "string", "--base-url": "string", "--fields": "string" };
-const BOOL_VALUES = new Set(["1", "t", "T", "true", "TRUE", "True", "0", "f", "F", "false", "FALSE", "False"]);
 const GO_DURATION = /^(0|([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))+)$/;
 
 function typeError(name, type, value) {
   if (type === "int" && !/^-?\d+$/.test(value)) return `${name} needs a whole number, got "${value}"`;
   if (type === "duration" && !GO_DURATION.test(value)) return `${name} needs a duration such as 30s, 10m or 1h, got "${value}"`;
-  if (type === "bool" && !BOOL_VALUES.has(value)) return `${name} is a switch; use ${name} or ${name}=false, not "${value}"`;
+  // A switch is on when present and off when absent; an explicit value (`--draft=false`)
+  // is refused so that what hey-axi's policy sees is exactly what HEY would do.
+  if (type === "bool") return `${name} is a switch and takes no value: pass ${name} to turn it on, or leave it out (got ${name}=${value})`;
+  if (type === "count" && !/^\d+$/.test(value)) return `${name} counts repeats (${name} ${name}) or takes a whole number, got "${value}"`;
   return null;
 }
 

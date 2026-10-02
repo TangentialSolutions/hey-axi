@@ -47,10 +47,10 @@ hey-axi move --help                        # usage, flags, examples, notes (no H
 - **Directory scope.** `hey-axi setup scope --label Acme` (or `--box`, `--search`, `--account`, `--limit`) writes `.hey-axi.json` in the current directory. The home view in that directory (or any subdirectory) then shows that label, box or search instead of the Imbox, and carries `--account` into every suggested command. `--status` shows it, `--remove` deletes it, and re-running with the same values is a no-op.
 - **Minimal fields.** List commands show at most 4 columns (usually an id, the thread id, sender and subject). The defaults per command are in `src/shape.js` and in each command's `--help`. `--fields a,b,c` picks columns, using default aliases (`from`, `subject`, `at`) or dotted paths (`creator.email_address`, `messages.0.summary`); `--fields all` keeps everything. An unknown field exits 2 and lists what's available.
 - **Truncation.** Strings longer than 1000 characters (120 in list cells) are cut and marked `… (truncated, N chars total)`, and a `help` line suggests `--full`.
-- **Aggregates and empty states.** Every list gets a `count`: `N of T total` when HEY reports a total, `N total` when the list is complete, or `N shown; more available` with a `help` line naming `--all`/`--page`/`--limit` when HEY says there's more. An empty list prints ``empty: 0 results for `…` ``, and a command with no data prints `result: no data returned`. Non-JSON success output is wrapped as `ok: true` + `output`.
+- **Aggregates and empty states.** Every list gets a `count`: `N of T total` when HEY reports a total (in `meta` or next to the list), `N total` when HEY says the list is complete, `N shown; more available` with a `help` line naming `--all`/`--page`/`--limit` when HEY says there's more, and `N shown; no more pages reported` when HEY says neither. Lists of plain values and results holding several lists (`2 todos, 1 habits`) are counted too. An empty list prints ``empty: 0 results for `…` ``, and a command with no data prints `result: no data returned`. Non-JSON success output is wrapped as `ok: true` + `output`.
 - **Help lines.** HEY's breadcrumbs (next-command hints) become ``help: Run `hey-axi …` to …``, HEY's hints are rewritten to name `hey-axi`, and `--account`/`--base-url` are carried into them.
 - **Fail loud.** Unknown commands (with "did you mean"), unknown flags, flags with a missing or wrongly typed value (`--limit abc`), missing or extra arguments (`thread read` without an id), and missing required flags (`move` without `--to`) all exit 2 before HEY runs, with the valid usage.
-- **Idempotent mutations.** When HEY reports that a change is already in place (code `conflict`/`already_exists`, or "already …" text) or a delete target is already gone, hey-axi prints `ok: true`, `noop: true` and exits 0.
+- **Idempotent mutations.** For state-setting commands (`seen`, `todo complete`, `label add`, `move`, `screener approve`, `timetrack stop`, name-based `create`s, …), when HEY's failure says that command's own end state already holds ("already seen", "already completed", "already exists", …), and for deletes whose target is already gone, hey-axi prints `ok: true`, `noop: true` and exits 0. The patterns are per command (`END_STATES` in `src/policy.js`); a generic conflict, any read, and any send or reply stays an error.
 - **Complete per-command help.** `hey-axi <command> --help` lists arguments, every flag with its type and default, global flags, and 2-3 examples, with no HEY call.
 - `--full` turns all of this off, and `--json` prints the same shaped result as compact JSON.
 
@@ -59,9 +59,9 @@ hey-axi move --help                        # usage, flags, examples, notes (no H
 | Kind | Commands | Behavior |
 |---|---|---|
 | JSON (default) | almost everything | `hey … --json` → TOON (or compact JSON with `--json`) |
-| Raw output | `--ids-only`, `--count`, `--markdown`, `--html`, `--styled`, `--jq`; `shell-completion generate`; `timetrack export` without `--output` | HEY's output is printed as-is |
+| Raw output | `--ids-only`, `--count`, `--markdown`, `--html`, `--styled`, `--jq`; `shell-completion generate`; `timetrack export` without `--output` | HEY's output is printed as-is once HEY succeeds; on failure only a structured error is printed |
 | Stream | `watch` | NDJSON relayed line by line as events arrive; Ctrl-C/SIGTERM forwarded to HEY |
-| Needs a person | `tui`, `mcp`, the `setup` wizard, `auth login`/`login` without `--token`/`--cookie` | Without a terminal on stdin and stdout, hey-axi refuses (exit 2) and names the non-interactive alternative (e.g. ask the user to run `hey-axi auth login` in their terminal, or pass `--token`). In a real terminal, HEY gets the terminal |
+| Needs a person | `tui`, `mcp`, the `setup` wizard, `auth login`/`login` without `--token`/`--cookie` | Refused (exit 2) unless `--interactive` is passed, terminal or not, with the alternative (e.g. pass `--token`, or ask the user to run `hey-axi auth login --interactive` in their terminal). With `--interactive`, HEY gets the terminal (for `mcp`, its stdio, so an MCP client can register `hey-axi mcp --interactive`); the others also need a real terminal |
 | Captured | other `setup …` commands, `upgrade`, `auth login --token …` | Run with stdin closed, `HEY_NONINTERACTIVE=1` and `EDITOR`/`VISUAL=false`, so nothing can wait for input; output is shaped like any other command |
 
 ### Safety rails
@@ -72,17 +72,17 @@ hey-axi move --help                        # usage, flags, examples, notes (no H
   - If you pass `--draft` or `--dry-run` yourself, hey-axi adds and marks nothing.
 - **Credentials stay out of agent context.** `auth token` needs `--allow-secret` or `HEY_AXI_ALLOW_SECRETS=1`.
 - **Content-first.** `compose`, `reply`, `draft edit`, `journal write`, `contact note set` and `bulk-reply send` must be given their content (`--message`, `--message -` for stdin, or a positional) and are refused (exit 2) otherwise, so HEY never opens an editor.
-- hey-axi's own flags (`--allow-send`, `--allow-secret`, `--fields`, `--full`) are never forwarded to HEY.
+- hey-axi's own flags (`--allow-send`, `--allow-secret`, `--interactive`, `--fields`, `--full`) are never forwarded to HEY. Switches take no value: `--draft=false` or `--allow-send=false` is refused (exit 2) rather than guessed at.
 
 ### Errors and exit codes
 
-Errors are printed as structured TOON on stdout: `ok: false`, `error`, a `kind`, and, when HEY gave them, `code`, `hint` and `meta`, plus a `help` next step. Raw HEY stderr is never passed through: debug noise (ANSI codes, Go stack traces) is dropped, and real warnings go to stderr as `warning: …`.
+Errors are printed as structured TOON on stdout: `ok: false`, `error`, a `kind`, and, when HEY gave them, `code`, `hint` and `meta`, plus a `help` next step. HEY's error text is translated too: only its first meaningful line is kept, stack traces, panics and terminal escapes are dropped, and debug keys (`stack`, `trace`, …) are removed from `meta`. On success HEY's stderr notices (warnings, `next_page: …`) go to stderr without that noise.
 
 | Exit | Meaning |
 |---|---|
 | 0 | success (including no-op mutations and empty results) |
 | 1 | the command failed; `kind` says why: `not_found`, `auth`, `forbidden`, `rate_limited`, `network`, `api_error`, `ambiguous`, `hey_missing`, `command_error` |
-| 2 | usage error (`kind: usage`): unknown command/flag/field, bad flag value, missing or extra arguments, missing required flag or content, blocked send, a person-only command without a terminal, or a usage error reported by HEY |
+| 2 | usage error (`kind: usage`): unknown command/flag/field, bad flag value, missing or extra arguments, missing required flag or content, a switch given a value (`--draft=false`), blocked send, a person-only command without `--interactive`, or a usage error reported by HEY |
 
 ## Agent integrations: session hook or skill
 
@@ -92,7 +92,7 @@ There are two ways to give an agent hey-axi. You only need one:
    - `--project` writes to the current directory's `.claude/`, `.codex/` and `.opencode/` instead.
    - `--status` reports what's installed, and `--remove` removes only hey-axi's entries.
    - Re-running is a no-op, or repairs the path if hey-axi moved. It uses [axi-sdk-js](https://www.npmjs.com/package/axi-sdk-js)'s installer.
-   - The session-end hook records a one-line summary of what the session did (drafts saved, messages sent, other changes; command names and numeric ids only, never message content) under `$XDG_STATE_HOME/hey-axi` (or `$HEY_AXI_STATE_DIR`), and the next home view shows it as `last_session`. Nothing is recorded unless `setup hooks` turned it on, and `setup hooks --remove` turns it off. OpenCode has no exact session-end event, so its plugin records on `session.idle`/`session.deleted`.
+   - The session-end hook records a one-line summary (at most 300 characters) of what the session did (drafts saved, messages sent, other changes; command names and numeric ids only, never message content) under `$XDG_STATE_HOME/hey-axi` (or `$HEY_AXI_STATE_DIR`), and the next home view shows it as `last_session`. Nothing is recorded unless `setup hooks` turned it on, and `setup hooks --remove` turns it off. Entries are tagged with the agent session (`CLAUDE_CODE_SESSION_ID` in Claude Code, `CODEX_THREAD_ID` in Codex, or `HEY_AXI_SESSION_ID`) so concurrent sessions in one directory stay apart. OpenCode has no exact session-end event, so its plugin records on `session.idle`/`session.deleted`.
    - Note that the hook puts Imbox senders and subjects into every session's context.
 2. **Agent skill (broader support, loads on demand):** see below.
 

@@ -40,7 +40,7 @@ test("bare (non-envelope) lists get shaping, a count and a definitive empty stat
   const empty = shapeEnvelope([], { path: "clip list", commandLine: "hey-axi clip list" });
   assert.deepEqual(empty, { count: "0 total", data: [], empty: "0 results for `hey-axi clip list`" });
   const rows = shapeEnvelope([{ id: 1, content: "c".repeat(300), topic_id: 2, created_at: "t", extra: 1 }], { path: "clip list", commandLine: "hey-axi clip list" });
-  assert.equal(rows.count, "1 total");
+  assert.equal(rows.count, "1 shown; no more pages reported");
   assert.deepEqual(Object.keys(rows.data[0]), ["id", "content", "topic_id", "at"]);
   assert.deepEqual(rows.help, ["Run `hey-axi clip list --full` to see complete content"]);
   const nothing = shapeEnvelope({ ok: true, data: null }, { path: "timetrack current", commandLine: "hey-axi timetrack current" });
@@ -49,7 +49,9 @@ test("bare (non-envelope) lists get shaping, a count and a definitive empty stat
 
 test("counts come from meta.total_count, a 'Showing N of T' notice, or HEY's paging signals", async () => {
   const cases = [
-    [{ ok: true, data: [{ id: 1 }] }, /^count: 1 total$/m, null],
+    [{ ok: true, data: [{ id: 1 }] }, /^count: 1 shown; no more pages reported$/m, null],
+    [{ ok: true, data: [{ id: 1 }], meta: { has_more: false } }, /^count: 1 total$/m, null],
+    [{ ok: true, data: { postings: [{ id: 1 }], total_count: 40, next_page: "c2" } }, /^count: 1 of 40 total$/m, /--all` for all 40/],
     [{ ok: true, data: [{ id: 1 }], meta: { total_count: 30 } }, /^count: 1 of 30 total$/m, /--all` for all 30/],
     [{ ok: true, data: [{ id: 1 }], notice: "Showing 1 of 12 results." }, /^count: 1 of 12 total$/m, /--all` for all 12/],
     [{ ok: true, data: [{ id: 1 }], notice: "Showing 25 results. More available; use --all to fetch all." }, /^count: 1 shown; more available$/m, /--all` for all of them/],
@@ -263,4 +265,120 @@ test("every refusal carries kind: usage, and panics or stack traces never reach 
   const { cleanLine } = await import("../src/errors.js");
   assert.equal(cleanLine("panic: runtime error: index out of range\ngoroutine 1 [running]:\nmain.go:12"), "");
   assert.equal(cleanLine("\u001b[31mError: no such label\u001b[0m\n    at x (y.js:1)"), "no such label");
+});
+
+test("only a command's own end state becomes a no-op; other conflicts and sends stay errors", async () => {
+  const cases = [
+    [["thread", "read", "9"], '{"ok":false,"error":"Edit conflict","code":"conflict"}', 1],
+    [["reply", "9", "--message", "hi"], '{"ok":false,"error":"Cannot reply: account is already suspended","code":"forbidden"}', 1],
+    [["seen", "9"], '{"ok":false,"error":"Conflict","code":"conflict"}', 1],
+    [["todo", "complete", "9"], '{"ok":false,"error":"Todo is already completed","code":"conflict"}', 0],
+  ];
+  for (const [args, stderr, code] of cases) {
+    const fake = await makeFakeHey({ exitCode: 1, stdout: "", stderr });
+    const result = await runAxi(args, { fake });
+    assert.equal(result.code, code, `${args.join(" ")}: ${result.stdout}`);
+    if (code) assert.doesNotMatch(result.stdout, /noop/);
+    else assert.match(result.stdout, /noop: true/);
+    await fake.cleanup();
+  }
+});
+
+test("switches take no value, and every letter of stacked shorthands is checked", () => refusedBeforeHey([
+  ["reply", "9", "--message", "hi", "--draft=false"],
+  ["forward", "9", "--to", "a@b.c", "--allow-send=false"],
+  ["box", "view", "imbox", "--all=true"],
+  ["box", "view", "imbox", "-vZ"],
+]));
+
+test("HEY's error envelope is translated too: no stack traces, no debug meta, no raw output on failure", async () => {
+  const stderr = JSON.stringify({ ok: false, error: "Error: boom\n    at handler (server.js:10)\ngoroutine 7 [running]:", code: "api_error", meta: { request_id: "r1", stack: "main.go:12\nmain.go:40", detail: "line one\nmain.go:9" } });
+  const fake = await makeFakeHey({ exitCode: 7, stdout: "", stderr });
+  const result = await runAxi(["thread", "read", "9"], { fake });
+  assert.equal(result.code, 1);
+  assert.match(result.stdout, /^error: boom$/m);
+  assert.match(result.stdout, /request_id: r1/);
+  assert.doesNotMatch(result.stdout, /goroutine|server\.js|main\.go|stack/);
+  await fake.cleanup();
+
+  const partial = await makeFakeHeyScript(`printf '101\\n102\\n'; echo "panic: lost connection" >&2; exit 6`);
+  const raw = await runAxi(["box", "view", "imbox", "--ids-only"], { fake: partial });
+  assert.equal(raw.code, 1);
+  assert.match(raw.stdout, /^ok: false$/m);
+  assert.match(raw.stdout, /kind: network/);
+  assert.doesNotMatch(raw.stdout, /101|panic/);
+  await partial.cleanup();
+});
+
+test("plain-value lists and multi-list containers get counts, empty states and minimal fields", () => {
+  const plain = shapeEnvelope({ ok: true, data: ["a", "b"] }, { path: "label list", commandLine: "hey-axi x" });
+  assert.equal(plain.count, "2 shown; no more pages reported");
+  const none = shapeEnvelope({ ok: true, data: [] }, { path: "label list", commandLine: "hey-axi x" });
+  assert.equal(none.empty, "0 results for `hey-axi x`");
+  const row = { id: 1, name: "n", title: "t", status: "s", extra1: 1, extra2: 2 };
+  const multi = shapeEnvelope({ ok: true, data: { todos: [row, row], habits: [row] } }, { path: "x", commandLine: "hey-axi x" });
+  assert.equal(multi.count, "2 todos, 1 habits");
+  assert.ok(Object.keys(multi.data.todos[0]).length <= MAX_LIST_FIELDS);
+  const empty = shapeEnvelope({ ok: true, data: { todos: [], habits: [] } }, { path: "x", commandLine: "hey-axi x" });
+  assert.equal(empty.empty, "0 results for `hey-axi x`");
+});
+
+test("string breadcrumbs, notices and error help carry --account too", async () => {
+  const envelope = { ok: true, data: [{ id: 1 }], breadcrumbs: ["Run `hey thread read <topic_id>` to read one"] };
+  const fake = await makeFakeHey({ stdout: JSON.stringify(envelope) });
+  const result = await runAxi(["box", "view", "imbox", "--account", "5"], { fake });
+  assert.match(result.stdout, /`hey-axi thread read <topic_id> --account 5`/);
+  await fake.cleanup();
+  const missing = await makeFakeHey({ exitCode: 2, stdout: "", stderr: '{"ok":false,"error":"not found","code":"not_found"}' });
+  const failed = await runAxi(["thread", "read", "9", "--account", "5"], { fake: missing });
+  assert.match(failed.stdout, /`hey-axi box view imbox --account 5`/);
+  await missing.cleanup();
+});
+
+test("person-only commands never run without --interactive, terminal or not", async () => {
+  const { userOnly, runMode } = await import("../src/policy.js");
+  const tty = { stdin: true, stdout: true };
+  assert.match(userOnly("tui", new Set(), tty).error, /needs the user/);
+  assert.equal(userOnly("tui", new Set(["--interactive"]), tty), null);
+  assert.match(userOnly("tui", new Set(["--interactive"]), { stdin: false, stdout: false }).reason, /needs a terminal/);
+  assert.equal(userOnly("mcp", new Set(["--interactive"]), { stdin: false, stdout: false }), null);
+  assert.equal(userOnly("auth login", new Set(["--token"]), { stdin: false, stdout: false }), null);
+  assert.match(userOnly("box list", new Set(["--interactive"]), tty).error, /does not apply/);
+  assert.equal(runMode("tui", new Set()), "json");
+  assert.equal(runMode("tui", new Set(["--interactive"])), "interactive");
+});
+
+test("session capture keeps concurrent sessions apart and the summary short", async () => {
+  const state = await mkdtemp(join(tmpdir(), "hey-axi-state-"));
+  const saved = { ...process.env };
+  process.env.HEY_AXI_STATE_DIR = state;
+  try {
+    const activity = await import("../src/activity.js");
+    activity.enableCapture();
+    process.env.HEY_AXI_SESSION_ID = "a";
+    activity.recordActivity({ path: "seen", positionals: ["1"], scopeDir: "/p" });
+    process.env.HEY_AXI_SESSION_ID = "b";
+    for (let i = 0; i < 60; i += 1) activity.recordActivity({ path: `label add ${i}`, positionals: [String(i)], scopeDir: "/p" });
+    assert.deepEqual(activity.endSession("/p", "a"), { captured: 1 });
+    assert.match(activity.lastSession("/p").line, /seen ×1 \[1\]$/);
+    assert.deepEqual(activity.endSession("/p", "b"), { captured: 60 });
+    assert.ok(activity.lastSession("/p").line.length < 400);
+  } finally {
+    process.env = saved;
+    await rm(state, { recursive: true, force: true });
+  }
+});
+
+test("the home view's bin is absolute with ~ for the home directory; long text output offers --full", async () => {
+  const { collapse } = await import("../src/home-path.js");
+  assert.equal(collapse("src/hey-axi.js", "/nowhere"), resolve("src/hey-axi.js"));
+  assert.equal(collapse("/home/me/bin/hey-axi", "/home/me"), "~/bin/hey-axi");
+  assert.equal(collapse("/home/meg/bin/hey-axi", "/home/me"), "/home/meg/bin/hey-axi");
+  const fake = await makeFakeHey({ stdout: "x".repeat(1500) });
+  const result = await runAxi(["config", "show"], { fake });
+  assert.match(result.stdout, /truncated, 1500 chars total/);
+  assert.match(result.stdout, /Run `hey-axi config show --full`/);
+  const full = await runAxi(["config", "show", "--full"], { fake });
+  assert.match(full.stdout, /x{1500}/);
+  await fake.cleanup();
 });

@@ -150,7 +150,7 @@ test("translateFailure keeps HEY's envelope, maps exit codes to AXI's, and trans
   // Real HEY 1.7.0 output: a keyring warning line, then the indented envelope. The warning goes to stderr.
   assert.deepEqual(
     translateFailure({ status: 3, stdout: "", stderr: 'warning: system keyring unavailable\n{\n  "ok": false,\n  "error": "Not logged in",\n  "code": "auth",\n  "hint": "Run: hey auth login"\n}\n' }),
-    { failure: { ok: false, error: "Not logged in", kind: "auth", code: "auth", hint: "Run: hey-axi auth login", help: "Ask the user to run `hey auth login` in their terminal, then `hey-axi auth status`" }, exitCode: 1, warnings: ["warning: system keyring unavailable"] },
+    { failure: { ok: false, error: "Not logged in", kind: "auth", code: "auth", hint: "Run: hey-axi auth login", help: "Run `hey-axi auth login --token <token>` if you have a token; otherwise ask the user to run `hey-axi auth login --interactive` in their terminal. Check with `hey-axi auth status`" }, exitCode: 1, warnings: ["warning: system keyring unavailable"] },
   );
   // Real HEY 1.7.0 usage error: exit 2, HEY's generic hint dropped, help names the command.
   assert.deepEqual(

@@ -28,7 +28,7 @@ function note(path) {
   if (refusal?.error === "send blocked") return "refused unless `--allow-send`";
   if (refusal?.error === "secret output blocked") return "refused unless `--allow-secret`";
   const mode = runMode(path, none);
-  if (mode === "interactive") return "needs the user at a terminal (refused in an agent shell)";
+  if (mode === "interactive") return "needs a person: refused unless --interactive";
   if (mode === "stream") return "streams NDJSON";
   if (mode === "raw") return path === "timetrack export" ? "raw CSV unless `--output <file>`" : "raw output";
   const fields = LIST_FIELDS[path] || DETAIL_FIELDS[path];

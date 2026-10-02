@@ -66,7 +66,7 @@ test("no arguments: home view with identity, compact Imbox and next commands", a
   assert.match(result.stdout, /^bin: .*hey-axi\.js$/m);
   assert.match(result.stdout, /^description: /m);
   assert.match(result.stdout, /^scope: "?account-wide Imbox \(no \.hey-axi\.json here/m);
-  assert.match(result.stdout, /^count: 2 total$/m);
+  assert.match(result.stdout, /^count: 2 (total|shown; no more pages reported)$/m);
   assert.match(result.stdout, /threads\[2\]\{id,topic_id,from,subject\}:/);
   assert.match(result.stdout, /1,2,Sender 1,Subject 1\n/);
   assert.doesNotMatch(result.stdout, /app_url|avatar|xxxxx/);
@@ -99,7 +99,7 @@ test("lists default to a few fields; --fields picks, --fields all and --full kee
   const fake = await makeFakeHey({ stdout: imbox([posting(1)]) });
   const plain = await runAxi(["box", "view", "imbox"], { fake });
   assert.match(plain.stdout, /postings\[1\]\{id,topic_id,from,subject\}:/);
-  assert.match(plain.stdout, /^count: 1 total$/m);
+  assert.match(plain.stdout, /^count: 1 shown; no more pages reported$/m);
   assert.doesNotMatch(plain.stdout, /app_url|avatar_url|\nurl:/);
   assert.match(plain.stdout, /help\[1\]: Run `hey-axi thread read <thread-id>` to read an email thread/);
 

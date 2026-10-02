@@ -134,15 +134,19 @@ export function truncateDeep(value, limit, onTruncate, list = false) {
 }
 
 const isObjectList = (value) => Array.isArray(value) && value.every((item) => item && typeof item === "object" && !Array.isArray(item));
-const DROP_CONTAINER_KEY = (key) => /(^|_)url$|^signed_stream_name$/.test(key);
+// URLs and paging fields (summarized by `count` and the "see the rest" help) are left out.
+const DROP_CONTAINER_KEY = (key) => /(^|_)url$|^signed_stream_name$|^(total_count|next_page|next_cursor|has_more)$/.test(key);
 
-// Find the collection in HEY's `data`: the array itself, or the one array of objects
-// inside a container object (e.g. a box with its postings).
+// Find the collection in HEY's `data`: the array itself (of objects or of plain
+// values), the one array of objects inside a container object (e.g. a box with its
+// postings), or, when a container holds several, all of them (`lists`).
 export function findList(data) {
   if (isObjectList(data)) return { list: data };
-  if (data && typeof data === "object" && !Array.isArray(data)) {
+  if (Array.isArray(data)) return { list: data, primitive: true };
+  if (data && typeof data === "object") {
     const keys = Object.keys(data).filter((key) => isObjectList(data[key]));
     if (keys.length === 1) return { list: data[keys[0]], key: keys[0], container: data };
+    if (keys.length > 1) return { lists: keys.map((key) => ({ key, list: data[key] })), container: data, list: keys.flatMap((key) => data[key]) };
   }
   return null;
 }
@@ -176,6 +180,24 @@ export function shapeData(data, { path, fields = null }) {
 
   if (!found) {
     return { data: truncateDeep(data, DETAIL_TEXT_LIMIT, mark), truncated, empty: false };
+  }
+  if (found.primitive) {
+    return { data: truncateDeep(found.list, LIST_TEXT_LIMIT, mark, true), truncated, empty: found.list.length === 0 };
+  }
+  if (found.lists) {
+    // Several collections side by side: each gets the minimal schema of its own items.
+    const shaped = {};
+    for (const [name, value] of Object.entries(found.container)) {
+      const entry = found.lists.find((item) => item.key === name);
+      if (entry) {
+        const specs = fields === "all" ? null : Array.isArray(fields) && fields.length ? fields : heuristicFields(entry.list);
+        const rows = specs ? project(entry.list, specs).rows : entry.list;
+        shaped[name] = truncateDeep(rows, specs ? LIST_TEXT_LIMIT : DETAIL_TEXT_LIMIT, mark, Boolean(specs));
+      } else if (fields === "all" || (!DROP_CONTAINER_KEY(name) && (value === null || typeof value !== "object"))) {
+        shaped[name] = truncateDeep(value, DETAIL_TEXT_LIMIT, mark);
+      }
+    }
+    return { data: shaped, truncated, empty: found.list.length === 0 };
   }
 
   const { list, key, container } = found;
@@ -218,19 +240,28 @@ const TOTAL_NOTICE = /\b\d[\d,]* of (\d[\d,]*)\b/;
 // What HEY told us about the size of a list: { shown, total?, more, next? }. Sources, in
 // order: meta.total_count, a "Showing N of T" notice, and HEY's paging signals
 // (next_page, has_more, a "more available" notice). With none of them the list is complete.
-export function listSize(envelope, shown) {
-  const meta = envelope && typeof envelope.meta === "object" && envelope.meta ? envelope.meta : {};
+export function listSize(envelope, shown, container = null) {
+  // HEY puts paging in meta, or (box and other postings listings) next to the list in data.
+  const ownMeta = envelope && typeof envelope.meta === "object" && envelope.meta ? envelope.meta : {};
+  const side = container && typeof container === "object" ? Object.fromEntries(["total_count", "next_page", "next_cursor", "has_more"].filter((key) => key in container).map((key) => [key, container[key]])) : {};
+  const meta = { ...side, ...ownMeta };
+  if (typeof meta.total_count === "number" && meta.total_count < shown) delete meta.total_count;
   const next = meta.next_page ?? meta.next_cursor ?? null;
   const noticed = String(envelope?.notice || "").match(TOTAL_NOTICE);
   const total = typeof meta.total_count === "number" ? meta.total_count : noticed ? Number(noticed[1].replace(/,/g, "")) : undefined;
   const more = total !== undefined ? total > shown : Boolean(next || meta.has_more || MORE_NOTICE.test(envelope?.notice || ""));
-  return { shown, total, more, next };
+  // Complete only when HEY says so: a total, has_more: false, or a null next_page.
+  const complete = total !== undefined ? !more : !more && (meta.has_more === false || ("next_page" in meta && meta.next_page === null) || ("next_cursor" in meta && meta.next_cursor === null));
+  return { shown, total, more, next, complete };
 }
 
-// `count: 25 of 847 total` / `count: 8 total` / `count: 25 shown; more available`.
-export function countLine({ shown, total, more }) {
+// `count: 25 of 847 total` / `count: 8 total` / `count: 25 shown; more available` /
+// `count: 25 shown; no more pages reported` (no total and no explicit end signal:
+// hey-axi does not claim the list is complete).
+export function countLine({ shown, total, more, complete, all = false }) {
   if (total !== undefined) return `${shown} of ${total} total`;
-  return more ? `${shown} shown; more available` : `${shown} total`;
+  if (more) return `${shown} shown; more available`;
+  return complete || all || shown === 0 ? `${shown} total` : `${shown} shown; no more pages reported`;
 }
 
 // Append the invocation's selectors (`--account 2`) to a suggested command, unless the
@@ -243,8 +274,16 @@ export function withSelectors(command, carry = []) {
   return extra.length ? `${command} ${extra.join(" ")}` : command;
 }
 
+// Carry the selectors into every `hey-axi …` command quoted inside a text (a hint, a
+// string breadcrumb, an error's help line).
+export function carrySelectors(text, carry = []) {
+  if (typeof text !== "string" || !carry.length) return text;
+  if (/^hey-axi \S/.test(text) && !/[`'"]/.test(text)) return withSelectors(text, carry);
+  return text.replace(/([`'"])(hey-axi [^`'"]+?)\1/g, (match, quote, command) => `${quote}${withSelectors(command, carry)}${quote}`);
+}
+
 function breadcrumbHelp(crumb, carry) {
-  if (typeof crumb === "string") return heyToAxi(crumb);
+  if (typeof crumb === "string") return carrySelectors(heyToAxi(crumb), carry);
   if (!crumb || typeof crumb !== "object" || !crumb.command) return null;
   const description = crumb.description ? ` to ${crumb.description.charAt(0).toLowerCase()}${crumb.description.slice(1)}` : "";
   return `Run \`${withSelectors(heyToAxi(crumb.command), carry)}\`${description}`;
@@ -266,7 +305,7 @@ export function moreHelp(size, { commandLine, pageFlags = [] }) {
 //   quiet:     drop HEY's summary, notice, breadcrumbs and meta; keep hey-axi's count,
 //              empty state and --full/--all hints
 // Returns the object to print.
-export function shapeEnvelope(envelope, { path, fields = null, commandLine, carry = [], pageFlags = [], quiet = false }) {
+export function shapeEnvelope(envelope, { path, fields = null, commandLine, carry = [], pageFlags = [], quiet = false, all = false }) {
   const enveloped = envelope && typeof envelope === "object" && !Array.isArray(envelope) && "data" in envelope;
   const body = enveloped ? envelope.data : envelope;
   const { data, truncated, empty } = shapeData(body, { path, fields });
@@ -274,8 +313,9 @@ export function shapeEnvelope(envelope, { path, fields = null, commandLine, carr
   const out = {};
   if (enveloped && envelope.ok !== undefined) out.ok = envelope.ok;
   if (enveloped && envelope.summary && !quiet) out.summary = envelope.summary;
-  const size = found ? listSize(enveloped ? envelope : null, found.list.length) : null;
-  if (size) out.count = countLine(size);
+  const size = found && !found.lists ? listSize(enveloped ? envelope : null, found.list.length, found.container) : null;
+  if (size) out.count = countLine({ ...size, all });
+  else if (found?.lists) out.count = found.lists.map(({ key, list }) => `${list.length} ${key}`).join(", ");
   const nothing = body === null || body === undefined || (typeof body === "object" && !Array.isArray(body) && Object.keys(body).length === 0);
   if (!enveloped && !found && !truncated && !nothing) return data;
   out.data = data;
@@ -287,7 +327,7 @@ export function shapeEnvelope(envelope, { path, fields = null, commandLine, carr
       if (["ok", "data", "summary", "meta", "breadcrumbs", "notice"].includes(key)) continue;
       out[key] = value;
     }
-    if (envelope.notice) out.notice = heyToAxi(envelope.notice);
+    if (envelope.notice) out.notice = carrySelectors(heyToAxi(envelope.notice), carry);
     help.push(...(Array.isArray(envelope.breadcrumbs) ? envelope.breadcrumbs : []).map((crumb) => breadcrumbHelp(crumb, carry)).filter(Boolean));
   }
   const more = size && moreHelp(size, { commandLine, pageFlags });

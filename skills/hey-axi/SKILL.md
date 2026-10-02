@@ -33,7 +33,7 @@ Next steps the home view suggests:
 
 Problems:
 - `status: HEY CLI not found` (`kind: hey_missing`): install `hey`, or set `HEY_BIN=/path/to/hey` (cron/launchd jobs usually need `HEY_BIN=$HOME/.local/bin/hey`).
-- `status: not signed in` (`kind: auth`): ask the **user** to run `npx -y hey-axi auth login` in their own terminal. It opens a browser, so it is refused in an agent shell. Don't try to sign in for them, and never print tokens (`auth token` is blocked unless `--allow-secret` is passed).
+- `status: not signed in` (`kind: auth`): ask the **user** to run `npx -y hey-axi auth login --interactive` in their own terminal. It opens a browser, so without `--interactive` it is refused (exit 2); `tui`, `mcp` and the `setup` wizard work the same way. Never pass `--interactive` yourself. Don't try to sign in for them, and never print tokens (`auth token` is blocked unless `--allow-secret` is passed).
 - `npx -y hey-axi doctor` finds other login and config problems. `npx -y hey-axi version` shows both versions.
 
 ## 2. Read and triage
@@ -85,7 +85,7 @@ Output includes HEY's breadcrumb hints as `help` lines (with your `--account` ca
 
 - **Lists show at most four columns** (for example `box view`: `id, topic_id, from, subject`). Pick others with `--fields id,subject,seen,at,creator.email_address`; aliases and dotted paths both work. `--fields all` keeps every field. An unknown field fails with exit 2 and lists the ones available. `npx -y hey-axi <command> --help` shows the defaults.
 - **Long text is cut** at 1000 characters in detail views (thread bodies, drafts) and 120 in list cells, marked `… (truncated, N chars total)`. The output then includes a `Run … --full` help line. Use `--full` only when you need the whole text.
-- **Every list has a `count`**: `N of T total`, `N total` (complete), or `N shown; more available` (then a help line says how to get the rest). Empty lists say `empty: 0 results for …`.
+- **Every list has a `count`**: `N of T total`, `N total` (HEY said the list is complete), `N shown; more available` (then a help line says how to get the rest), or `N shown; no more pages reported` (HEY gave no total and no further page). Empty lists say `empty: 0 results for …`.
 
 | Want | Use |
 |---|---|
@@ -117,7 +117,7 @@ Errors are TOON on stdout: `ok: false`, `error`, `kind` (`usage`, `not_found`, `
 ```bash
 # HEY CLI (macOS/Linux)
 curl -fsSL https://hey.com/install-cli | bash        # or: brew install --cask basecamp/tap/hey
-hey auth login                                      # the user runs this once, interactively
+npx -y hey-axi auth login --interactive            # the user runs this once, in their own terminal
 
 # hey-axi (optional: every example here also works as npx -y hey-axi …)
 npm i -g hey-axi                                    # puts `hey-axi` on PATH

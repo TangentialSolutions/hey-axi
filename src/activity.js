@@ -46,6 +46,15 @@ export function disableCapture() {
   return had;
 }
 
+// The agent session a command ran in, when the harness says: Claude Code sets
+// CLAUDE_CODE_SESSION_ID and Codex CODEX_THREAD_ID in the commands they run, matching the
+// session_id their session-end hooks receive. HEY_AXI_SESSION_ID overrides both.
+export function sessionIdFrom(env = process.env) {
+  return env.HEY_AXI_SESSION_ID || env.CLAUDE_CODE_SESSION_ID || env.CODEX_THREAD_ID || env.CODEX_SESSION_ID || env.OPENCODE_SESSION_ID || "";
+}
+
+const SUMMARY_LIMIT = 300;
+
 const scopeKey = (scopeDir) => createHash("sha256").update(scopeDir).digest("hex").slice(0, 16);
 
 const READ_WORDS = new Set(["list", "view", "show", "read", "status", "history", "categories", "current", "filters", "preview", "senders", "token", "day", "week", "trusted-locals"]);
@@ -67,7 +76,8 @@ export function recordActivity({ path, positionals = [], staged = false, sent = 
     if (!kind) return;
     const ids = positionals.filter((word) => /^\d+$/.test(word)).slice(0, 20);
     const f = files();
-    appendFileSync(f.journal, `${JSON.stringify({ at: new Date().toISOString(), scope: scopeKey(scopeDir), path, kind, ids })}\n`);
+    const session = sessionIdFrom();
+    appendFileSync(f.journal, `${JSON.stringify({ at: new Date().toISOString(), scope: scopeKey(scopeDir), ...(session ? { session } : {}), path, kind, ids })}\n`);
   } catch {
     // capture is best-effort
   }
@@ -93,20 +103,26 @@ function summarize(entries) {
     group.ids.push(...entry.ids);
     groups.set(key, group);
   }
-  return [...groups].map(([key, { count, ids }]) => {
+  const line = [...groups].map(([key, { count, ids }]) => {
     const shown = [...new Set(ids)].slice(0, 5);
     return `${key} ×${count}${shown.length ? ` [${shown.join(", ")}${ids.length > shown.length ? ", …" : ""}]` : ""}`;
   }).join("; ");
+  // Session-start context loads every session: keep it to one short line.
+  return line.length > SUMMARY_LIMIT ? `${line.slice(0, SUMMARY_LIMIT)}… (${groups.size} kinds of action)` : line;
 }
 
-// The session-end hook: fold this scope's journal entries into its last-session summary.
-// A session with no hey-axi activity leaves the previous summary in place.
-export function endSession(scopeDir) {
+// The session-end hook: fold this session's journal entries (in this scope) into the
+// scope's last-session summary. With a session id, only that session's entries (and
+// entries whose session is unknown) are taken, so concurrent sessions in the same
+// directory don't merge. A session with no hey-axi activity leaves the previous
+// summary in place.
+export function endSession(scopeDir, sessionId = "") {
   const f = files();
   if (!existsSync(f.enabled)) return { captured: 0 };
   const key = scopeKey(scopeDir);
   const entries = readJournal(f);
-  const mine = entries.filter((entry) => entry.scope === key);
+  const isMine = (entry) => entry.scope === key && (!sessionId || !entry.session || entry.session === sessionId);
+  const mine = entries.filter(isMine);
   if (!mine.length) return { captured: 0 };
   mkdirSync(f.sessions, { recursive: true });
   const summary = {
@@ -116,7 +132,7 @@ export function endSession(scopeDir) {
     drafts: mine.filter((entry) => entry.kind === "draft").length,
   };
   writeFileSync(join(f.sessions, `${key}.json`), `${JSON.stringify(summary)}\n`);
-  const rest = entries.filter((entry) => entry.scope !== key);
+  const rest = entries.filter((entry) => !isMine(entry));
   writeFileSync(f.journal, rest.map((entry) => `${JSON.stringify(entry)}\n`).join(""));
   return { captured: mine.length };
 }

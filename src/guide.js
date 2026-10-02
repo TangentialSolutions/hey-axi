@@ -40,7 +40,7 @@ export const SETUP_HELP = {
     "If it is installed outside PATH, set HEY_BIN=/path/to/hey",
   ],
   auth: [
-    "Ask the user to run `hey-axi auth login` in their own terminal (it opens a browser)",
+    "Ask the user to run `hey-axi auth login --interactive` in their own terminal (it opens a browser), or run `hey-axi auth login --token <token>`",
     "Run `hey-axi auth status` to check afterwards",
   ],
   other: ["Run `hey-axi doctor` to find login and configuration problems"],

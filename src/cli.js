@@ -10,11 +10,11 @@ import { readFileSync } from "node:fs";
 import { createInterface } from "node:readline";
 import { encode } from "@toon-format/toon";
 import { closestNames, loadBundledManifest, resolveCommand } from "./router.js";
-import { STDIN_VALUE_FLAGS, checkPolicy, contentProblem, noopFor, runMode, sendCommands, sendStaging } from "./policy.js";
-import { translateFailure, cleanLine } from "./errors.js";
+import { STDIN_VALUE_FLAGS, checkPolicy, contentProblem, noopFor, runMode, sendCommands, sendStaging, userOnlyPaths } from "./policy.js";
+import { translateFailure, cleanLine, warningLines } from "./errors.js";
 import { RAW_OUTPUT_FLAGS, flagLabel, flagValue, hasAny, nodeValueFlags, scanArgs, stripAxiFlags, validateFlags, valueFlagSet } from "./args.js";
 import { argumentHelp, checkArity, oneOfHelp } from "./arity.js";
-import { FieldError, LIST_FIELDS, DETAIL_FIELDS, shapeEnvelope } from "./shape.js";
+import { FieldError, LIST_FIELDS, DETAIL_FIELDS, carrySelectors, shapeEnvelope } from "./shape.js";
 import { homeView } from "./home.js";
 import { DESCRIPTION } from "./guide.js";
 import { heyToAxi, shellWord } from "./text.js";
@@ -29,7 +29,23 @@ const HEY = process.env.HEY_BIN || "hey";
 const QUIET_ENV = { HEY_NONINTERACTIVE: "1", EDITOR: "false", VISUAL: "false" };
 const heyEnv = () => ({ ...process.env, ...QUIET_ENV });
 
-const ALWAYS_ALLOWED = "--help, --json, --quiet, --fields, --full, --account, --ids-only, --count, --markdown, --html, --styled, --jq, --stats, --verbose, --base-url, --allow-send, --allow-secret";
+const ALWAYS_ALLOWED = "--help, --json, --quiet, --fields, --full, --account, --ids-only, --count, --markdown, --html, --styled, --jq, --stats, --verbose, --base-url, --allow-send, --allow-secret, --interactive";
+
+const GLOBAL_HELP = [
+  "--account <id|all>  linked account (default: HEY's default account)",
+  "--base-url <url>  HEY server (default: HEY's configured server)",
+  "--json  the same shaped result as compact JSON (default false: TOON)",
+  "--quiet  drop HEY's summary/notice/breadcrumbs/meta, keep data, count and hints (default false)",
+  "--fields <a,b|all>  columns to show (default: the default fields)",
+  "--full  HEY's complete, untruncated result (default false)",
+  "--ids-only, --count, --markdown, --html, --styled, --jq <expr>  HEY's own output format, printed as-is (default: none)",
+  "--stats, --verbose  request stats / debug logging on stderr (default false)",
+];
+const OWN_FLAG_HELP = [
+  [(path) => sendCommands().includes(path), "--allow-send  really send (default false: saved as a draft, or refused when there is no draft mode)"],
+  [(path) => path === "auth token", "--allow-secret  print the token (default false: refused)"],
+  [(path) => userOnlyPaths().includes(path), "--interactive  hand HEY the terminal; for a person at a terminal (default false: refused)"],
+];
 
 function usage(manifest) {
   const lines = [
@@ -56,6 +72,7 @@ function usage(manifest) {
     "  --fields a,b,c        Choose list columns (aliases from the defaults or dotted paths); --fields all keeps every field",
     "  --full                HEY's complete, untruncated result (no field selection, no truncation)",
     "  --account <id|all>    Linked account (default: HEY's default account); also --base-url <url>, --stats, --verbose",
+    "  --interactive         Hand HEY the terminal for tui, setup, browser auth login and mcp (refused without it)",
     "  --help                Show this help (or `hey-axi <command> --help`)",
     "  -v, -V, --version     Print hey-axi's version (`hey-axi version` also shows HEY's)",
     "",
@@ -92,7 +109,9 @@ export function commandHelp(node) {
       lines.push(`  ${flagLabel(flag)}  ${extra}`);
     }
   }
-  lines.push("", "global: --account <id|all> (default: HEY's default account), --json, --quiet, --fields <a,b|all>, --full; see `hey-axi --help`");
+  lines.push("", "global flags (allowed on every command):", ...GLOBAL_HELP.map((line) => `  ${line}`));
+  const own = OWN_FLAG_HELP.filter(([applies]) => applies(node.path)).map(([, line]) => `  ${line}`);
+  if (own.length) lines.push(...own);
   const fields = LIST_FIELDS[node.path] || DETAIL_FIELDS[node.path];
   if (fields) {
     lines.push("", `default fields: ${fields.map((spec) => spec.split("=")[0]).join(", ")}  (--fields a,b,c to choose, --fields all for every field, --full for HEY's untouched result)`);
@@ -100,8 +119,8 @@ export function commandHelp(node) {
   lines.push("", "examples:");
   for (const example of examplesFor(node)) lines.push(`  ${example}`);
   if (node.notes) lines.push("", `notes: ${heyToAxi(node.notes)}`);
-  const mode = runMode(node.path, new Set());
-  if (mode === "interactive") lines.push("", "needs a person at a terminal: refused (exit 2) when stdin/stdout aren't a terminal");
+  const mode = runMode(node.path, new Set(["--interactive"]));
+  if (mode === "interactive") lines.push("", "needs a person (or, for mcp, an MCP client): refused (exit 2) unless --interactive is passed; then HEY gets the terminal");
   if (mode === "stream") lines.push("", "streams HEY's NDJSON line by line until it exits or is interrupted");
   if (mode === "raw") lines.push("", "prints HEY's output as-is (not JSON)");
   const gate = checkPolicy(node.path, new Set(), {}, { stdin: true, stdout: true });
@@ -114,6 +133,11 @@ export function commandHelp(node) {
 
 function output(value) {
   process.stdout.write(`${encode(value)}\n`);
+}
+
+// Only HEY's real warnings reach stderr; debug and progress noise is dropped.
+function writeWarnings(text) {
+  for (const line of warningLines(text)) process.stderr.write(`${line}\n`);
 }
 
 function fail(value, code) {
@@ -165,16 +189,19 @@ function runHeyInteractive(args) {
   });
 }
 
-// Raw output (a script, a CSV, --ids-only ...): stdout goes straight through; stderr is
-// captured so a failure can be reported as a structured error on stdout.
+// Raw output (a script, a CSV, --ids-only ...): stdout is held until HEY exits, then
+// printed untouched on success. On failure nothing of HEY's is printed; the failure is
+// reported as a structured error on stdout instead.
 function runHeyRaw(args) {
   return new Promise((resolve) => {
-    const child = spawn(HEY, args, { stdio: ["ignore", "inherit", "pipe"], env: heyEnv() });
+    const child = spawn(HEY, args, { stdio: ["ignore", "pipe", "pipe"], env: heyEnv() });
     const release = forwardSignals(child);
+    const out = [];
     let stderr = "";
+    child.stdout.on("data", (chunk) => { out.push(chunk); });
     child.stderr.on("data", (chunk) => { stderr += chunk; });
     child.on("error", (error) => { release(); resolve({ status: 127, error: spawnErrorMessage(error) }); });
-    child.on("close", (status, signal) => { release(); resolve({ status: status ?? 0, signal, stderr, stdout: "" }); });
+    child.on("close", (status, signal) => { release(); resolve({ status: status ?? 0, signal, stderr, stdout: Buffer.concat(out) }); });
   });
 }
 
@@ -233,7 +260,9 @@ if (args[0] === "hook" && args[1] === "session-end" && args.length === 2) {
   const { findScope } = await import("./scope.js");
   const input = readHookInput();
   const cwd = typeof input.cwd === "string" && input.cwd ? input.cwd : process.cwd();
-  output(endSession(scopeDirFor(cwd, findScope)));
+  const { sessionIdFrom } = await import("./activity.js");
+  const session = [input.session_id, input.sessionID, input.sessionId].find((value) => typeof value === "string" && value) || sessionIdFrom();
+  output(endSession(scopeDirFor(cwd, findScope), session));
   process.exit(0);
 }
 if (args[0] === "setup" && args[1] === "scope") {
@@ -376,6 +405,11 @@ function markStaged(parsed) {
 
 function reportFailure(result) {
   const { failure, exitCode, warnings } = translateFailure(result, { path });
+  // The fix-it commands keep the invocation's --account/--base-url.
+  for (const key of ["hint", "help"]) {
+    if (Array.isArray(failure[key])) failure[key] = failure[key].map((line) => carrySelectors(line, carry));
+    else if (failure[key]) failure[key] = carrySelectors(failure[key], carry);
+  }
   for (const line of warnings) process.stderr.write(`${line}\n`);
   const noop = exitCode !== 0 && noopFor(path, failure, positionals);
   if (noop) {
@@ -390,7 +424,7 @@ function reportFailure(result) {
 
 const mode = runMode(path, flags);
 if (mode === "interactive") {
-  // Only reached with a terminal on stdin and stdout: a person, not an agent.
+  // Only reached with the explicit --interactive opt-in (and a terminal, except for mcp).
   const result = await runHeyInteractive(heyArgs);
   if (result.error) reportFailure(result);
   process.exit(result.status === 0 ? 0 : 1);
@@ -399,9 +433,11 @@ if (raw || mode !== "json") {
   // stream: watch; raw: scripts, CSV, and --ids-only/--count/--markdown/--html/--styled/--jq.
   const result = mode === "stream" ? await runHeyStream(heyArgs) : await runHeyRaw(heyArgs);
   // A watch stopped by a signal ended the way the agent asked: not an error.
-  if (result.signal || result.status === 130 || result.status === 143) process.exit(0);
-  if (result.error || result.status !== 0) reportFailure(result);
-  if (result.stderr) process.stderr.write(result.stderr);
+  if (mode === "stream" && (result.signal || result.status === 130 || result.status === 143)) process.exit(0);
+  // HEY's stdout here is data, not an error message: it never goes into the failure.
+  if (result.error || result.status !== 0) reportFailure({ ...result, stdout: "" });
+  writeWarnings(result.stderr);
+  if (mode !== "stream" && result.stdout?.length) process.stdout.write(result.stdout);
   process.exit(0);
 }
 
@@ -429,20 +465,24 @@ if (path === "version") {
 
 const result = await runHey(command, ["--json"]);
 if (result.status !== 0) reportFailure(result);
-if (result.stderr) process.stderr.write(result.stderr);
+writeWarnings(result.stderr);
 
 let parsed;
+let plainText = false;
 try {
   parsed = JSON.parse(result.stdout);
 } catch {
+  plainText = true;
   // HEY succeeded but printed text: show it, cleaned and cut, rather than fail.
   const text = String(result.stdout || "").trim();
-  parsed = text ? { ok: true, output: text.length > 1000 ? `${text.slice(0, 1000)}… (truncated, ${text.length} chars total)` : text } : { ok: true };
+  if (!text) parsed = { ok: true, result: "done (HEY printed nothing)" };
+  else if (full || text.length <= 1000) parsed = { ok: true, output: text };
+  else parsed = { ok: true, output: `${text.slice(0, 1000)}… (truncated, ${text.length} chars total)`, help: [`Run \`${commandLine} --full\` to see the complete output`] };
 }
 
 let shaped;
 try {
-  shaped = full ? parsed : shapeEnvelope(parsed, { path, fields, commandLine, carry, pageFlags, quiet });
+  shaped = full || plainText ? parsed : shapeEnvelope(parsed, { path, fields, commandLine, carry, pageFlags, quiet, all: flags.has("--all") });
 } catch (error) {
   if (!(error instanceof FieldError)) throw error;
   fail({

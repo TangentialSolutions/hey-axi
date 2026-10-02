@@ -78,7 +78,7 @@ test("--json prints the shaped envelope as compact JSON; --full keeps HEY's unto
   const fake = await makeFakeHey({ stdout: JSON.stringify(envelope, null, 2) });
   const result = await runAxi(["box", "view", "imbox", "--json"], { fake });
   assert.equal(result.code, 0);
-  assert.deepEqual(JSON.parse(result.stdout), { ok: true, summary: "1 thread", count: "1 total", data: [{ id: 1 }], help: ["Run `hey-axi thread read 1` to read"] });
+  assert.deepEqual(JSON.parse(result.stdout), { ok: true, summary: "1 thread", count: "1 shown; no more pages reported", data: [{ id: 1 }], help: ["Run `hey-axi thread read 1` to read"] });
   assert.equal(result.stdout.trim().split("\n").length, 1);
   const untouched = await runAxi(["box", "view", "imbox", "--json", "--full"], { fake });
   assert.deepEqual(JSON.parse(untouched.stdout), envelope);

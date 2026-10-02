@@ -13,7 +13,7 @@ Flags every command accepts: `--account <id|all>`, `--json`, `--quiet`, `--field
 | `account use` | Set the default linked mail account |  |  |
 | `attachment list` | List a thread's attachments | `--allow-partial` | fields: id, filename, content_type, byte_size |
 | `attachment save` | Save an attachment to disk | `--force` `--output <v>` |  |
-| `auth login` | Authenticate with the HEY server | `--cookie <v>` `--no-browser` `--token <v>` | needs the user at a terminal (refused in an agent shell) |
+| `auth login` | Authenticate with the HEY server | `--cookie <v>` `--no-browser` `--token <v>` |  |
 | `auth logout` | Clear stored credentials |  |  |
 | `auth refresh` | Force token refresh |  |  |
 | `auth status` | Show authentication status |  |  |
@@ -88,9 +88,9 @@ Flags every command accepts: `--account <id|all>`, `--json`, `--quiet`, `--field
 | `label list` | List your email labels | `--all` `--limit <v>` | fields: id, name |
 | `label remove` | Remove labels from email threads | `--from <v>` |  |
 | `label view` | List email threads with a label | `--all` `--limit <v>` `--page <v>` | fields: id, topic_id, from, subject |
-| `login` | Authenticate with the HEY server | `--cookie <v>` `--no-browser` `--token <v>` | needs the user at a terminal (refused in an agent shell) |
+| `login` | Authenticate with the HEY server | `--cookie <v>` `--no-browser` `--token <v>` |  |
 | `logout` | Clear stored credentials |  |  |
-| `mcp` | Serve HEY to MCP clients over stdio | `--domains <v>` `--read-only` | needs the user at a terminal (refused in an agent shell) |
+| `mcp` | Serve HEY to MCP clients over stdio | `--domains <v>` `--read-only` |  |
 | `move` | Move email threads to another box | `--to <v>` |  |
 | `reply` | Reply to a thread | `--attach <v>` `--bcc <v>` `--cc <v>` `--draft` `--dry-run` `--message <v>` `--message-html <v>` `--replace-recipients` `--to <v>` | saved as a draft unless `--allow-send` |
 | `screener approve` | Let a sender through | `--box <v>` `--seen` |  |
@@ -110,7 +110,7 @@ Flags every command accepts: `--account <id|all>`, `--json`, `--quiet`, `--field
 | `set-aside group remove` | Take email threads out of their Set Aside group |  |  |
 | `set-aside group view` | List email threads in a Set Aside group | `--all` `--limit <v>` `--page <v>` | fields: id, topic_id, from, subject |
 | `set-aside view` | List email threads in Set Aside | `--all` `--limit <v>` `--page <v>` | fields: id, topic_id, from, subject |
-| `setup` | Set up HEY for first use | `--silent-success` `--skip-agents` `--skip-omarchy` | needs the user at a terminal (refused in an agent shell) |
+| `setup` | Set up HEY for first use | `--silent-success` `--skip-agents` `--skip-omarchy` |  |
 | `setup agents` | Install or remove HEY coding-agent integrations | `--remove` |  |
 | `setup claude` | Connect Claude Code to HEY |  |  |
 | `setup codex` | Connect Codex to HEY |  |  |
@@ -144,7 +144,7 @@ Flags every command accepts: `--account <id|all>`, `--json`, `--quiet`, `--field
 | `todo list` | List todos | `--all` `--calendar <v>` `--ends-on <v>` `--limit <v>` `--starts-on <v>` | fields: id, title, starts_at, completed_at |
 | `todo uncomplete` | Mark a todo as incomplete |  |  |
 | `trash` | Move email threads to Trash |  |  |
-| `tui` | Launch the interactive terminal UI | `--instance <v>` `--remote` `--screener` `--topic <v>` `--topic-title <v>` | needs the user at a terminal (refused in an agent shell) |
+| `tui` | Launch the interactive terminal UI | `--instance <v>` `--remote` `--screener` `--topic <v>` `--topic-title <v>` |  |
 | `unseen` | Mark email threads as unseen |  |  |
 | `unshare` | Turn off an email thread's sharing link |  |  |
 | `upgrade` | Upgrade hey to the latest release |  |  |
