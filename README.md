@@ -51,6 +51,26 @@ hey-axi workflow --help                    # per-command help from the manifest 
 
 Errors are printed as structured TOON: `ok: false`, `error`, and, when HEY gave them, `code`, `hint`, `meta`, plus `exit_code`. hey-axi passes HEY's exit code through: 1 usage, 2 not found, 3 auth, 4 forbidden, 5 rate limit, 6 network, 7 API, 8 ambiguous (`hey help exit-codes`). hey-axi's own refusals (unknown/incomplete command, blocked send, missing TTY) exit **2**. If `hey` can't be found, hey-axi exits **127**.
 
+## Agent skill
+
+[`skills/hey-axi/SKILL.md`](skills/hey-axi/SKILL.md) is an [Agent Skills](https://agentskills.io/specification) package. It tells coding agents (Claude Code, Codex, Cursor, Gemini CLI, Copilot, …) when and how to use hey-axi: setup checks, triage commands, which id goes where, drafts-by-default, output modes, `watch` and exit codes. [`references/commands.md`](skills/hey-axi/references/commands.md) lists every command and is generated from the manifest (`npm run skill:reference`).
+
+Installing the skill doesn't install the CLI. Install `hey` and `hey-axi` first (see [Install](#install)).
+
+```bash
+# with the skills CLI (https://skills.sh), from GitHub
+npx skills add TangentialSolutions/hey-axi            # this project
+npx skills add TangentialSolutions/hey-axi -g -a claude-code   # user-wide, Claude Code only
+
+# with GitHub CLI (gh skill, preview)
+gh skill install TangentialSolutions/hey-axi hey-axi --agent claude-code --scope user
+
+# manually
+cp -r skills/hey-axi ~/.claude/skills/               # or ~/.agents/skills/, ~/.codex/skills/, …
+```
+
+While the repository is private, `npx skills add` and `gh skill install` work only for people with access (they use your git/gh credentials). See [docs/listing.md](docs/listing.md) for the public-listing checklist.
+
 ## Keeping up with HEY releases
 
 `src/manifest.json` is a snapshot of `hey commands --json`. To regenerate it from whichever `hey` you have installed:

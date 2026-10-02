@@ -2,14 +2,45 @@
   "name": "hey-axi",
   "version": "0.1.0",
   "private": true,
-  "description": "Agent-ergonomic AXI wrapper for the HEY CLI",
+  "description": "Agent-ergonomic AXI wrapper for Basecamp's HEY CLI: TOON output, send-to-draft safety, and a shareable agent skill",
+  "keywords": [
+    "axi",
+    "agent",
+    "ai-agent",
+    "agent-skills",
+    "skill",
+    "cli",
+    "hey",
+    "hey.com",
+    "email",
+    "basecamp",
+    "toon",
+    "llm",
+    "claude-code",
+    "codex"
+  ],
+  "homepage": "https://github.com/TangentialSolutions/hey-axi#readme",
+  "bugs": {
+    "url": "https://github.com/TangentialSolutions/hey-axi/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TangentialSolutions/hey-axi.git"
+  },
+  "author": "Trevor Broaddus",
   "type": "module",
   "bin": {
     "hey-axi": "src/hey-axi.js"
   },
+  "files": [
+    "src",
+    "skills",
+    "README.md"
+  ],
   "scripts": {
     "test": "node --test test/*.test.js",
-    "refresh-manifest": "node scripts/refresh-manifest.js"
+    "refresh-manifest": "node scripts/refresh-manifest.js",
+    "skill:reference": "node scripts/gen-skill-reference.js"
   },
   "dependencies": {
     "@toon-format/toon": "^4.1.1"
