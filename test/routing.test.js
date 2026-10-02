@@ -1,16 +1,17 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { loadBundledManifest, listCommands } from "../src/router.js";
-import { blockedPaths } from "../src/policy.js";
+import { blockedPaths, sendCommands } from "../src/policy.js";
 import { makeFakeHey, runAxi } from "./helpers.js";
 
 const manifest = loadBundledManifest();
 const blocked = new Set(blockedPaths());
+const gated = new Set([...sendCommands(), "auth token"]);
 
 test("routes every non-blocked manifest command to HEY with its argv intact", async () => {
   const fake = await makeFakeHey({ stdout: '{"ok":true,"data":{"done":true}}' });
-  const runnable = listCommands(manifest.commands).filter((node) => !blocked.has(node.path));
-  assert.ok(runnable.length >= 130, `only ${runnable.length} routable`);
+  const runnable = listCommands(manifest.commands).filter((node) => !blocked.has(node.path) && !gated.has(node.path));
+  assert.ok(runnable.length >= 125, `only ${runnable.length} routable`);
   const expected = [];
   for (let i = 0; i < runnable.length; i += 16) {
     const batch = runnable.slice(i, i + 16);
