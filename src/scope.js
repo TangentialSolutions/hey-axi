@@ -123,6 +123,9 @@ export function setupScope(argv, cwd = process.cwd()) {
     if (!SCOPE_FLAGS.has(name)) {
       return { code: 2, output: { ok: false, error: arg.startsWith("-") ? `unknown flag ${name} for \`setup scope\`` : `unexpected argument "${arg}" for \`setup scope\``, help: ["valid flags for `setup scope`: --box, --label, --search, --account, --limit, --status, --remove", "Run `hey-axi setup scope --help`"] } };
     }
+    if (eq !== -1 && !SCOPE_VALUE_FLAGS.has(name)) {
+      return { code: 2, output: { ok: false, kind: "usage", error: `${name} is a switch and takes no value: pass ${name}, or leave it out (got ${arg})`, help: "Run `hey-axi setup scope --help`" } };
+    }
     flags.add(name);
     if (SCOPE_VALUE_FLAGS.has(name)) {
       const value = eq !== -1 ? arg.slice(eq + 1) : argv[i + 1];

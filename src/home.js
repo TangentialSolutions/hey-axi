@@ -5,7 +5,7 @@
 // session hook still gives the agent something useful.
 
 import { DESCRIPTION, SETUP_HELP, homeHelp } from "./guide.js";
-import { countLine, listSize, shapeData, findList } from "./shape.js";
+import { carrySelectors, countLine, listSize, shapeData, findList } from "./shape.js";
 import { heyFailure } from "./errors.js";
 import { heyToAxi } from "./text.js";
 import { ScopeError, findScope, scopeQuery } from "./scope.js";
@@ -45,6 +45,7 @@ export async function homeView(runHey, { execPath = process.argv[1], cwd = proce
       out.status = `HEY error: ${heyToAxi(failure.error)}`;
       out.help = [...(failure.hint ? [heyToAxi(failure.hint)] : []), ...SETUP_HELP.other];
     }
+    out.help = out.help.map((line) => carrySelectors(line, query.carry || []));
     return out;
   }
   let envelope;
@@ -67,7 +68,11 @@ export async function homeView(runHey, { execPath = process.argv[1], cwd = proce
   let threads = Array.isArray(data) ? data : data?.[found?.key];
   if (threads && threads.length > query.limit) threads = threads.slice(0, query.limit);
   size.shown = threads?.length ?? 0;
-  if (!threads?.length) out.mail = `0 threads: nothing in ${query.label.split(" (")[0]}`;
+  if (!threads?.length && (size.more || size.total > 0)) {
+    // An empty page while HEY reports more: say exactly that, not "nothing".
+    out.count = countLine(size);
+    out.mail = `0 threads on this page; HEY reports ${size.total > 0 ? `${size.total} in total` : "more"}`;
+  } else if (!threads?.length) out.mail = `0 threads: nothing in ${query.label.split(" (")[0]}`;
   else {
     out.count = countLine(size);
     out.threads = threads;

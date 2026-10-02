@@ -100,7 +100,6 @@ export function contentProblem(node, flags, positionals = []) {
 // commands never become no-ops. Deletes are idempotent too: deleting something that
 // is not there is a no-op.
 const DELETES = new Set(["draft delete", "event delete", "todo delete", "habit delete", "clip delete", "snippet delete", "timetrack delete", "timetrack category delete", "workflow delete", "workflow stage delete", "set-aside group delete", "contact note delete"]);
-const EXISTS = /\balready (exists|taken|in use|been taken)\b|\bname has already been taken\b/i;
 const ADDED = /\balready (in|on|has|have|added|labell?ed|a member|part of|belongs?)\b/i;
 const REMOVED = /\b(not (in|on|labell?ed|a member|part of)|already removed|isn'?t (in|on|labell?ed))\b/i;
 export const END_STATES = {
@@ -133,16 +132,22 @@ export const END_STATES = {
   "config untrust-local": /\b(not trusted|already untrusted)\b/i,
   share: /\balready shared\b/i,
   unshare: /\b(not shared|already unshared)\b/i,
-  "label create": EXISTS, "collection create": EXISTS, "workflow create": EXISTS, "set-aside group create": EXISTS, "timetrack category create": EXISTS, "contact add": EXISTS,
 };
+// Creates are not on the list: "already exists" doesn't say the existing one has the
+// settings asked for, so it stays an error the agent can check.
 
-export function noopFor(path, failure, positionals = []) {
+// Commands whose end state names a destination: the failure must name the same one.
+const DESTINATION = { move: "to" };
+
+export function noopFor(path, failure, positionals = [], values = {}) {
   const text = `${failure.error || ""} ${failure.hint || ""}`;
   const target = positionals.length ? ` ${positionals.join(" ")}` : "";
   if (DELETES.has(path) && failure.kind === "not_found") {
     return { ok: true, noop: true, command: path, result: `nothing to delete:${target || " it"} is already gone (no-op)`, note: "if you expected it to exist, check the id with the matching list command" };
   }
   const endState = END_STATES[path];
+  const destination = DESTINATION[path] ? values[DESTINATION[path]] : undefined;
+  if (DESTINATION[path] && (!destination || !text.toLowerCase().includes(String(destination).toLowerCase()))) return null;
   if (endState && failure.kind !== "auth" && failure.kind !== "forbidden" && failure.kind !== "not_found" && endState.test(text)) {
     return { ok: true, noop: true, command: path, result: `already done${target ? ` for${target}` : ""} (no-op)`, detail: failure.error };
   }

@@ -26,7 +26,7 @@ const USAGE_CODES = new Set(["usage", "invalid_argument", "invalid_flag", "valid
 
 // AXI exit code for a failed HEY run.
 export function axiExitCode(status, code) {
-  if (!status) return 0;
+  if (status === 0) return 0;
   if (USAGE_CODES.has(code)) return 2;
   return 1;
 }

@@ -193,7 +193,8 @@ export function shapeData(data, { path, fields = null }) {
         const specs = fields === "all" ? null : Array.isArray(fields) && fields.length ? fields : heuristicFields(entry.list);
         const rows = specs ? project(entry.list, specs).rows : entry.list;
         shaped[name] = truncateDeep(rows, specs ? LIST_TEXT_LIMIT : DETAIL_TEXT_LIMIT, mark, Boolean(specs));
-      } else if (fields === "all" || (!DROP_CONTAINER_KEY(name) && (value === null || typeof value !== "object"))) {
+      } else if (fields === "all" || !DROP_CONTAINER_KEY(name)) {
+        // Content next to the lists is kept (long text cut with its size), never dropped.
         shaped[name] = truncateDeep(value, DETAIL_TEXT_LIMIT, mark);
       }
     }
@@ -226,7 +227,8 @@ export function shapeData(data, { path, fields = null }) {
     shaped = {};
     for (const [name, value] of Object.entries(container)) {
       if (name === key) shaped[name] = rows;
-      else if (fields === "all" || (!DROP_CONTAINER_KEY(name) && (value === null || typeof value !== "object"))) {
+      else if (fields === "all" || !DROP_CONTAINER_KEY(name)) {
+        // Content next to the list is kept (long text cut with its size), never dropped.
         shaped[name] = truncateDeep(value, DETAIL_TEXT_LIMIT, mark);
       }
     }
@@ -315,7 +317,13 @@ export function shapeEnvelope(envelope, { path, fields = null, commandLine, carr
   if (enveloped && envelope.summary && !quiet) out.summary = envelope.summary;
   const size = found && !found.lists ? listSize(enveloped ? envelope : null, found.list.length, found.container) : null;
   if (size) out.count = countLine({ ...size, all });
-  else if (found?.lists) out.count = found.lists.map(({ key, list }) => `${list.length} ${key}`).join(", ");
+  let multiSize = null;
+  if (found?.lists) {
+    // Several lists: each one's length, plus whatever HEY says about the whole result.
+    multiSize = listSize(enveloped ? envelope : null, found.list.length, found.container);
+    const parts = found.lists.map(({ key, list }) => `${list.length} ${key}`).join(", ");
+    out.count = multiSize.total !== undefined ? `${parts} (${multiSize.total} total)` : multiSize.more ? `${parts}; more available` : parts;
+  }
   const nothing = body === null || body === undefined || (typeof body === "object" && !Array.isArray(body) && Object.keys(body).length === 0);
   if (!enveloped && !found && !truncated && !nothing) return data;
   out.data = data;
@@ -330,7 +338,7 @@ export function shapeEnvelope(envelope, { path, fields = null, commandLine, carr
     if (envelope.notice) out.notice = carrySelectors(heyToAxi(envelope.notice), carry);
     help.push(...(Array.isArray(envelope.breadcrumbs) ? envelope.breadcrumbs : []).map((crumb) => breadcrumbHelp(crumb, carry)).filter(Boolean));
   }
-  const more = size && moreHelp(size, { commandLine, pageFlags });
+  const more = (size || multiSize) && moreHelp(size || multiSize, { commandLine, pageFlags });
   if (more) help.push(more);
   if (truncated) help.push(`Run \`${commandLine} --full\` to see complete content`);
   if (help.length) out.help = help;

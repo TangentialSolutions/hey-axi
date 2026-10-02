@@ -382,3 +382,63 @@ test("the home view's bin is absolute with ~ for the home directory; long text o
   assert.match(full.stdout, /x{1500}/);
   await fake.cleanup();
 });
+
+test("a HEY killed by a signal is a failure, not a success", async () => {
+  const { translateFailure } = await import("../src/errors.js");
+  const { exitCode, failure } = translateFailure({ status: null, signal: "SIGKILL", stdout: "", stderr: "" });
+  assert.notEqual(exitCode, 0);
+  assert.equal(failure.ok, false);
+  const killed = await makeFakeHeyScript("kill -9 $$");
+  const result = await runAxi(["thread", "read", "9"], { fake: killed });
+  assert.equal(result.code, 1, result.stdout);
+  assert.match(result.stdout, /^ok: false$/m);
+  await killed.cleanup();
+});
+
+test("hey-axi's own setup commands refuse values on switches", async () => {
+  const removed = await runAxi(["setup", "hooks", "--remove=false"]);
+  assert.equal(removed.code, 2);
+  assert.match(removed.stdout, /--remove is a switch/);
+  const scope = await runAxi(["setup", "scope", "--status=no"]);
+  assert.equal(scope.code, 2);
+  assert.match(scope.stdout, /--status is a switch/);
+});
+
+test("move is a no-op only when HEY names the requested destination; creates stay errors", async () => {
+  const { noopFor } = await import("../src/policy.js");
+  assert.equal(noopFor("move", { error: "Already in another box; cannot move", kind: "command_error" }, ["5"], { to: "feed" }), null);
+  assert.equal(noopFor("move", { error: "Thread is already in the Feed", kind: "command_error" }, ["5"], { to: "feed" }).noop, true);
+  assert.equal(noopFor("label create", { error: "Name has already been taken", code: "conflict", kind: "command_error" }, ["Acme"]), null);
+});
+
+test("person-only commands' examples include --interactive", () => {
+  for (const path of ["tui", "mcp", "setup"]) {
+    const node = listCommands(manifest.commands).find((candidate) => candidate.path === path);
+    for (const example of examplesFor(node)) assert.match(example, /--interactive|--token|--cookie/, `${path}: ${example}`);
+  }
+});
+
+test("content next to a list is kept; multi-list totals and paging are reported", () => {
+  const detail = shapeEnvelope({ ok: true, data: { message: { body: "b".repeat(1200) }, attachments: [{ id: 1 }] } }, { path: "x", commandLine: "hey-axi x" });
+  assert.match(detail.data.message.body, /truncated, 1200 chars total/);
+  const multi = shapeEnvelope({ ok: true, data: { todos: [{ id: 1 }], habits: [{ id: 2 }] }, meta: { total_count: 100, has_more: true } }, { path: "x", commandLine: "hey-axi x", pageFlags: ["all"] });
+  assert.equal(multi.count, "1 todos, 1 habits (100 total)");
+  assert.ok(multi.help.some((line) => /--all` for all 100/.test(line)));
+});
+
+test("the home view never calls an empty page 'nothing' when HEY reports more", async () => {
+  const fake = await makeFakeHey({ stdout: JSON.stringify({ ok: true, data: { postings: [], total_count: 12, next_page: "c2" } }) });
+  const result = await runAxi([], { fake });
+  assert.doesNotMatch(result.stdout, /nothing in/);
+  assert.match(result.stdout, /0 threads on this page; HEY reports 12 in total/);
+  await fake.cleanup();
+});
+
+test("local refusals carry --account into their suggestions", async () => {
+  const fake = await makeFakeHey();
+  const blocked = await runAxi(["forward", "9", "--to", "a@b.c", "--account", "5"], { fake });
+  assert.equal(blocked.code, 2);
+  assert.match(blocked.stdout, /hey-axi reply [^`]*--account 5/);
+  assert.deepEqual(await fake.calls(), []);
+  await fake.cleanup();
+});

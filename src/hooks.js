@@ -224,8 +224,10 @@ export async function setupHooks(flags, { execPath = process.argv[1], cwd = proc
     });
     const command = startCommand([before.claude.path, before.codex.path]);
     if (command) {
-      setEndHook(end.claude, `${command} ${END_ARGS}`, onError);
-      setEndHook(end.codex, `${command} ${END_ARGS}`, onError);
+      // Claude Code and Codex run hook commands through a shell: quote a path with spaces.
+      const shellCommand = /\s/.test(command) && existsSync(command) ? `'${command.replace(/'/g, "'\\''")}'` : command;
+      setEndHook(end.claude, `${shellCommand} ${END_ARGS}`, onError);
+      setEndHook(end.codex, `${shellCommand} ${END_ARGS}`, onError);
       setEndPlugin(end.opencode, command, onError);
       captureChanged = enableCapture();
     }

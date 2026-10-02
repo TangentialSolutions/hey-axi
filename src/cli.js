@@ -140,9 +140,19 @@ function writeWarnings(text) {
   for (const line of warningLines(text)) process.stderr.write(`${line}\n`);
 }
 
+// The invocation's --account/--base-url, carried into every suggested command, including
+// those in refusals.
+let helpCarry = [];
+
 function fail(value, code) {
   // Every refusal says what kind of failure it is (exit 2 is always a usage error).
   if (value && value.ok === false && !value.kind) value = { ok: false, kind: code === 2 ? "usage" : "command_error", ...value };
+  if (value && value.ok === false && helpCarry.length) {
+    for (const key of ["help", "hint"]) {
+      if (Array.isArray(value[key])) value[key] = value[key].map((line) => carrySelectors(line, helpCarry));
+      else if (typeof value[key] === "string") value[key] = carrySelectors(value[key], helpCarry);
+    }
+  }
   output(value);
   process.exit(code);
 }
@@ -165,7 +175,8 @@ function runHey(args, extra = ["--json"]) {
     child.stdout.on("data", (chunk) => { stdout += chunk; });
     child.stderr.on("data", (chunk) => { stderr += chunk; });
     child.on("error", (error) => resolve({ status: 127, error: spawnErrorMessage(error) }));
-    child.on("close", (status) => resolve({ status, stdout, stderr }));
+    // Killed by a signal: no exit status, and not a success.
+    child.on("close", (status, signal) => resolve({ status: status ?? (signal ? 1 : 0), signal, stdout, stderr }));
   });
 }
 
@@ -185,7 +196,7 @@ function runHeyInteractive(args) {
     const child = spawn(HEY, args, { stdio: "inherit" });
     const release = forwardSignals(child);
     child.on("error", (error) => { release(); resolve({ status: 127, error: spawnErrorMessage(error) }); });
-    child.on("close", (status, signal) => { release(); resolve({ status: status ?? 0, signal }); });
+    child.on("close", (status, signal) => { release(); resolve({ status: status ?? (signal ? 1 : 0), signal }); });
   });
 }
 
@@ -201,7 +212,7 @@ function runHeyRaw(args) {
     child.stdout.on("data", (chunk) => { out.push(chunk); });
     child.stderr.on("data", (chunk) => { stderr += chunk; });
     child.on("error", (error) => { release(); resolve({ status: 127, error: spawnErrorMessage(error) }); });
-    child.on("close", (status, signal) => { release(); resolve({ status: status ?? 0, signal, stderr, stdout: Buffer.concat(out) }); });
+    child.on("close", (status, signal) => { release(); resolve({ status: status ?? (signal ? 1 : 0), signal, stderr, stdout: Buffer.concat(out) }); });
   });
 }
 
@@ -276,9 +287,16 @@ if (args[0] === "setup" && args[1] === "scope") {
 }
 
 const first = scanArgs(args, valueFlagSet(manifest.commands));
+for (const name of ["account", "base-url"]) {
+  const value = flagValue(args, name);
+  if (value !== undefined) helpCarry.push(`--${name}`, shellWord(value));
+}
 if (first.words[0] === "setup" && first.words[1] === "hooks") {
   const { HOOKS_HELP, setupHooks } = await import("./hooks.js");
   if (first.words.length > 2) fail({ ok: false, error: `unexpected argument "${first.words[2]}" for \`setup hooks\``, help: "Run `hey-axi setup hooks --help`" }, 2);
+  // Its flags are all switches: `--remove=false` is refused, not read as --remove.
+  const switchValue = first.values.find(([name]) => ["--project", "--status", "--remove"].includes(name));
+  if (switchValue) fail({ ok: false, error: `${switchValue[0]} is a switch and takes no value: pass ${switchValue[0]}, or leave it out`, help: "Run `hey-axi setup hooks --help`" }, 2);
   if (first.flags.has("--help") || first.flags.has("-h")) {
     process.stdout.write(`${HOOKS_HELP}\n`);
     process.exit(0);
@@ -411,7 +429,7 @@ function reportFailure(result) {
     else if (failure[key]) failure[key] = carrySelectors(failure[key], carry);
   }
   for (const line of warnings) process.stderr.write(`${line}\n`);
-  const noop = exitCode !== 0 && noopFor(path, failure, positionals);
+  const noop = exitCode !== 0 && noopFor(path, failure, positionals, { to: flagValue(args, "to") });
   if (noop) {
     if (json) process.stdout.write(`${JSON.stringify(noop)}\n`);
     else output(noop);

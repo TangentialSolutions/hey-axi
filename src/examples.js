@@ -5,6 +5,7 @@
 import { heyToAxi } from "./text.js";
 import { patternsFor } from "./arity.js";
 import { LIST_FIELDS, parseField } from "./shape.js";
+import { userOnlyPaths } from "./policy.js";
 
 // "(default …)" text for one flag, including zero, false and empty defaults.
 export function flagDefault(flag) {
@@ -50,5 +51,7 @@ export function examplesFor(node) {
     if (examples.length >= 3 || (examples.length >= 2 && (node.examples || []).length >= 2)) break;
     if (!examples.includes(example)) examples.push(example);
   }
-  return examples.slice(0, 3);
+  // Person-only commands run only with --interactive, so their examples say so.
+  const person = userOnlyPaths().includes(node.path);
+  return examples.slice(0, 3).map((example) => (person && !/--(interactive|token|cookie)\b/.test(example) ? `${example} --interactive` : example));
 }
