@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 
 import { spawn } from "node:child_process";
+import { createInterface } from "node:readline";
 import { encode } from "@toon-format/toon";
 import { loadBundledManifest, normalizeCatalog, resolveCommand } from "./router.js";
-import { AXI_FLAGS, blockedReason, checkPolicy } from "./policy.js";
+import { AXI_FLAGS, checkPolicy, runMode } from "./policy.js";
+import { heyFailure } from "./errors.js";
 import { RAW_OUTPUT_FLAGS, hasAny, scanArgs, valueFlagSet } from "./args.js";
 
 // Resolve the HEY CLI: an explicit HEY_BIN wins, otherwise `hey` is looked up on PATH
@@ -55,10 +57,12 @@ function commandHelp(node) {
     lines.push("", "flags:");
     for (const flag of node.flags) lines.push(`  ${flagLabel(flag)}`);
   }
-  const reason = blockedReason(node.path);
-  if (reason) lines.push("", `not supported by hey-axi: ${reason}`);
-  const gate = checkPolicy(node.path, new Set(), {});
-  if (!reason && gate) lines.push("", `${gate.error}: ${gate.reason}; ${gate.hint}`);
+  const mode = runMode(node.path, new Set());
+  if (mode === "interactive") lines.push("", "runs interactively: HEY gets the terminal; output is not converted");
+  if (mode === "stream") lines.push("", "streams HEY's NDJSON line by line until it exits or is interrupted");
+  if (mode === "raw") lines.push("", "prints HEY's output as-is (not JSON)");
+  const gate = checkPolicy(node.path, new Set(), {}, { stdin: true, stdout: true });
+  if (gate) lines.push("", `${gate.error}: ${gate.reason}; ${gate.hint}`);
   return lines.join("\n");
 }
 
@@ -88,14 +92,46 @@ function runHey(args, extra = ["--json"]) {
   });
 }
 
-// Run HEY exactly as typed, with stdout/stderr going straight to the terminal.
+// Relay SIGINT/SIGTERM to HEY and let it decide how to exit, instead of dying first.
+function forwardSignals(child) {
+  const handlers = ["SIGINT", "SIGTERM", "SIGHUP"].map((signal) => {
+    const handler = () => child.kill(signal);
+    process.on(signal, handler);
+    return [signal, handler];
+  });
+  return () => handlers.forEach(([signal, handler]) => process.off(signal, handler));
+}
+
+const exitStatus = (status, signal) => status ?? (signal ? 128 + (({ SIGHUP: 1, SIGINT: 2, SIGTERM: 15 })[signal] || 0) : 0);
+
+// Run HEY exactly as typed, with stdio going straight to the terminal (raw output and
+// interactive commands).
 function runHeyRaw(args) {
   return new Promise((resolve) => {
     const child = spawn(HEY, args, { stdio: "inherit" });
-    child.on("error", (error) => resolve({ status: 127, error: spawnErrorMessage(error) }));
-    child.on("close", (status, signal) => resolve({ status: status ?? (signal ? 1 : 0) }));
+    const release = forwardSignals(child);
+    child.on("error", (error) => { release(); resolve({ status: 127, error: spawnErrorMessage(error) }); });
+    child.on("close", (status, signal) => { release(); resolve({ status: exitStatus(status, signal) }); });
   });
 }
+
+// Run a long-lived NDJSON producer (hey watch), relaying each complete line the moment
+// it arrives so consumers never see a partial event.
+function runHeyStream(args) {
+  return new Promise((resolve) => {
+    const child = spawn(HEY, args, { stdio: ["inherit", "pipe", "inherit"] });
+    const release = forwardSignals(child);
+    const lines = createInterface({ input: child.stdout, crlfDelay: Infinity });
+    lines.on("line", (line) => process.stdout.write(`${line}\n`));
+    // A consumer that stops reading (e.g. `| head -1`) ends the watch cleanly.
+    process.stdout.on("error", (error) => {
+      if (error.code === "EPIPE") child.kill("SIGTERM");
+    });
+    child.on("error", (error) => { release(); resolve({ status: 127, error: spawnErrorMessage(error) }); });
+    child.on("close", (status, signal) => { release(); lines.close(); resolve({ status: exitStatus(status, signal) }); });
+  });
+}
+
 
 // Ask the installed HEY for its live catalog, for commands newer than the bundled manifest.
 async function discoverCommands() {
@@ -152,13 +188,12 @@ if (refusal) {
   process.exit(2);
 }
 
-if (raw) {
-  // --ids-only, --count, --markdown, --html, --styled, --jq: HEY owns the output format.
-  const result = await runHeyRaw(heyArgs);
-  if (result.error) {
-    output({ ok: false, error: result.error, exit_code: result.status });
-    process.exit(1);
-  }
+const mode = runMode(resolved.path, flags);
+if (raw || mode !== "json") {
+  // interactive: tui, login, setup, mcp, upgrade; stream: watch; raw: scripts, CSV, and
+  // --ids-only/--count/--markdown/--html/--styled/--jq. HEY owns the output.
+  const result = mode === "stream" ? await runHeyStream(heyArgs) : await runHeyRaw(heyArgs);
+  if (result.error) output(heyFailure(result));
   process.exit(result.status);
 }
 
@@ -166,8 +201,10 @@ const result = await runHey(command, quiet ? ["--json", "--quiet"] : ["--json"])
 if (result.status === 0 && result.stderr) process.stderr.write(result.stderr);
 
 if (result.status !== 0) {
-  output({ ok: false, error: result.error || result.stdout.trim() || result.stderr.trim() || "hey command failed", exit_code: result.status });
-  process.exit(1);
+  // Pass HEY's exit code through: 1 usage, 2 not found, 3 auth, 4 forbidden,
+  // 5 rate limit, 6 network, 7 API, 8 ambiguous (see `hey help exit-codes`).
+  output(heyFailure(result));
+  process.exit(result.status);
 }
 
 try {

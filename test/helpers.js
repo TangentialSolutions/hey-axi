@@ -46,3 +46,26 @@ export function runAxi(args, { env = {}, fake } = {}) {
   return new Promise((resolve) => execFile(process.execPath, ["src/hey-axi.js", ...args], { env: fullEnv },
     (error, stdout, stderr) => resolve({ code: error ? error.code : 0, stdout, stderr })));
 }
+
+// A fake `hey` with an arbitrary shell body (for streaming/signal tests). Calls are logged.
+export async function makeFakeHeyScript(body) {
+  const directory = await mkdtemp(join(tmpdir(), "hey-axi-fake-"));
+  const bin = join(directory, "hey");
+  const log = join(directory, "calls");
+  await writeFile(bin, `#!/bin/sh
+printf '%s\\n' "$*" >> ${shellQuote(log)}
+${body}
+`);
+  await chmod(bin, 0o755);
+  return {
+    bin,
+    async calls() {
+      try {
+        return (await readFile(log, "utf8")).split("\n").filter(Boolean);
+      } catch {
+        return [];
+      }
+    },
+    cleanup: () => rm(directory, { recursive: true, force: true }),
+  };
+}

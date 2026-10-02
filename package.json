@@ -13,5 +13,8 @@
   },
   "dependencies": {
     "@toon-format/toon": "^4.1.1"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }
