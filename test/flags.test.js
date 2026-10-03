@@ -98,7 +98,7 @@ test("--quiet drops HEY's summary, notice, breadcrumbs and meta but keeps count,
   const empty = await makeFakeHey({ stdout: '{"ok":true,"summary":"0 threads","data":[]}' });
   const none = await runAxi(["box", "view", "imbox", "--quiet"], { fake: empty });
   assert.match(none.stdout, /empty: 0 results for `hey-axi box view imbox`/);
-  assert.match(none.stdout, /count: 0 total/);
+  assert.match(none.stdout, /count: 0 shown; no more pages reported/);
   // HEY always gets --json alone: the envelope is needed for the count.
   assert.deepEqual([...await fake.calls(), ...await empty.calls()], ["box view imbox --json", "box view imbox --json"]);
   await fake.cleanup();

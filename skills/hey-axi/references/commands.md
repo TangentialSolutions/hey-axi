@@ -32,7 +32,7 @@ Flags every command accepts: `--account <id|all>`, `--json`, `--quiet`, `--field
 | `calendar list` | List calendars |  | fields: id, name, kind, owned |
 | `clip create` | Save text from an email entry | `--content <v>` |  |
 | `clip delete` | Delete a saved clip |  |  |
-| `clip list` | List the newest page of passages clipped from email |  | fields: id, content, topic_id, at |
+| `clip list` | List the newest page of passages clipped from email |  | fields: id, topic_id, at |
 | `collection` | List and manage email collections | `--all` `--limit <v>` `--page <v>` | fields: id, topic_id, from, subject |
 | `collection add` | Add email threads to a collection | `--to <v>` |  |
 | `collection create` | Create a collection | `--summary <v>` |  |
@@ -79,7 +79,7 @@ Flags every command accepts: `--account <id|all>`, `--json`, `--quiet`, `--field
 | `habit list` | List habits | `--all` `--date <v>` `--limit <v>` | fields: id, title, days |
 | `habit uncomplete` | Remove a habit completion for a date | `--date <v>` |  |
 | `ignore` | Ignore email threads |  |  |
-| `journal list` | List journal entries | `--all` `--calendar <v>` `--ends-on <v>` `--limit <v>` `--starts-on <v>` | fields: id, starts_at, content |
+| `journal list` | List journal entries | `--all` `--calendar <v>` `--ends-on <v>` `--limit <v>` `--starts-on <v>` | fields: id, date |
 | `journal read` | Read a journal entry (default: today) |  |  |
 | `journal write` | Write or edit a journal entry (default: today) | `--content <v>` `--content-html <v>` |  |
 | `label` | List and manage email labels | `--all` `--limit <v>` `--page <v>` | fields: id, topic_id, from, subject |
@@ -122,7 +122,7 @@ Flags every command accepts: `--account <id|all>`, `--json`, `--quiet`, `--field
 | `skill install` | Install the hey skill globally for your coding agents |  |  |
 | `snippet create` | Create a reusable email snippet | `--content <v>` `--content-html <v>` `--name <v>` |  |
 | `snippet delete` | Delete a reusable email snippet |  |  |
-| `snippet list` | List reusable email snippets |  | fields: id, name, content |
+| `snippet list` | List reusable email snippets |  | fields: id, name |
 | `snippet update` | Update a reusable email snippet | `--content <v>` `--content-html <v>` `--name <v>` |  |
 | `spam` | Mark email threads as spam |  |  |
 | `stop-ignoring` | Stop ignoring email threads |  |  |

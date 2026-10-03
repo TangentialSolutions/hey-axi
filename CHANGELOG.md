@@ -2,6 +2,19 @@
 
 All notable changes to hey-axi. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [semver](https://semver.org/).
 
+## 0.3.1 (2026-10-03)
+
+Closes the remaining gaps from the independent catalog review of 0.3.0. The rules that were already in place stay as they were: nothing is sent without `--allow-send`, tests use a fake HEY, HEY's next-command hints are still shown, `--interactive` stays opt-in, and the home view stays account-wide unless `setup scope` narrows it.
+
+### Fixed
+- **Empty counts (principle 4):** an empty list is only counted as `0 total` when HEY says nothing is left (`has_more: false`, a null next page/cursor, a total of 0) or `--all` fetched everything. Otherwise it says `0 shown; no more pages reported`, like a non-empty list without paging signals.
+- **Empty-list suggestion keeps selectors (principle 9):** the `hey-axi <command> --help` hint after an empty list now carries `--account`/`--base-url`.
+- **Dependency text scrubbed from errors (principle 6):** any `<Name>Error:`/`<Name>Exception:` line (for example `SqliteError`), Ruby/Python class paths (`PG::ConnectionBad`, `sqlalchemy.exc.…`), tracebacks and `node:internal` lines are dropped so the plain message for the error kind stands alone. SQLite codes become plain words ("the local database is busy; retry in a moment"), local file paths become "a local file", and library prefixes (`better-sqlite3:`, `node-fetch:` …) are removed. Short values in HEY's error `meta` that are a dependency error or just a library name (`undici`) are dropped too.
+- **Content stays out of lists (principle 2):** `journal list` shows `id, date`, `clip list` shows `id, topic_id, at` and `snippet list` shows `id, name`. A help line says how to get the content (`hey-axi journal read <date>`, or `--fields …,content`).
+
+### Added
+- skills.sh badge in the README.
+
 ## 0.3.0 (2026-10-02)
 
 Closes the gaps from the axi.md admission review (AXI principles 2-7, 9 and 10). The rules that were already in place stay as they were: nothing is sent without `--allow-send`, tests use a fake HEY, and HEY's next-command hints (breadcrumbs) are still shown.

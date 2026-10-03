@@ -38,11 +38,11 @@ test("every default list schema has at most four fields", () => {
 // Principles 3-5
 test("bare (non-envelope) lists get shaping, a count and a definitive empty state", () => {
   const empty = shapeEnvelope([], { path: "clip list", commandLine: "hey-axi clip list" });
-  assert.deepEqual(empty, { count: "0 total", data: [], empty: "0 results for `hey-axi clip list`" });
+  assert.deepEqual(empty, { count: "0 shown; no more pages reported", data: [], empty: "0 results for `hey-axi clip list`" });
   const rows = shapeEnvelope([{ id: 1, content: "c".repeat(300), topic_id: 2, created_at: "t", extra: 1 }], { path: "clip list", commandLine: "hey-axi clip list" });
   assert.equal(rows.count, "1 shown; no more pages reported");
-  assert.deepEqual(Object.keys(rows.data[0]), ["id", "content", "topic_id", "at"]);
-  assert.deepEqual(rows.help, ["Run `hey-axi clip list --full` to see complete content"]);
+  assert.deepEqual(Object.keys(rows.data[0]), ["id", "topic_id", "at"]);
+  assert.deepEqual(rows.help, ["Run `hey-axi clip list --fields id,content` to include each clip's content"]);
   const nothing = shapeEnvelope({ ok: true, data: null }, { path: "timetrack current", commandLine: "hey-axi timetrack current" });
   assert.equal(nothing.empty, "no data returned for `hey-axi timetrack current`");
 });
@@ -517,4 +517,40 @@ test("0.3.0 edge cases: container and batch no-ops, page hints, scope quoting, n
   assert.equal(cleanLine("TypeError: Cannot read properties of undefined"), "");
   assert.equal(cleanLine("Error: axios ECONNRESET at https://internal.example"), "the connection was reset");
   assert.equal(cleanLine('Get "https://app.hey.com/x": label not found'), "label not found");
+});
+
+test("0.3.1: empty counts need proof, empty-list help keeps --account, dependency errors are scrubbed, content lists show ids only", async () => {
+  // "0 total" only when HEY says nothing is left, or --all fetched everything.
+  assert.equal(shapeEnvelope({ ok: true, data: [] }, { path: "x", commandLine: "hey-axi x" }).count, "0 shown; no more pages reported");
+  assert.equal(shapeEnvelope({ ok: true, data: [], meta: { has_more: false } }, { path: "x", commandLine: "hey-axi x" }).count, "0 total");
+  assert.equal(shapeEnvelope({ ok: true, data: [], meta: { total_count: 0 } }, { path: "x", commandLine: "hey-axi x" }).count, "0 of 0 total");
+  assert.equal(shapeEnvelope([], { path: "x", commandLine: "hey-axi x --all", all: true }).count, "0 total");
+
+  // The empty-list fallback suggestion carries --account.
+  const empty = await makeFakeHey({ stdout: '{"ok":true,"data":[]}' });
+  const none = await runAxi(["journal", "list", "--account", "7", "--json"], { fake: empty });
+  assert.equal(none.code, 0);
+  const out = JSON.parse(none.stdout);
+  assert.ok(out.help.every((line) => !/`hey-axi /.test(line) || /--account 7/.test(line)), JSON.stringify(out.help));
+  await empty.cleanup();
+
+  // Dependency errors and names never reach the agent.
+  const { cleanLine, cleanMeta, translateFailure } = await import("../src/errors.js");
+  for (const line of ["SqliteError: something broke", "PG::ConnectionBad: could not connect", "sqlalchemy.exc.OperationalError: x", "Error: TypeError: broken", "undici"]) assert.equal(cleanLine(line), "", line);
+  assert.equal(cleanLine("SqliteError: database is locked"), "the local database is busy; retry in a moment");
+  assert.equal(cleanLine("Error: open /home/u/.cache/hey/db.sqlite: permission denied"), "open a local file: permission denied");
+  assert.equal(cleanLine("label not found"), "label not found");
+  assert.deepEqual(cleanMeta({ a: "TypeError: broken", b: "undici", c: "SqliteError: x", box: "imbox", id: 5 }), { box: "imbox", id: 5 });
+  const failure = translateFailure({ status: 7, stdout: "", stderr: '{"ok":false,"error":"SqliteError: disk I/O error","meta":{"client":"undici"}}' }).failure;
+  assert.deepEqual(failure, { ok: false, error: "HEY's API returned an error", kind: "api_error", help: "Retry later, or run `hey-axi doctor`" });
+
+  // Journal, clip and snippet lists show ids and dates; content is one hint away.
+  const journal = shapeEnvelope([{ id: 1, starts_at: "2026-10-01", content: "long text" }], { path: "journal list", commandLine: "hey-axi journal list", carry: ["--account", "7"] });
+  assert.deepEqual(Object.keys(journal.data[0]), ["id", "date"]);
+  assert.ok(journal.help.some((line) => line.includes("`hey-axi journal read <date> --account 7`") && line.includes("--fields id,starts_at,content")));
+  const snippets = shapeEnvelope([{ id: 1, name: "sig", content: "x" }], { path: "snippet list", commandLine: "hey-axi snippet list" });
+  assert.deepEqual(Object.keys(snippets.data[0]), ["id", "name"]);
+  const chosen = shapeEnvelope([{ id: 1, name: "sig", content: "x" }], { path: "snippet list", fields: ["id", "content"], commandLine: "hey-axi snippet list --fields id,content" });
+  assert.deepEqual(chosen.data[0], { id: 1, content: "x" });
+  assert.equal(chosen.help, undefined);
 });

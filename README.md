@@ -1,5 +1,7 @@
 # hey-axi
 
+[![skills.sh](https://skills.sh/b/TangentialSolutions/hey-axi)](https://skills.sh/TangentialSolutions/hey-axi)
+
 An agent-friendly wrapper for [HEY CLI](https://github.com/basecamp/hey-cli) (`hey`), Basecamp's command line for HEY email, calendars, todos, habits, time tracking and journals.
 
 hey-axi runs `hey`, asks for its JSON response envelope, and prints it as [TOON](https://github.com/toon-format/toon). It follows the [AXI](https://axi.md) principles: a live home view, minimal default fields, truncated long text, definitive empty states, and unknown flags rejected up front. On our synthetic benchmark that's **~89% fewer tokens than `hey --json`** ([docs/benchmarks.md](docs/benchmarks.md)). It also adds a few safety rails. It covers **every command in HEY CLI v1.7.0** (154 runnable command paths, including the `login`/`logout` aliases, plus the `box <id>`-style shortcuts) by routing from a snapshot of HEY's own `hey commands --json` catalog. See [CHANGELOG.md](CHANGELOG.md) for what changed in each release.

@@ -568,7 +568,7 @@ if (!full && !quiet && !plainText && shaped && typeof shaped === "object" && sha
       ? `Run \`${withSelectors(`hey-axi ${sibling.path} --help`, carry)}\` to see how to add one`
       : sibling
       ? `Run \`${withSelectors(`hey-axi ${sibling.path} <id>`, carry)}\` to see one in full`
-      : shaped.empty ? `Run \`hey-axi ${path} --help\` to check the filters` : `Run \`${commandLine} --fields all\` to see every field`;
+      : shaped.empty ? `Run \`${withSelectors(`hey-axi ${path} --help`, carry)}\` to check the filters` : `Run \`${commandLine} --fields all\` to see every field`;
     shaped.help = [next, ...help];
   }
 }

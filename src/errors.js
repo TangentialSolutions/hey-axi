@@ -38,11 +38,19 @@ const NOISE = /^(warning:|panic:|fatal error:|\[signal |runtime error|\s+at |gor
 // Programming-language errors from inside HEY or its libraries say nothing an agent can
 // act on: they are dropped, and the failure's own message (by kind) stands alone.
 const INTERNAL = /^(Uncaught )?(TypeError|ReferenceError|SyntaxError|RangeError|InternalError|AssertionError|panic|fatal|runtime error|invalid memory address|nil pointer|unexpected end of JSON|json: |SIGSEGV)\b/i;
+// Any other "<Something>Error:" / "<Something>Exception:" line, a Ruby/Python-style
+// class path (Foo::Bar, foo.bar.BazError) or a traceback is a dependency's own error
+// (SqliteError, PG::ConnectionBad, sqlalchemy.exc.OperationalError): dropped the same way.
+const DEPENDENCY = /^(Uncaught\s+)?([\w$]+(\.[\w$]+|::[\w$]+)*(Error|Exception|Fault)\b|[A-Z]\w*(::[A-Z]\w*)+\b|Traceback\b|Caused by\b|node:internal\b)/;
+// Names of HTTP/database libraries; a short value that is just one of these says nothing.
+const LIBRARY = /\b(undici|axios|node-fetch|got|superagent|sqlite3?|better-sqlite3|sequel|activerecord|faraday|net\/http|go-http-client|libcurl|openssl|electron|node(\.js)?|v8)\b/i;
 // Low-level network codes become plain words.
 const NETWORK = [
   [/\bECONNRESET\b/, "the connection was reset"], [/\bECONNREFUSED\b/, "the connection was refused"],
   [/\bETIMEDOUT\b|\bi\/o timeout\b|context deadline exceeded/i, "the request timed out"], [/\bENOTFOUND\b|no such host/i, "the server name could not be resolved"],
   [/\bEAI_AGAIN\b/, "DNS lookup failed"], [/\bcertificate\b|\bx509\b|\bTLS\b/i, "a TLS/certificate problem"],
+  // Local database codes (HEY's cache) become plain words too.
+  [/\bSQLITE_(BUSY|LOCKED)\b|database is locked/i, "the local database is busy; retry in a moment"], [/\bSQLITE_[A-Z]+\b/, "a local database error"],
 ];
 
 export function cleanLine(text) {
@@ -51,10 +59,14 @@ export function cleanLine(text) {
   let line = lines[0].trim().replace(/^(error|Error|ERROR):\s*/, "");
   const network = NETWORK.find(([pattern]) => pattern.test(line));
   if (network) return network[1];
-  if (INTERNAL.test(line)) return "";
+  if (INTERNAL.test(line) || DEPENDENCY.test(line)) return "";
   // Library prefixes ("axios:", "fetch failed:", "Get \"https://…\":") and raw URLs add nothing.
-  line = line.replace(/^(axios|undici|fetch failed|request failed|(get|post|put|patch|delete) "[^"]*"):?\s*/i, "").replace(/\bhttps?:\/\/\S+/g, "the HEY server").trim();
-  if (!line) return "";
+  line = line.replace(/^((axios|undici|node-fetch|got|faraday|sqlite3?|better-sqlite3)(\s*error)?|fetch failed|request failed|(get|post|put|patch|delete) "[^"]*"):?\s*/i, "")
+    .replace(/\bhttps?:\/\/\S+/g, "the HEY server")
+    // File paths and source locations (/usr/lib/…/x.js:12:3, C:\\…) are internal detail.
+    .replace(/(^|\s)(\/|~\/|[A-Za-z]:\\)[^\s:]+(:\d+)*/g, "$1a local file").replace(/\s{2,}/g, " ").trim();
+  // A line that is still a dependency error after its prefix came off is dropped too.
+  if (!line || INTERNAL.test(line) || DEPENDENCY.test(line) || /^[\w./-]+$/.test(line) && LIBRARY.test(line)) return "";
   return heyToAxi(line.length > 200 ? `${line.slice(0, 200)}…` : line);
 }
 
@@ -72,7 +84,12 @@ const DEBUG_KEYS = /stack|trace|backtrace|panic|goroutine|debug|caller|frames?$/
 // HEY's error meta without debugging detail: stack-like keys are dropped and
 // multi-line strings are cut to their one meaningful line.
 export function cleanMeta(value, depth = 0) {
-  if (typeof value === "string") return /[\r\n\u001b]/.test(value) || value.length > 200 ? cleanLine(value) : value;
+  if (typeof value === "string") {
+    if (/[\r\n\u001b]/.test(value) || value.length > 200) return cleanLine(value);
+    // Short values are kept as they are, unless they are a dependency's error or name.
+    const bare = value.trim().replace(/^(error|Error|ERROR):\s*/, "");
+    return INTERNAL.test(bare) || DEPENDENCY.test(bare) || (/^[\w./@ -]{1,40}$/.test(bare) && LIBRARY.test(bare) && !/\s\w+\s\w+/.test(bare)) ? undefined : value;
+  }
   if (!value || typeof value !== "object" || depth > 3) return depth > 3 ? undefined : value;
   if (Array.isArray(value)) return value.slice(0, 20).map((item) => cleanMeta(item, depth + 1)).filter((item) => item !== undefined && item !== "");
   const out = {};

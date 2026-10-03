@@ -38,7 +38,7 @@ export const LIST_FIELDS = {
   "event week": EVENTS,
   "todo list": ["id", "title", "starts_at", "completed_at"],
   "habit list": ["id", "title=title|name", "days"],
-  "journal list": ["id", "starts_at", "content"],
+  "journal list": ["id", "date=date|starts_at"],
   "draft list": ["id", "subject", "summary", "at=updated_at|created_at"],
   "contact list": ["id", "name", "email_address"],
   "label list": NAMED,
@@ -46,8 +46,8 @@ export const LIST_FIELDS = {
   "workflow list": NAMED,
   "calendar list": ["id", "name", "kind", "owned"],
   "attachment list": ["id", "filename", "content_type", "byte_size"],
-  "clip list": ["id", "content", "topic_id", "at=created_at"],
-  "snippet list": ["id", "name", "content"],
+  "clip list": ["id", "topic_id=topic_id|topic.id", "at=created_at"],
+  "snippet list": ["id", "name"],
   "timetrack list": ["id", "starts_at", "ends_at", "category"],
   "timetrack categories": ["id", "title"],
   "account list": ["id", "email=email|email_address", "name", "active"],
@@ -55,6 +55,14 @@ export const LIST_FIELDS = {
 };
 
 // Detail views keep their long text (truncated), but drop URLs and duplicated fields.
+// Lists whose entries are long-form content: the list shows ids and dates only, and a help
+// line says how to get the content (AXI principle 2: long text belongs in detail views).
+export const CONTENT_LISTS = {
+  "journal list": (line, carry) => `Run \`${withSelectors("hey-axi journal read <date>", carry)}\` to read one entry, or \`${line} --fields id,starts_at,content\` to include previews`,
+  "clip list": (line) => `Run \`${line} --fields id,content\` to include each clip's content`,
+  "snippet list": (line) => `Run \`${line} --fields id,name,content\` to include each snippet's content`,
+};
+
 export const DETAIL_FIELDS = {
   "thread read": ["id", "at=created_at", "from=creator.name|sender.name", "email=creator.email_address|sender.email_address", "to=recipients.to[].email_address", "cc=recipients.cc[].email_address", "body=body|summary"],
 };
@@ -279,7 +287,8 @@ export function listSize(envelope, shown, container = null) {
 export function countLine({ shown, total, more, complete, all = false }) {
   if (total !== undefined) return `${shown} of ${total} total`;
   if (more) return `${shown} shown; more available`;
-  return complete || all || shown === 0 ? `${shown} total` : `${shown} shown; no more pages reported`;
+  // An empty page is only "0 total" when HEY says nothing is left (or --all fetched everything).
+  return complete || all ? `${shown} total` : `${shown} shown; no more pages reported`;
 }
 
 // Append the invocation's selectors (`--account 2`) to a suggested command, unless the
@@ -372,6 +381,7 @@ export function shapeEnvelope(envelope, { path, fields = null, commandLine, carr
   const more = (size || multiSize) && moreHelp(size || multiSize, { commandLine, pageFlags });
   if (more) help.push(more);
   if (truncated) help.push(`Run \`${commandLine} --full\` to see complete content`);
+  if (CONTENT_LISTS[path] && !fields && !empty && found) help.push(CONTENT_LISTS[path](commandLine, carry));
   if (help.length) out.help = help;
   if (enveloped && !quiet && envelope.meta && typeof envelope.meta === "object") {
     const meta = { ...envelope.meta };

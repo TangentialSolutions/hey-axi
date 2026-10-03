@@ -220,8 +220,10 @@ printf '%s' '[{"id":4242,"content":"See you at 10","topic":{"id":9001,"name":"Sa
   assert.equal(result.error, null);
   // A bare (non-envelope) list is shaped like any other: default fields and a count.
   assert.match(result.stdout, /^count: 1 shown; no more pages reported$/m);
-  assert.match(result.stdout, /data\[1\]\{id,content\}:/);
-  assert.match(result.stdout, /See you at 10/);
+  // Clip content stays out of the list; the help line says how to include it.
+  assert.match(result.stdout, /data\[1\]\{id,topic_id\}:/);
+  assert.doesNotMatch(result.stdout, /See you at 10/);
+  assert.match(result.stdout, /hey-axi clip list --fields id,content/);
   const forwarded = await import("node:fs/promises").then(({ readFile }) => readFile(argsFile, "utf8"));
   assert.equal(forwarded.trim(), "clip list --json");
   await rm(directory, { recursive: true, force: true });
@@ -411,7 +413,9 @@ printf '%s' '{"ok":true,"data":[{"date":"2026-09-03","content":"Today notes"}]}'
     env: { ...process.env, HEY_BIN: fakeHey, HEY_ARGS_FILE: argsFile },
   }, (error, stdout, stderr) => resolve({ error, stdout, stderr })));
   assert.equal(result.error, null);
-  assert.match(result.stdout, /Today/);
+  assert.match(result.stdout, /2026-09-03/);
+  assert.doesNotMatch(result.stdout, /Today notes/);
+  assert.match(result.stdout, /hey-axi journal read <date>/);
   const forwarded = await import("node:fs/promises").then(({ readFile }) => readFile(argsFile, "utf8"));
   assert.equal(forwarded.trim(), "journal list --calendar 42 --starts-on 2026-09-01 --ends-on 2026-09-30 --limit 10 --all --json");
   await rm(directory, { recursive: true, force: true });
@@ -526,7 +530,8 @@ printf '%s' '{"ok":true,"data":[{"id":51,"name":"Meeting follow-up","content":"T
   }, (error, stdout, stderr) => resolve({ error, stdout, stderr })));
   assert.equal(result.error, null);
   assert.match(result.stdout, /Meeting follow-up/);
-  assert.match(result.stdout, /Thanks for meeting/);
+  assert.doesNotMatch(result.stdout, /Thanks for meeting/);
+  assert.match(result.stdout, /--fields id,name,content/);
   const forwarded = await import("node:fs/promises").then(({ readFile }) => readFile(argsFile, "utf8"));
   assert.equal(forwarded.trim(), "snippet list --json");
   await rm(directory, { recursive: true, force: true });
