@@ -241,7 +241,7 @@ test("shape helpers: projection, fallbacks, array mapping, cell truncation", () 
   const items = [{ id: 1, creator: { name: "A" }, recipients: { to: [{ email_address: "x@a" }, { email_address: "y@a" }] } }, { id: 2, sender: { name: "B" } }];
   const { rows } = project(items, ["id", "from=creator.name|sender.name", "to=recipients.to[].email_address", "missing"]);
   assert.deepEqual(rows, [{ id: 1, from: "A", to: "x@a, y@a" }, { id: 2, from: "B", to: null }]);
-  const shaped = shapeData([{ id: 1, name: "L", content: "c".repeat(500) }], { path: "snippet list" });
+  const shaped = shapeData([{ id: 1, name: "L", content: "c".repeat(500) }], { path: "snippet list", fields: ["id", "name", "content"] });
   assert.equal(shaped.truncated, true);
   assert.match(shaped.data[0].content, new RegExp(`^c{${LIST_TEXT_LIMIT}}… \\(500 chars\\)$`));
   const detail = shapeData({ id: 1, body: "b".repeat(DETAIL_TEXT_LIMIT + 1) }, { path: "draft show" });

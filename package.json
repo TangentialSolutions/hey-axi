@@ -1,6 +1,6 @@
 {
   "name": "hey-axi",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Agent-ergonomic AXI wrapper for Basecamp's HEY CLI: TOON output, send-to-draft safety, and a shareable agent skill",
   "keywords": [
     "axi",
