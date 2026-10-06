@@ -1,0 +1,8 @@
+{
+  "ok": true,
+  "data": {
+    "id": 12345,
+    "destination": "feed"
+  },
+  "summary": "Contact delivery changed"
+}

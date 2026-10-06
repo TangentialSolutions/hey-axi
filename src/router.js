@@ -38,6 +38,17 @@ export function normalizeCatalog(nodes, types = {}) {
   });
 }
 
+// Which HEY the manifest covers, in words: "v1.7.0", or for a snapshot of an unreleased
+// branch ("1.7.0+main.8bf9310") "v1.7.0 plus the commands on HEY main as of 2026-10-03
+// (8bf9310, unreleased)".
+export function coverageLabel(manifest) {
+  const version = String(manifest.hey_version || "unknown");
+  const match = version.match(/^(\d+\.\d+\.\d+)\+([\w.-]+)\.([0-9a-f]{7,})$/);
+  if (!match) return /^\d/.test(version) ? `v${version}` : version;
+  const date = manifest.hey_commit_date ? ` as of ${manifest.hey_commit_date}` : "";
+  return `v${match[1]} plus the commands on HEY ${match[2]}${date} (commit ${match[3]}, unreleased)`;
+}
+
 export function loadBundledManifest() {
   return JSON.parse(readFileSync(new URL("./manifest.json", import.meta.url), "utf8"));
 }

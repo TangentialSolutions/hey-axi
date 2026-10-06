@@ -9,10 +9,11 @@ import { spawn } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { createInterface } from "node:readline";
 import { encode } from "@toon-format/toon";
-import { closestNames, loadBundledManifest, resolveCommand } from "./router.js";
+import { closestNames, coverageLabel, loadBundledManifest, resolveCommand } from "./router.js";
 import { STDIN_VALUE_FLAGS, checkPolicy, contentProblem, noopFor, runMode, sendCommands, sendStaging, userOnlyPaths } from "./policy.js";
 import { translateFailure, cleanLine, warningLines } from "./errors.js";
-import { RAW_OUTPUT_FLAGS, flagLabel, flagValue, hasAny, nodeValueFlags, scanArgs, stripAxiFlags, validateFlags, valueFlagSet } from "./args.js";
+import { FLAG_RULES, RAW_OUTPUT_FLAGS, flagLabel, flagValue, hasAny, nodeValueFlags, scanArgs, stripAxiFlags, validateFlags, valueFlagSet } from "./args.js";
+import { markSent, recipientProblem } from "./send.js";
 import { argumentHelp, checkArity, oneOfHelp } from "./arity.js";
 import { FieldError, LIST_FIELDS, DETAIL_FIELDS, carrySelectors, withSelectors, shapeEnvelope } from "./shape.js";
 import { homeView } from "./home.js";
@@ -53,7 +54,7 @@ function usage(manifest) {
     "",
     "Run `hey-axi` with no arguments for a live home view (mail for this directory's scope + next commands).",
     "",
-    `commands (from hey ${manifest.hey_version}; run \`hey-axi <command> --help\` for details):`,
+    `commands (from HEY CLI ${coverageLabel(manifest)}; run \`hey-axi <command> --help\` for details):`,
   ];
   for (const node of manifest.commands) {
     const subs = node.subcommands?.length ? ` ${node.subcommands.map((child) => child.name).join("|")}` : "";
@@ -103,11 +104,16 @@ export function commandHelp(node) {
     for (const child of node.subcommands) lines.push(`  ${child.path} — ${child.short}`);
   }
   if (node.flags?.length) {
+    const rules = FLAG_RULES[node.path] || {};
     lines.push("", "flags:");
     for (const flag of node.flags) {
-      const extra = [flag.desc, `(${flagDefault(flag)})`].filter(Boolean).join(" ");
+      const name = `--${flag.name}`;
+      const required = rules.required?.includes(name) && !/\(required\)$/.test(flag.desc || "") ? "(required)" : "";
+      const choices = rules.choices?.[name] ? `one of: ${rules.choices[name].join(", ")}` : "";
+      const extra = [flag.desc, required, choices, `(${flagDefault(flag)})`].filter(Boolean).join(" ");
       lines.push(`  ${flagLabel(flag)}  ${extra}`);
     }
+    for (const group of rules.together || []) lines.push(`  ${group.join(" and ")} go together: pass both or neither`);
   }
   lines.push("", "global flags (allowed on every command):", ...GLOBAL_HELP.map((line) => `  ${line}`));
   const own = OWN_FLAG_HELP.filter(([applies]) => applies(node.path)).map(([, line]) => `  ${line}`);
@@ -412,6 +418,10 @@ if (refusal) fail({ ok: false, ...refusal }, 2);
 const missingContent = contentProblem(node, flags, positionals);
 if (missingContent) fail({ ok: false, kind: "usage", ...missingContent }, 2);
 
+// A recipient HEY would drop (no domain): refused here, so no HEY version can lose it.
+const badRecipient = recipientProblem(path, scan.values);
+if (badRecipient) fail({ ok: false, kind: "usage", ...badRecipient }, 2);
+
 let heyArgs = stripAxiFlags(args);
 // `--message -` (and --note -, --content -): read the content from stdin.
 const fromStdin = scan.values.filter(([name, value]) => STDIN_VALUE_FLAGS.includes(name) && value === "-").map(([name]) => name);
@@ -461,19 +471,28 @@ function markStaged(parsed) {
   return { ...marker, data: parsed };
 }
 
-function reportFailure(result) {
-  const { failure, exitCode, warnings } = translateFailure(result, { path });
+// A real delivery: a send command, not staged as a draft, not --draft or --dry-run.
+const delivering = sendCommands().includes(path) && !staging && !flags.has("--draft") && !flags.has("--dry-run");
+
+async function reportFailure(result) {
+  const { failure, exitCode, warnings } = translateFailure(result, { path, usage: usageLines, example: examplesFor(node)[0], coverage: coverageLabel(manifest) });
   // The fix-it commands keep the invocation's --account/--base-url.
   for (const key of ["hint", "help"]) {
     if (Array.isArray(failure[key])) failure[key] = failure[key].map((line) => carrySelectors(line, carry));
     else if (failure[key]) failure[key] = carrySelectors(failure[key], carry);
   }
   for (const line of warnings) process.stderr.write(`${line}\n`);
-  const noop = exitCode !== 0 && noopFor(path, failure, positionals, { to: flagValue(args, "to"), from: flagValue(args, "from") });
+  const noop = exitCode !== 0 && noopFor(path, failure, positionals, { to: flagValue(args, "to"), from: flagValue(args, "from"), occurrence: flagValue(args, "occurrence") });
   if (noop) {
     if (json) process.stdout.write(`${JSON.stringify(noop)}\n`);
     else output(noop);
     process.exit(0);
+  }
+  if (failure.kind === "not_delivered") {
+    // HEY kept the message as a draft: remember it as one, so the next home view says so.
+    const { recordActivity } = await import("./activity.js");
+    const { findScope } = await import("./scope.js");
+    recordActivity({ path, positionals: failure.draft_id ? [failure.draft_id] : [], staged: true, scopeDir: scopeDirFor(process.cwd(), findScope) });
   }
   if (json) process.stdout.write(`${JSON.stringify(failure)}\n`);
   else output(failure);
@@ -484,7 +503,7 @@ const mode = runMode(path, flags);
 if (mode === "interactive") {
   // Only reached with the explicit --interactive opt-in (and a terminal, except for mcp).
   const result = await runHeyInteractive(heyArgs);
-  if (result.error) reportFailure(result);
+  if (result.error) await reportFailure(result);
   process.exit(result.status === 0 ? 0 : 1);
 }
 if (raw || mode !== "json") {
@@ -493,7 +512,7 @@ if (raw || mode !== "json") {
   // A watch stopped by a signal ended the way the agent asked: not an error.
   if (mode === "stream" && (result.signal || result.status === 130 || result.status === 143)) process.exit(0);
   // HEY's stdout here is data, not an error message: it never goes into the failure.
-  if (result.error || result.status !== 0) reportFailure({ ...result, stdout: "" });
+  if (result.error || result.status !== 0) await reportFailure({ ...result, stdout: "" });
   writeWarnings(result.stderr);
   if (mode !== "stream" && result.stdout?.length) process.stdout.write(result.stdout);
   process.exit(0);
@@ -522,7 +541,7 @@ if (path === "version") {
 }
 
 const result = await runHey(command, ["--json"]);
-if (result.status !== 0) reportFailure(result);
+if (result.status !== 0) await reportFailure(result);
 writeWarnings(result.stderr);
 
 let parsed;
@@ -551,6 +570,8 @@ try {
   }, 2);
 }
 shaped = markStaged(shaped);
+// A delivered message: say so, and when Undo Send holds it, that the thread won't show it yet.
+if (delivering && !full && !plainText) shaped = markSent(shaped);
 
 // A list whose HEY result carried no next steps still gets one (AXI principle 9): the
 // matching view/show command when there is one, else how to see every field.
@@ -575,7 +596,7 @@ if (!full && !quiet && !plainText && shaped && typeof shaped === "object" && sha
 
 const { recordActivity } = await import("./activity.js");
 const { findScope } = await import("./scope.js");
-recordActivity({ path, positionals, staged: Boolean(staging), sent: sendCommands().includes(path) && !staging && !flags.has("--draft") && !flags.has("--dry-run"), scopeDir: scopeDirFor(process.cwd(), findScope) });
+recordActivity({ path, positionals, staged: Boolean(staging), sent: delivering, scopeDir: scopeDirFor(process.cwd(), findScope) });
 
 if (json) process.stdout.write(`${JSON.stringify(shaped)}\n`);
 else output(shaped);

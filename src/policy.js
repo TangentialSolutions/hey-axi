@@ -157,14 +157,27 @@ const NAMED_CONTAINER = /\b(?:label|collection|group|workflow|box)\s+["'“]?([^
 export function noopFor(path, failure, positionals = [], values = {}) {
   const text = `${failure.error || ""} ${failure.hint || ""}`;
   const target = positionals.length ? ` ${positionals.join(" ")}` : "";
-  if (DELETES.has(path) && failure.kind === "not_found" && (GENERIC_NOT_FOUND.test(failure.error || "") || DELETES.get(path).test(failure.error || ""))) {
+  // One day of a repeating event (--occurrence) is not "already gone" on a not-found:
+  // the day may simply not be in the series (a wrong date), so it stays an error.
+  const occurrence = path === "event delete" && values.occurrence;
+  if (DELETES.has(path) && !occurrence && failure.kind === "not_found" && (GENERIC_NOT_FOUND.test(failure.error || "") || DELETES.get(path).test(failure.error || ""))) {
     return { ok: true, noop: true, command: path, result: `nothing to delete:${target || " it"} is already gone (no-op)`, note: "if you expected it to exist, check the id with the matching list command" };
   }
   const endState = END_STATES[path];
-  // Several targets: if HEY names some of them, it must name all of them.
+  if (!endState) return null;
+  // The ids asked for must be the ones HEY's message is about. Every number the message
+  // names has to be one of them (or the --to/--from container), and when it names any,
+  // it has to name them all: "1 already seen" is not about `seen 2`, and "5 already
+  // seen" is not about `seen 5 6`. A bare count is only accepted for the whole batch
+  // ("all 2 already seen"). A message naming no number at all ("Already seen") stands.
   const ids = positionals.filter((word) => /^\d+$/.test(word));
-  if (ids.length > 1) {
-    const named = ids.filter((id) => new RegExp(`\\b${id}\\b`).test(text));
+  if (ids.length) {
+    const allowed = new Set([...ids, ...["to", "from"].map((key) => values[key]).filter((value) => value !== undefined).map(String)]);
+    const numbers = [...text.matchAll(/(?<![\w.-])\d+(?![\w.-])/g)].map((match) => match[0]);
+    const strangers = numbers.filter((number) => !allowed.has(number));
+    const wholeBatch = strangers.length === 1 && Number(strangers[0]) === ids.length && new RegExp(`\\ball ${strangers[0]}\\b`, "i").test(text);
+    if (strangers.length && !wholeBatch) return null;
+    const named = ids.filter((id) => numbers.includes(id));
     if (named.length && named.length < ids.length) return null;
   }
   if (CONTAINER[path]) {
@@ -177,7 +190,7 @@ export function noopFor(path, failure, positionals = [], values = {}) {
   if (DESTINATION[path] && (!destination || !text.toLowerCase().includes(String(destination).toLowerCase()))) return null;
   // A failure that also reports a failed part ("1 already seen; 2 failed") is not a no-op.
   if (/\b(failed|cannot|can'?t|could ?n[o']t|unable|error)\b/i.test(failure.error || "")) return null;
-  if (endState && failure.kind !== "auth" && failure.kind !== "forbidden" && failure.kind !== "not_found" && endState.test(text)) {
+  if (failure.kind !== "auth" && failure.kind !== "forbidden" && failure.kind !== "not_found" && endState.test(text)) {
     return { ok: true, noop: true, command: path, result: `already done${target ? ` for${target}` : ""} (no-op)`, detail: failure.error };
   }
   return null;

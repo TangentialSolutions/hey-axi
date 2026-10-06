@@ -1,0 +1,17 @@
+{
+  "ok": true,
+  "data": {
+    "delayed": true,
+    "id": 3301,
+    "subject": "Board update",
+    "topic_id": 4401
+  },
+  "summary": "Message sent",
+  "breadcrumbs": [
+    {
+      "action": "view",
+      "command": "hey thread read 4401",
+      "description": "Read the thread once Undo Send releases the message"
+    }
+  ]
+}

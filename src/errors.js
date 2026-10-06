@@ -8,10 +8,12 @@
 // A `help` line always says what to do next.
 
 import { heyToAxi } from "./text.js";
+import { HEY_BAD_ADDRESS, notDelivered, recipientRefusal } from "./send.js";
 
 // HEY's exit codes (`hey help exit-codes`) → a kind, a message and the next step.
 const KINDS = {
-  1: { kind: "command_error", message: "the command failed", help: "Run `hey-axi <command> --help` to check the arguments" },
+  // No fixed help: the fix for an unrecognized failure is built from the command (fixFor).
+  1: { kind: "command_error", message: "the command failed" },
   2: { kind: "not_found", message: "not found", help: "Check the id; list commands such as `hey-axi box view imbox` show valid ids (threads use topic_id)" },
   3: { kind: "auth", message: "not signed in to HEY", help: "Run `hey-axi auth login --token <token>` if you have a token; otherwise ask the user to run `hey-axi auth login --interactive` in their terminal. Check with `hey-axi auth status`" },
   4: { kind: "forbidden", message: "this account can't do that", help: "Check `hey-axi account list` and --account" },
@@ -23,6 +25,22 @@ const KINDS = {
 };
 
 const USAGE_CODES = new Set(["usage", "invalid_argument", "invalid_flag", "validation"]);
+
+const DOCTOR = "Run `hey-axi doctor` to check HEY's sign-in, configuration and connection";
+
+// The specific next step for a failure that matched no known kind, or a usage error: the
+// command's own USAGE line and an example inline (no "see --help" round trip), then the
+// one command that diagnoses HEY itself.
+//   context: { path, usage: ["usage: hey-axi thread read <thread-id>"], example }
+function fixFor(context = {}, { usageError = false } = {}) {
+  const { path, usage = [], example } = context;
+  if (!path) return [DOCTOR];
+  const lines = usage.length ? [...usage] : [];
+  if (example) lines.push(`example: ${example}`);
+  if (!lines.length) lines.push(`Run \`hey-axi ${path} --help\` for its arguments and flags`);
+  if (!usageError) lines.push("Run `hey-axi doctor` if the arguments are right (it checks HEY's sign-in, configuration and connection)");
+  return lines;
+}
 
 // AXI exit code for a failed HEY run.
 export function axiExitCode(status, code) {
@@ -44,6 +62,12 @@ const INTERNAL = /^(Uncaught )?(TypeError|ReferenceError|SyntaxError|RangeError|
 const DEPENDENCY = /^(Uncaught\s+)?([\w$]+(\.[\w$]+|::[\w$]+)*(Error|Exception|Fault)\b|[A-Z]\w*(::[A-Z]\w*)+\b|Traceback\b|Caused by\b|node:internal\b)/;
 // Names of HTTP/database libraries; a short value that is just one of these says nothing.
 const LIBRARY = /\b(undici|axios|node-fetch|got|superagent|sqlite3?|better-sqlite3|sequel|activerecord|faraday|net\/http|go-http-client|libcurl|openssl|electron|node(\.js)?|v8)\b/i;
+// The ones that are never ordinary words: a line or meta value that still names one,
+// even mid-sentence ("request via superagent failed"), is dependency detail and is dropped.
+const LIBRARY_NAME = /(^|[^\w-])(undici|axios|node-fetch|superagent|better-sqlite3|sqlite3|activerecord|faraday|net\/http|go-http-client|libcurl|node\.js|nodejs)(?![\w-])/i;
+// HEY's error codes are snake_case words (usage, not_found, not_delivered ...); anything
+// else in `code` (SqliteError, ECONNRESET) is a dependency's and is left out.
+const HEY_CODE = /^[a-z][a-z0-9]*(_[a-z0-9]+)*$/;
 // Low-level network codes become plain words.
 const NETWORK = [
   [/\bECONNRESET\b/, "the connection was reset"], [/\bECONNREFUSED\b/, "the connection was refused"],
@@ -61,12 +85,12 @@ export function cleanLine(text) {
   if (network) return network[1];
   if (INTERNAL.test(line) || DEPENDENCY.test(line)) return "";
   // Library prefixes ("axios:", "fetch failed:", "Get \"https://…\":") and raw URLs add nothing.
-  line = line.replace(/^((axios|undici|node-fetch|got|faraday|sqlite3?|better-sqlite3)(\s*error)?|fetch failed|request failed|(get|post|put|patch|delete) "[^"]*"):?\s*/i, "")
+  line = line.replace(/^((axios|undici|node-fetch|got|superagent|faraday|sqlite3?|better-sqlite3)(\s*error)?|fetch failed|request failed|(get|post|put|patch|delete) "[^"]*"):?\s*/i, "")
     .replace(/\bhttps?:\/\/\S+/g, "the HEY server")
     // File paths and source locations (/usr/lib/…/x.js:12:3, C:\\…) are internal detail.
     .replace(/(^|\s)(\/|~\/|[A-Za-z]:\\)[^\s:]+(:\d+)*/g, "$1a local file").replace(/\s{2,}/g, " ").trim();
   // A line that is still a dependency error after its prefix came off is dropped too.
-  if (!line || INTERNAL.test(line) || DEPENDENCY.test(line) || /^[\w./-]+$/.test(line) && LIBRARY.test(line)) return "";
+  if (!line || INTERNAL.test(line) || DEPENDENCY.test(line) || LIBRARY_NAME.test(line) || /^[\w./-]+$/.test(line) && LIBRARY.test(line)) return "";
   return heyToAxi(line.length > 200 ? `${line.slice(0, 200)}…` : line);
 }
 
@@ -88,7 +112,7 @@ export function cleanMeta(value, depth = 0) {
     if (/[\r\n\u001b]/.test(value) || value.length > 200) return cleanLine(value);
     // Short values are kept as they are, unless they are a dependency's error or name.
     const bare = value.trim().replace(/^(error|Error|ERROR):\s*/, "");
-    return INTERNAL.test(bare) || DEPENDENCY.test(bare) || (/^[\w./@ -]{1,40}$/.test(bare) && LIBRARY.test(bare) && !/\s\w+\s\w+/.test(bare)) ? undefined : value;
+    return INTERNAL.test(bare) || DEPENDENCY.test(bare) || LIBRARY_NAME.test(bare) || (/^[\w./@ -]{1,40}$/.test(bare) && LIBRARY.test(bare) && !/\s\w+\s\w+/.test(bare)) ? undefined : value;
   }
   if (!value || typeof value !== "object" || depth > 3) return depth > 3 ? undefined : value;
   if (Array.isArray(value)) return value.slice(0, 20).map((item) => cleanMeta(item, depth + 1)).filter((item) => item !== undefined && item !== "");
@@ -124,31 +148,59 @@ function findEnvelope(text) {
 }
 
 // Returns { failure, exitCode, warnings }: the object to print, hey-axi's exit code,
-// and diagnostic lines for stderr.
-export function translateFailure(result, { path } = {}) {
-  const raw = KINDS[result.status] || KINDS[1];
-  const info = path ? { ...raw, help: raw.help.replace("<command>", path) } : raw;
+// and diagnostic lines for stderr. `context` ({ path, usage, example }) names the command
+// so the fix-it lines can be specific.
+export function translateFailure(result, context = {}) {
+  const { path } = context;
+  const info = KINDS[result.status] || KINDS[1];
+  const help = (kind = info) => kind.help || fixFor(context);
   if (result.error) {
-    return { failure: { ok: false, error: result.error, kind: info.kind, help: info.help }, exitCode: 1, warnings: [] };
+    return { failure: { ok: false, error: result.error, kind: info.kind, help: help() }, exitCode: 1, warnings: [] };
   }
   for (const text of [result.stderr, result.stdout]) {
     const found = findEnvelope(text);
     if (!found) continue;
     const { envelope } = found;
+    // A send HEY refused and kept as a draft: say it wasn't sent, and never "retry".
+    if (envelope.code === "not_delivered") return { failure: notDelivered(envelope), exitCode: 1, warnings: warnings(found.prefix) };
     // Even HEY's own envelope is translated: one clean line, no stack frames or escapes.
     const failure = { ok: false, error: cleanLine(String(envelope.error)) || info.message, kind: info.kind };
-    if (envelope.code !== undefined && envelope.code !== "" && envelope.code !== "unknown") failure.code = String(envelope.code);
+    const code = envelope.code === undefined || envelope.code === null ? "" : String(envelope.code);
+    if (code && code !== "unknown" && HEY_CODE.test(code) && !LIBRARY.test(code)) failure.code = code;
     const meta = envelope.meta === undefined || envelope.meta === "" ? undefined : cleanMeta(envelope.meta);
     if (meta !== undefined) failure.meta = meta;
-    const usage = USAGE_CODES.has(envelope.code) || /^usage: /i.test(String(envelope.error));
+    const usage = USAGE_CODES.has(code) || /^usage: /i.test(String(envelope.error));
     if (usage) failure.kind = "usage";
+    // hey-axi checked the command and flags against its catalog before HEY ran, so HEY
+    // not knowing one means the installed HEY is older than that catalog (for example
+    // v1.7.0 and `contact deliver`, which is only on HEY's main branch so far).
+    const unknown = usage && path && failure.error.match(/^unknown (flag|shorthand flag|command)[:\s]+["']?([^"'\s]+)["']?/i);
+    if (unknown) {
+      const what = /command/i.test(unknown[1]) ? `the command \`${path}\`` : `${unknown[2]} for \`${path}\``;
+      return {
+        failure: {
+          ok: false,
+          kind: "hey_outdated",
+          error: `the installed HEY CLI doesn't have ${what}${context.coverage ? `; hey-axi's catalog is HEY CLI ${context.coverage}` : ""}`,
+          help: ["Run `hey-axi version` to see which HEY is installed", "Upgrade HEY with `hey-axi upgrade`; commands not in a HEY release yet need a HEY built from basecamp/hey-cli main"],
+        },
+        exitCode: 1,
+        warnings: warnings(found.prefix),
+      };
+    }
+    // HEY refused a recipient it would otherwise drop: name it and the fix.
+    const badAddress = usage && failure.error.match(HEY_BAD_ADDRESS);
+    if (badAddress) {
+      const refusal = recipientRefusal(path, badAddress[1]);
+      return { failure: { ...failure, sent: false, reason: refusal.reason, hint: refusal.hint, help: `Fix or remove that address, then run the command again` }, exitCode: 2, warnings: warnings(found.prefix) };
+    }
     const hint = envelope.hint ? cleanLine(String(envelope.hint)) : "";
     if (hint && !/^Run 'hey(-axi)? --help'/.test(hint)) failure.hint = hint;
-    failure.help = usage ? `Run \`hey-axi ${path || "<command>"} --help\` for its arguments and flags` : info.help;
-    return { failure, exitCode: usage ? 2 : axiExitCode(result.status, envelope.code), warnings: warnings(found.prefix) };
+    failure.help = usage ? fixFor(context, { usageError: true }) : help();
+    return { failure, exitCode: usage ? 2 : axiExitCode(result.status, code), warnings: warnings(found.prefix) };
   }
   const detail = cleanLine(result.stderr) || cleanLine(result.stdout);
-  const failure = { ok: false, error: detail ? `${info.message}: ${detail}` : info.message, kind: info.kind, help: info.help };
+  const failure = { ok: false, error: detail ? `${info.message}: ${detail}` : info.message, kind: info.kind, help: help() };
   return { failure, exitCode: axiExitCode(result.status), warnings: [...warnings(result.stderr), ...warnings(result.stdout)] };
 }
 

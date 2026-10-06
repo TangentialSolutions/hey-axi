@@ -1,11 +1,28 @@
-name: manifest drift
+name: upstream drift
 
-# Weekly check that src/manifest.json still matches the latest HEY CLI release.
-# Only `hey version`, `hey commands` and `hey <command> --help` are run; no login, no mailbox access.
+# Compares the HEY command surface on basecamp/hey-cli main (built from source) against
+# src/manifest.json and fails, with a readable diff, when commands or flags differ.
+# Help-text-only changes are listed in the job summary but do not fail the job.
+# Only `hey commands --json` and `hey <command> --help` run; no login, no mailbox access.
 on:
   schedule:
-    - cron: "17 13 * * 1"
+    - cron: "17 13 * * *"
   workflow_dispatch:
+    inputs:
+      ref:
+        description: basecamp/hey-cli branch or tag to compare against
+        default: main
+  push:
+    branches: [main]
+    paths:
+      - src/manifest.json
+      - scripts/**
+      - .github/workflows/manifest-drift.yml
+  pull_request:
+    paths:
+      - src/manifest.json
+      - scripts/**
+      - .github/workflows/manifest-drift.yml
 
 permissions:
   contents: read
@@ -20,25 +37,28 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Install latest HEY CLI release
+      - name: Check out basecamp/hey-cli
+        uses: actions/checkout@v4
+        with:
+          repository: basecamp/hey-cli
+          ref: ${{ github.event.inputs.ref || 'main' }}
+          path: hey-cli
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: hey-cli/go.mod
+          cache: false
+      - name: Compare HEY's command list with src/manifest.json
         env:
-          GH_TOKEN: ${{ github.token }}
+          HEY_REF: ${{ github.event.inputs.ref || 'main' }}
+        run: node scripts/check-drift.js --source hey-cli --ref "$HEY_REF"
+      - name: Note newer HEY releases
+        if: always()
         run: |
           set -euo pipefail
-          tag=$(gh release view -R basecamp/hey-cli --json tagName -q .tagName)
-          version=${tag#v}
-          mkdir -p "$RUNNER_TEMP/hey"
-          cd "$RUNNER_TEMP/hey"
-          gh release download "$tag" -R basecamp/hey-cli -p "hey_${version}_linux_amd64.tar.gz" -p checksums.txt
-          grep " hey_${version}_linux_amd64.tar.gz\$" checksums.txt | sha256sum -c -
-          tar xzf "hey_${version}_linux_amd64.tar.gz" hey
-          echo "HEY_BIN=$RUNNER_TEMP/hey/hey" >> "$GITHUB_ENV"
-      - run: npm run refresh-manifest
-        env:
-          HOME: ${{ runner.temp }}/hey-home
-      - name: Fail if the manifest is out of date
-        run: |
-          if ! git diff --exit-code -- src/manifest.json; then
-            echo "::error::src/manifest.json is stale. Run 'npm run refresh-manifest' with the latest hey and commit the result."
-            exit 1
+          ours=$(node -p "require('./src/manifest.json').hey_version.split('+')[0]")
+          latest=$(git -C hey-cli tag --list 'v*' --sort=-v:refname | head -n1)
+          if [ -n "$latest" ] && [ "${latest#v}" != "$ours" ]; then
+            echo "::warning title=HEY release::basecamp/hey-cli has released $latest; src/manifest.json builds on v$ours. Re-run npm run manifest:main (or check-drift --ref $latest --write) and update the README/CHANGELOG coverage wording."
           fi

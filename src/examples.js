@@ -6,6 +6,7 @@ import { heyToAxi } from "./text.js";
 import { patternsFor } from "./arity.js";
 import { LIST_FIELDS, parseField } from "./shape.js";
 import { userOnlyPaths } from "./policy.js";
+import { requiredFlags } from "./args.js";
 
 // "(default …)" text for one flag, including zero, false and empty defaults.
 export function flagDefault(flag) {
@@ -31,8 +32,9 @@ function synthesized(node) {
   const base = fromHey ? heyToAxi(fromHey) : ["hey-axi", node.path, ...args, ...(oneOf ? [oneOf] : [])].join(" ");
   const out = [base];
   const own = (node.flags || []).filter((flag) => !(pattern?.oneOf || []).flat().includes(`--${flag.name}`));
-  const valued = own.find((flag) => flag.value && !/\(required\)$/.test(flag.desc || ""));
-  const required = own.filter((flag) => /\(required\)$/.test(flag.desc || ""));
+  const needed = requiredFlags(node);
+  const valued = own.find((flag) => flag.value && !needed.includes(`--${flag.name}`));
+  const required = own.filter((flag) => needed.includes(`--${flag.name}`));
   if (required.length && !fromHey) {
     out[0] = `${base} ${required.map((flag) => `--${flag.name} ${placeholder(flag)}`).join(" ")}`;
   }

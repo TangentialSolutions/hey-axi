@@ -164,12 +164,13 @@ test("translateFailure keeps HEY's envelope, maps exit codes to AXI's, and trans
     translateFailure({ status: 3, stdout: "", stderr: 'warning: system keyring unavailable\n{\n  "ok": false,\n  "error": "Not logged in",\n  "code": "auth",\n  "hint": "Run: hey auth login"\n}\n' }),
     { failure: { ok: false, error: "Not logged in", kind: "auth", code: "auth", hint: "Run: hey-axi auth login", help: "Run `hey-axi auth login --token <token>` if you have a token; otherwise ask the user to run `hey-axi auth login --interactive` in their terminal. Check with `hey-axi auth status`" }, exitCode: 1, warnings: ["warning: system keyring unavailable"] },
   );
-  // Real HEY 1.7.0 usage error: exit 2, HEY's generic hint dropped, help names the command.
+  // Real HEY 1.7.0 usage error: exit 2, HEY's generic hint dropped, help shows the usage inline.
   assert.deepEqual(
-    translateFailure({ status: 1, stderr: '{"ok":false,"error":"accepts at most 1 arg(s), received 2","code":"usage","hint":"Run \'hey --help\' for usage information"}' }, { path: "search" }),
-    { failure: { ok: false, error: "accepts at most 1 arg(s), received 2", kind: "usage", code: "usage", help: "Run `hey-axi search --help` for its arguments and flags" }, exitCode: 2, warnings: [] },
+    translateFailure({ status: 1, stderr: '{"ok":false,"error":"accepts at most 1 arg(s), received 2","code":"usage","hint":"Run \'hey --help\' for usage information"}' }, { path: "search", usage: ["usage: hey-axi search [query] [flags]"], example: "hey-axi search \"invoice\"" }),
+    { failure: { ok: false, error: "accepts at most 1 arg(s), received 2", kind: "usage", code: "usage", help: ["usage: hey-axi search [query] [flags]", "example: hey-axi search \"invoice\""] }, exitCode: 2, warnings: [] },
   );
-  assert.deepEqual(heyFailure({ status: 1, stderr: "", stdout: "" }), { ok: false, error: "the command failed", kind: "command_error", help: "Run `hey-axi <command> --help` to check the arguments" });
+  // A failure of no known kind: a specific next step, never "see --help".
+  assert.deepEqual(heyFailure({ status: 1, stderr: "", stdout: "" }), { ok: false, error: "the command failed", kind: "command_error", help: ["Run `hey-axi doctor` to check HEY's sign-in, configuration and connection"] });
   assert.deepEqual(heyFailure({ status: 7, stderr: "\u001b[31mError: upstream 502\u001b[0m\ngoroutine 1 [running]:\n  main.go:3\n" }), { ok: false, error: "HEY's API returned an error: upstream 502", kind: "api_error", help: "Retry later, or run `hey-axi doctor`" });
   assert.deepEqual(heyFailure({ status: 127, error: "HEY CLI not found on PATH" }), { ok: false, error: "HEY CLI not found on PATH", kind: "hey_missing", help: "Install the HEY CLI (curl -fsSL https://hey.com/install-cli | bash) or set HEY_BIN" });
 });

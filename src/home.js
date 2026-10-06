@@ -68,15 +68,24 @@ export async function homeView(runHey, { execPath = process.argv[1], cwd = proce
   let threads = Array.isArray(data) ? data : data?.[found?.key];
   if (threads && threads.length > query.limit) threads = threads.slice(0, query.limit);
   size.shown = threads?.length ?? 0;
+  const where = query.label.split(" (")[0];
   if (!threads?.length && (size.more || size.total > 0)) {
     // An empty page while HEY reports more: say exactly that, not "nothing".
     out.count = countLine(size);
     out.mail = `0 threads on this page; HEY reports ${size.total > 0 ? `${size.total} in total` : "more"}`;
-  } else if (!threads?.length) out.mail = `0 threads: nothing in ${query.label.split(" (")[0]}`;
-  else {
+  } else if (!threads?.length && size.complete) {
+    // "Nothing" only when HEY says nothing is left (a total of 0, has_more: false, no next page).
+    out.count = countLine(size);
+    out.mail = `0 threads: nothing in ${where}`;
+  } else if (!threads?.length) {
+    // An empty first page with no paging signal either way: report the page, claim no more.
+    out.count = countLine(size);
+    out.mail = `0 threads on this page of ${where}; HEY reported no total and no further pages`;
+  } else {
     out.count = countLine(size);
     out.threads = threads;
   }
-  out.help = homeHelp({ base: query.base, carry: query.carry, more: size.more, total: size.total, truncated, drafts: previous?.drafts > 0, search: query.path === "search" });
+  const unsure = !threads?.length && !size.more && !(size.total > 0) && !size.complete;
+  out.help = homeHelp({ base: query.base, carry: query.carry, more: size.more, total: size.total, truncated, drafts: previous?.drafts > 0, search: query.path === "search", unsure });
   return out;
 }

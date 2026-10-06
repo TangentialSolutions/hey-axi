@@ -88,11 +88,24 @@ test("home view degrades gracefully: HEY missing, signed out, empty Imbox", asyn
   assert.match(auth.stdout, /hey-axi auth login/);
   await signedOut.cleanup();
 
+  // An empty page with no paging signal: the page is reported, "nothing" is not claimed.
   const empty = await makeFakeHey({ stdout: imbox([]) });
-  const none = await runAxi([], { fake: empty });
-  assert.match(none.stdout, /mail: "?0 threads: nothing in account-wide Imbox"?/);
-  assert.doesNotMatch(none.stdout, /^count:/m);
+  const unsure = await runAxi([], { fake: empty });
+  assert.match(unsure.stdout, /mail: "?0 threads on this page of account-wide Imbox; HEY reported no total and no further pages"?/);
+  assert.match(unsure.stdout, /^count: 0 shown; no more pages reported$/m);
+  assert.match(unsure.stdout, /Run `hey-axi box view imbox --all` to check every page/);
+  assert.doesNotMatch(unsure.stdout, /nothing in/);
   await empty.cleanup();
+
+  // "Nothing" only when HEY says nothing is left: has_more false, a null next page, or a total of 0.
+  for (const side of [{ has_more: false }, { next_page: null }, { total_count: 0 }]) {
+    const done = await makeFakeHey({ stdout: JSON.stringify({ ok: true, data: { id: 7, name: "Imbox", kind: "imbox", postings: [], ...side } }) });
+    const none = await runAxi([], { fake: done });
+    assert.match(none.stdout, /mail: "?0 threads: nothing in account-wide Imbox"?/, JSON.stringify(side));
+    assert.match(none.stdout, /^count: 0 (of 0 )?total$/m, JSON.stringify(side));
+    assert.doesNotMatch(none.stdout, /check every page/);
+    await done.cleanup();
+  }
 });
 
 test("lists default to a few fields; --fields picks, --fields all and --full keep everything", async () => {
