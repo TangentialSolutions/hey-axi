@@ -1,0 +1,9 @@
+{
+  "ok": false,
+  "error": "HEY kept this message as draft 2201 instead of sending it, usually because the account has reached its sending limit",
+  "code": "not_delivered",
+  "hint": "hey draft send 2201",
+  "meta": {
+    "draft_id": 2201
+  }
+}

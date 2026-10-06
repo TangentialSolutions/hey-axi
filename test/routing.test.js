@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { loadBundledManifest, listCommands } from "../src/router.js";
 import { runMode, sendCommands, userOnlyPaths } from "../src/policy.js";
 import { patternsFor } from "../src/arity.js";
+import { FLAG_RULES, requiredFlags } from "../src/args.js";
 import { makeFakeHey, runAxi } from "./helpers.js";
 
 const manifest = loadBundledManifest();
@@ -14,10 +15,11 @@ const gated = new Set([...sendCommands(), "auth token"]);
 function argsFor(node) {
   const [pattern] = patternsFor(node);
   const positionals = (pattern?.args || []).filter((arg) => arg.required).map(() => "123");
-  const typed = (flag) => (flag.type === "int" ? "5" : "x");
+  const typed = (flag) => FLAG_RULES[node.path]?.choices?.[`--${flag.name}`]?.[0] ?? (flag.type === "int" ? "5" : "x");
+  const required = requiredFlags(node);
   const flags = [
     ...((node.flags || []).some((flag) => flag.name === "limit") ? ["--limit", "5"] : []),
-    ...(node.flags || []).filter((flag) => /\(required\)$/.test(flag.desc || "")).flatMap((flag) => [`--${flag.name}`, typed(flag)]),
+    ...(node.flags || []).filter((flag) => required.includes(`--${flag.name}`)).flatMap((flag) => [`--${flag.name}`, typed(flag)]),
     ...(pattern?.oneOf || []).map((group) => group[0]).flatMap((flag) => {
       const spec = (node.flags || []).find((candidate) => `--${candidate.name}` === flag);
       return spec?.value ? [flag, "x"] : [flag];

@@ -1,7 +1,8 @@
 {
- "source": "hey commands --json + hey <command> --help",
- "hey_version": "1.7.0",
- "hey_commit": "924703c5d7e8a24bb46acba0fe27bbc27f9c1de9",
+ "source": "hey commands --json + hey <command> --help (basecamp/hey-cli main at 8bf9310, 2026-10-03; unreleased, built from source)",
+ "hey_version": "1.7.0+main.8bf9310",
+ "hey_commit": "8bf9310c0b1df7448e39ed1f81826ae795bd8b5c",
+ "hey_commit_date": "2026-10-03",
  "commands": [
   {
    "name": "account",
@@ -199,7 +200,7 @@
    "path": "box",
    "short": "List HEY boxes and their email threads",
    "usage": "box <name|id>",
-   "notes": "Accepts a box name or numeric ID. Returns email threads. Use topic_id with hey thread read, reply, and forward; use id with seen, unseen, and move. A row with kind \"bundle\" groups one sender's unseen threads and has no topic_id: list them with hey bundle view <id>, and every thread with that sender via hey contact threads <contact-id>. --page continues from the next_page cursor of an earlier listing of the same box.",
+   "notes": "Accepts a box's short name (imbox, feed, papertrail, setaside, replylater, bubbleup), kind (feedbox, trailbox, …) or display name (including one the user gave the box) in any case, or a numeric ID. hey search --in and hey move --to take the same spellings, but not every box: search narrows only to imbox, feed and papertrail (plus trash) and refuses anything else as a usage error, and move takes a box ID or any box but bubbleup (use hey bubble up). An unknown name is not_found here and in move. Trash is not a box: search it with hey search --in trash and move threads there with hey trash. Returns email threads. Use topic_id with hey thread read, reply, and forward; use id with seen, unseen, and move. A row with kind \"bundle\" groups one sender's unseen threads and has no topic_id: list them with hey bundle view <id>, and every thread with that sender via hey contact threads <contact-id>. --page continues from the next_page cursor of an earlier listing of the same box.",
    "flags": [
     {
      "name": "all",
@@ -254,7 +255,7 @@
      "name": "view",
      "path": "box view",
      "short": "List email threads in a box",
-     "notes": "Accepts a box name or numeric ID. Returns email threads. Use topic_id with hey thread read, reply, and forward; use id with seen, unseen, and move. A row with kind \"bundle\" groups one sender's unseen threads and has no topic_id: list them with hey bundle view <id>, and every thread with that sender via hey contact threads <contact-id>. --page continues from the next_page cursor of an earlier listing of the same box.",
+     "notes": "Accepts a box's short name (imbox, feed, papertrail, setaside, replylater, bubbleup), kind (feedbox, trailbox, …) or display name (including one the user gave the box) in any case, or a numeric ID. hey search --in and hey move --to take the same spellings, but not every box: search narrows only to imbox, feed and papertrail (plus trash) and refuses anything else as a usage error, and move takes a box ID or any box but bubbleup (use hey bubble up). An unknown name is not_found here and in move. Trash is not a box: search it with hey search --in trash and move threads there with hey trash. Returns email threads. Use topic_id with hey thread read, reply, and forward; use id with seen, unseen, and move. A row with kind \"bundle\" groups one sender's unseen threads and has no topic_id: list them with hey bundle view <id>, and every thread with that sender via hey contact threads <contact-id>. --page continues from the next_page cursor of an earlier listing of the same box.",
      "flags": [
       {
        "name": "all",
@@ -281,8 +282,8 @@
      ],
      "examples": [
       "hey box view imbox",
-      "hey box view imbox --limit 10",
-      "hey box view imbox --page next-cursor"
+      "hey box view papertrail",
+      "hey box view imbox --limit 10"
      ]
     }
    ],
@@ -292,7 +293,7 @@
    "examples": [
     "hey box list",
     "hey box view imbox",
-    "hey box view imbox --limit 10"
+    "hey box view papertrail"
    ]
   },
   {
@@ -331,7 +332,7 @@
      "name": "pop",
      "path": "bubble pop",
      "short": "Cancel bubble-ups",
-     "notes": "Accepts one or more box item IDs from hey box view output. Cancels each thread's bubble-up.",
+     "notes": "Accepts one or more box item IDs from hey box view output. Cancels each thread's bubble-up; the thread moves to the Imbox and is marked seen.",
      "synopsis": [
       "hey bubble pop <box-item-id>... [flags]"
      ],
@@ -344,7 +345,7 @@
      "name": "up",
      "path": "bubble up",
      "short": "Bubble email threads up",
-     "notes": "Accepts one or more box item IDs from hey box view output. Exactly one of --now, --on, --tomorrow, --weekend and --next-week is required. --on takes a YYYY-MM-DD date; HEY bubbles the threads up at its morning hour of that day, or at its evening hour (18:00) when the date is today. --tomorrow, --weekend and --next-week land at the morning hour of tomorrow, the coming Saturday, and next Monday.",
+     "notes": "Accepts one or more box item IDs from hey box view output. Exactly one of --now, --on, --tomorrow, --weekend and --next-week is required. --on takes a YYYY-MM-DD date; HEY bubbles the threads up at 08:00 UTC that day, or at 18:00 UTC when the date is today in UTC, HEY's clock for bubbling up, not the local one. --tomorrow, --weekend and --next-week land at 08:00 UTC tomorrow, the next Saturday, and next Monday.",
      "flags": [
       {
        "name": "next-week",
@@ -817,7 +818,7 @@
    "name": "compose",
    "path": "compose",
    "short": "Write and send a new email",
-   "notes": "--from selects a configured sender email or ID from account senders; --account must agree. --from is only for new messages. Starts a new thread with --to (optionally --cc/--bcc), which requires --subject, or replies to an existing one with --thread-id, which does not. Repeatable --attach files are uploaded before sending and can be sent without body text. The body is Markdown; use --message-html to send raw HTML instead. --draft saves instead of sending — recipients become optional — and answers the draft ID for hey draft show/edit/send/delete. A new message ends with the sender's HEY name tag, as one composed in HEY does; --no-name-tag leaves it out.",
+   "notes": "--from selects a configured sender email or ID from account senders; --account must agree. --from is only for new messages. Starts a new thread with --to (optionally --cc/--bcc), which requires --subject, or replies to an existing one with --thread-id, which does not; --thread-id answers the thread's latest emailed message, never a note (kind \"comment\") or share notice (kind \"access_notice\"), and a thread with no emailed message is refused as not_found. Repeatable --attach files are uploaded before sending and can be sent without body text. The body is Markdown; use --message-html to send raw HTML instead. --draft saves instead of sending — recipients become optional — and answers the draft ID for hey draft show/edit/send/delete. A new message ends with the sender's HEY name tag, as one composed in HEY does; --no-name-tag leaves it out. A send answers the new message's id and the topic_id of its thread (for hey thread read), with subject and delayed (true while Undo Send holds it back) — only the fields HEY's answer carries, never guessed. While delayed is true, HEY leaves the message out of its thread, so hey thread read shows the thread without it (a thread it started reads as not found) until Undo Send releases it. A send HEY refuses — usually the account's sending limit — is kept as a draft and fails with not_delivered (exit 7), naming the draft in meta.draft_id; send it later with hey draft send <draft_id>, not by sending again, which only makes another draft.",
    "flags": [
     {
      "name": "attach",
@@ -883,7 +884,7 @@
      "name": "thread-id",
      "value": true,
      "type": "string",
-     "desc": "Reply to this thread instead of starting a new one",
+     "desc": "Reply to this thread's latest emailed message instead of starting a new one",
      "default": ""
     },
     {
@@ -961,7 +962,7 @@
    "name": "contact",
    "path": "contact",
    "short": "Manage contacts",
-   "notes": "Contact IDs come from `hey contact list`. Hiding and bundling are reversible. Private notes are managed under `hey contact note`.",
+   "notes": "Contact IDs come from `hey contact list`. Delivery is managed with `hey contact deliver`; hiding and bundling are reversible. Private notes are managed under `hey contact note`.",
    "subcommands": [
     {
      "name": "add",
@@ -1010,12 +1011,34 @@
      "name": "bundle",
      "path": "contact bundle",
      "short": "Bundle a contact's mail",
-     "notes": "Bundling is a per-contact preference. HEY applies it when the contact's delivery setting supports bundles. Reverse it with `hey contact unbundle <id>`.",
+     "notes": "Bundling is a per-contact preference. HEY bundles only a contact with no box preference or one sent to the Paper Trail; for any other it answers success and changes nothing. Reverse it with `hey contact unbundle <id>`.",
      "synopsis": [
       "hey contact bundle <id> [flags]"
      ],
      "examples": [
       "hey contact bundle 12345"
+     ]
+    },
+    {
+     "name": "deliver",
+     "path": "contact deliver",
+     "short": "Choose where a contact's email arrives",
+     "notes": "Use a contact ID from `hey contact list`, not a clearance ID, box item ID, box ID, or email address. Pass the exact --to token: imbox, feed, papertrail, or screened-out.",
+     "flags": [
+      {
+       "name": "to",
+       "value": true,
+       "type": "string",
+       "desc": "Delivery destination: imbox, feed, papertrail, or screened-out",
+       "default": ""
+      }
+     ],
+     "synopsis": [
+      "hey contact deliver <contact-id> [flags]"
+     ],
+     "examples": [
+      "hey contact deliver 12345 --to feed",
+      "hey contact deliver 12345 --to screened-out"
      ]
     },
     {
@@ -1062,7 +1085,7 @@
      "name": "note",
      "path": "contact note",
      "short": "Manage private contact notes",
-     "notes": "Private notes support show, set, and delete. Set accepts --note, positional content, stdin, or $EDITOR.",
+     "notes": "Private notes support show, set, and delete. Show answers note_markdown, the form set takes, and note_markdown_lossless; when that is false, change note_html and set it with --note-html instead. Set replaces the whole note and accepts --note, positional content, stdin, or $EDITOR.",
      "subcommands": [
       {
        "name": "delete",
@@ -1079,7 +1102,7 @@
        "name": "set",
        "path": "contact note set",
        "short": "Write or edit a private contact note",
-       "notes": "Accepts --note, positional content, stdin, or opens $EDITOR with the existing note. The note is Markdown, or raw HTML via --note-html. Use the delete subcommand to clear a note.",
+       "notes": "Replaces the whole note. Accepts --note, positional content, stdin, or opens $EDITOR with the existing note as Markdown, which is refused when that Markdown would drop part of the note. The note is Markdown, or raw HTML via --note-html. To add to a note, read note_markdown from hey contact note show, change it, and set all of it; when note_markdown_lossless is false, change note_html and set it with --note-html instead. Use the delete subcommand to clear a note.",
        "flags": [
         {
          "name": "note",
@@ -1102,19 +1125,22 @@
        ],
        "examples": [
         "hey contact note set 12345 \"Prefers email\"",
-        "hey contact note set 12345 --note \"Prefers email\""
+        "hey contact note set 12345 --note \"Prefers email\"",
+        "hey contact note set 12345 --note-html \"<p><strong>Prefers email</strong></p>\""
        ]
       },
       {
        "name": "show",
        "path": "contact note show",
        "short": "Read a private contact note",
+       "notes": "JSON answers note (HEY's plain text, formatting dropped), note_html (as HEY serves it), note_markdown (the note as Markdown, the form hey contact note set takes) and note_markdown_lossless. When note_markdown_lossless is false the note holds an attachment or other markup Markdown cannot carry: change note_html and write it back with --note-html instead.",
        "synopsis": [
         "hey contact note show <id> [flags]"
        ],
        "examples": [
         "hey contact note show 12345",
-        "hey contact note show 12345 --json"
+        "hey contact note show 12345 --json",
+        "hey contact note show 12345 --jq '.data.note_markdown'"
        ]
       }
      ],
@@ -1126,7 +1152,7 @@
      "name": "show",
      "path": "contact show",
      "short": "View a contact",
-     "notes": "Returns contact details, aliases, screening status, and the private note. The embedded postings are one page of the contact's threads; hey contact threads <id> pages through all of them.",
+     "notes": "Returns contact details, aliases, screening status, and the private note: note, note_html and note_markdown, empty for a contact with no note, and note_markdown_lossless, true then (note_markdown is the form hey contact note set takes when note_markdown_lossless is true). The embedded postings are one page of the contact's threads; hey contact threads <id> pages through all of them.",
      "synopsis": [
       "hey contact show <id> [flags]"
      ],
@@ -1367,7 +1393,7 @@
      "name": "send",
      "path": "draft send",
      "short": "Deliver a draft",
-     "notes": "Sends the draft as it stands — recipients are required, added with `hey draft edit --to`. Delivery goes through HEY's undo window. Scheduling a delivery is done in a HEY app for now; the API cannot yet name an exact instant.",
+     "notes": "Sends the draft as it stands — recipients are required, added with `hey draft edit --to`. Delivery goes through HEY's undo window. The answer carries the delivered message's id and its thread's topic_id, with subject and delayed; when HEY's answer names no entry, the id stays the draft's and only the fields HEY served are added. While delayed is true, HEY leaves the message out of its thread, so hey thread read shows the thread without it (a thread it started reads as not found) until Undo Send releases it. Scheduling a delivery is done in a HEY app for now; the CLI has no flag for it, and HEY's API schedules only to a whole hour. A send HEY refuses — usually the account's sending limit — is kept as a draft and fails with not_delivered (exit 7), naming the draft in meta.draft_id; send it later with hey draft send <draft_id>, not by sending again, which only makes another draft.",
      "synopsis": [
       "hey draft send <draft-id> [flags]"
      ],
@@ -1397,7 +1423,7 @@
    "name": "event",
    "path": "event",
    "short": "Read and manage calendar events",
-   "notes": "Subcommands: list, day, week, add, edit, delete. \"What's on the schedule today?\" is answered by day, not list: day and week read the span as HEY draws it, with a repeating event expanded into the occurrences inside it, over the calendars switched on in HEY. list reads what calendars hold — every calendar unless --calendar names one — and a repeating event is one row, its series, on the day the series began. An edit is not a patch on HEY's side: it resends the notes, location, link, attached email, reminders and time zones the event already carries, so notes lose their formatting and a countdown is removed unless --countdown names one again. edit <series id> changes a whole series; one day of it is edit <series id> --occurrence <occurrence_id from day/week> --apply-to current|future, which keeps the countdown and refuses to flatten notes unless --allow-plain-notes or --notes is given. --apply-to future starts a new series and requires --repeat with its complete schedule; a preset alone means forever and custom copies an existing opaque schedule (a count-based rule can restart its full count). A virtual day of an opaque custom schedule is read from HEY's Day view and refused if that view no longer serves it. A realized custom day cannot be split safely; use a virtual occurrence, edit that day alone, or edit the whole series. A realized preset occurrence moved away from its series time must be moved back with --apply-to current before a future split. Read the day again afterward for the new series id.",
+   "notes": "Subcommands: list, day, week, add, edit, delete. \"What's on the schedule today?\" is answered by day, not list: day and week read the span as HEY draws it, with a repeating event expanded into the occurrences inside it, over the calendars switched on in HEY; without a date they, and list's window, start from today in the HEY account's time zone. list reads what calendars hold — every calendar unless --calendar names one — and a repeating event is one row, its series, on the day the series began. An edit is not a patch on HEY's side: it resends the notes, location, link, attached email, reminders and time zones the event already carries, so notes lose their formatting and a countdown is removed unless --countdown names one again. edit <series id> changes a whole series; one day of it is edit <series id> --occurrence <occurrence_id from day/week> --apply-to current|future, which keeps the countdown and refuses to flatten notes unless --allow-plain-notes or --notes is given. --apply-to future starts a new series and requires --repeat with its complete schedule; a preset alone means forever and custom copies an existing opaque schedule (a count-based rule can restart its full count). A virtual day of an opaque custom schedule is read from HEY's Day view and refused if that view no longer serves it. A realized custom day cannot be split safely; use a virtual occurrence, edit that day alone, or edit the whole series. A realized preset occurrence moved away from its series time must be moved back with --apply-to current before a future split. Read the day again afterward for the new series id. delete <series id> deletes the whole series; one day of it is delete <series id> --occurrence <occurrence_id> --apply-to current|future, whether or not HEY has written that day out. delete refuses a written-out day's own id, because HEY would draw the day again from the series. add and edit read clock times, and today when --starts-on is left out, in the HEY account's time zone unless --time-zone names one, and refuse when they need it and the account has none; an edit keeps a zoned event's zone and leaves a zoneless event zoneless.",
    "subcommands": [
     {
      "name": "add",
@@ -1523,7 +1549,7 @@
        "name": "time-zone",
        "value": true,
        "type": "string",
-       "desc": "IANA zone the times are written in (defaults to this machine's)",
+       "desc": "IANA zone the times are written in, such as America/New_York (defaults to your HEY account's)",
        "default": ""
       },
       {
@@ -1575,12 +1601,30 @@
      "name": "delete",
      "path": "event delete",
      "short": "Delete an event",
-     "notes": "Deletes the whole event, recurring series included. An event on a shared calendar is deleted for everybody on it.",
+     "notes": "delete <id> deletes the whole event, recurring series included, for everybody on a shared calendar. One day of a series is delete <series id> --occurrence <occurrence_id from day/week> --apply-to current|future: current deletes that day alone; future deletes it and every day after, and from the series' first day that is the whole series. A day HEY wrote out on its own (own id in id/recording_id, series in parent_id) is refused by its own id, because deleting that id lets HEY draw the day again from the series; use the occurrence form. future is refused from a written-out day moved off its series time or on an opaque custom schedule.",
+     "flags": [
+      {
+       "name": "apply-to",
+       "value": true,
+       "type": "string",
+       "desc": "How much of the series an --occurrence delete reaches: current (that day alone) or future (that day and every one after it)",
+       "default": ""
+      },
+      {
+       "name": "occurrence",
+       "value": true,
+       "type": "string",
+       "desc": "One day of a repeating event, by the occurrence_id 'hey event day' serves (<series id>_<YYYY-MM-DD>)",
+       "default": ""
+      }
+     ],
      "synopsis": [
       "hey event delete <id> [flags]"
      ],
      "examples": [
-      "hey event delete 4821"
+      "hey event delete 4821",
+      "hey event delete 4821 --occurrence 4821_2026-09-15 --apply-to current",
+      "hey event delete 4821 --occurrence 4821_2026-09-15 --apply-to future"
      ]
     },
     {
@@ -1609,7 +1653,7 @@
        "name": "calendar",
        "value": true,
        "type": "int",
-       "desc": "Calendar ID to file the event on",
+       "desc": "Calendar ID to move the event to",
        "default": "0"
       },
       {
@@ -1726,7 +1770,7 @@
        "name": "time-zone",
        "value": true,
        "type": "string",
-       "desc": "IANA zone the times are written in (defaults to this machine's)",
+       "desc": "IANA zone the times are written in, such as America/New_York (defaults to the event's own zone, else your HEY account's)",
        "default": ""
       },
       {
@@ -1831,7 +1875,7 @@
    "name": "forward",
    "path": "forward",
    "short": "Forward the latest message in a thread",
-   "notes": "Forwards the latest entry in a thread with HEY's quoted content. Accepts comma-separated recipients and an optional note via -m.",
+   "notes": "Forwards the latest emailed message in a thread with HEY's quoted content — never an internal note or share notice posted after it. Accepts comma-separated recipients and an optional note via -m. The answer's thread_id and entry_id name what was forwarded; id and topic_id name the new message and the thread it started, as HEY's answer names them. While delayed is true, HEY leaves the message out of its thread, so hey thread read shows the thread without it (a thread it started reads as not found) until Undo Send releases it. A send HEY refuses — usually the account's sending limit — is kept as a draft and fails with not_delivered (exit 7), naming the draft in meta.draft_id; send it later with hey draft send <draft_id>, not by sending again, which only makes another draft.",
    "flags": [
     {
      "name": "bcc",
@@ -1882,7 +1926,7 @@
    "name": "habit",
    "path": "habit",
    "short": "Create and manage habits",
-   "notes": "Subcommands: list, create, edit, delete, complete, uncomplete. Use list --ids-only to pipe IDs to the rest. Days accept weekday names or 0 (Sunday) through 6 (Saturday).",
+   "notes": "Subcommands: list, create, edit, delete, complete, uncomplete. Use list --ids-only to pipe IDs to the rest. Days accept weekday names or 0 (Sunday) through 6 (Saturday). Without --date, list, complete and uncomplete use today in the HEY account's time zone; complete and uncomplete refuse when the account has none, so pass --date.",
    "subcommands": [
     {
      "name": "complete",
@@ -2065,7 +2109,7 @@
    "name": "ignore",
    "path": "ignore",
    "short": "Ignore email threads",
-   "notes": "Accepts one or more box item IDs from hey box view output. Ignored threads remain in their box and can be restored with hey stop-ignoring.",
+   "notes": "Accepts one or more box item IDs from hey box view output. Ignoring marks a thread seen and leaves it in its box; while it is ignored hey unseen has no effect. hey stop-ignoring resumes notifications but leaves it seen.",
    "synopsis": [
     "hey ignore <box-item-id>... [flags]"
    ],
@@ -2078,7 +2122,7 @@
    "name": "journal",
    "path": "journal",
    "short": "Read and write journal entries",
-   "notes": "Subcommands: list, read, write. Read defaults to today. Write accepts --content, stdin, or opens $EDITOR; content is Markdown, or raw HTML via --content-html.",
+   "notes": "Subcommands: list, read, write. Read and write default to today in the HEY account's time zone; write refuses without one, so name the date. Read JSON answers content (HTML as HEY serves it), content_markdown (the form write takes) and content_markdown_lossless; when that is false, change content and write it with --content-html instead. Write replaces the whole entry and accepts --content, stdin, or opens $EDITOR (refused for an entry whose Markdown is not lossless); content is Markdown, or raw HTML via --content-html.",
    "subcommands": [
     {
      "name": "list",
@@ -2138,7 +2182,7 @@
      "examples": [
       "hey journal read",
       "hey journal read 2026-03-15",
-      "hey journal read --html"
+      "hey journal read --html > entry.html"
      ]
     },
     {
@@ -2158,7 +2202,7 @@
        "name": "content-html",
        "value": true,
        "type": "string",
-       "desc": "Journal content as raw HTML instead of Markdown",
+       "desc": "Journal content as raw HTML instead of Markdown; the trix-content wrapper HEY serves an entry in is taken off",
        "default": ""
       }
      ],
@@ -2426,7 +2470,7 @@
    "name": "reply",
    "path": "reply",
    "short": "Reply to a thread",
-   "notes": "Replies to the latest entry in a thread, addressed the way HEY addresses a reply: everyone that entry was addressed to, plus its sender on the To line, minus the acting user's own addresses. Repeatable --to/--cc/--bcc flags merge explicit recipients into that prefill; --replace-recipients uses only the explicit lists. --dry-run is read-only, needs no message, and returns the resolved sender, recipients, subject, account, thread and entry. Accepts message via -m, stdin, or $EDITOR, plus repeatable --attach files; an attachment can be sent without body text. The message is Markdown; use --message-html to send raw HTML instead. --draft saves the reply as a draft, carries the resolved recipients, and answers the draft ID for hey draft show/edit/send/delete.",
+   "notes": "Replies to the latest emailed message in a thread — never a note (kind \"comment\") or share notice (kind \"access_notice\"), which are internal to the thread and never emailed; a thread with no emailed message is refused as not_found. The reply is addressed the way HEY addresses a reply: everyone that entry was addressed to, plus its sender on the To line, minus the acting user's own addresses. Repeatable --to/--cc/--bcc flags merge explicit recipients into that prefill; --replace-recipients uses only the explicit lists. --dry-run is read-only, needs no message, and returns the resolved sender, recipients, subject, account, thread and entry. Accepts message via -m, stdin, or $EDITOR, plus repeatable --attach files; an attachment can be sent without body text. The message is Markdown; use --message-html to send raw HTML instead. --draft saves the reply as a draft, carries the resolved recipients, and answers the draft ID for hey draft show/edit/send/delete. A send answers the reply's id and the topic_id of the thread it landed on — a new thread when HEY breaks the reply out of this one — as HEY's answer names them. While delayed is true, HEY leaves the message out of its thread, so hey thread read shows the thread without it (a thread it started reads as not found) until Undo Send releases it. A send HEY refuses — usually the account's sending limit — is kept as a draft and fails with not_delivered (exit 7), naming the draft in meta.draft_id; send it later with hey draft send <draft_id>, not by sending again, which only makes another draft.",
    "flags": [
     {
      "name": "attach",
@@ -2517,7 +2561,7 @@
       },
       {
        "name": "seen",
-       "desc": "Mark what they already sent as seen",
+       "desc": "Mark what they already sent as seen (reliable only for a sender with one waiting thread)",
        "default": "false"
       }
      ],
@@ -2533,8 +2577,8 @@
     {
      "name": "clear",
      "path": "screener clear",
-     "short": "Empty the Screener without deciding",
-     "notes": "Clears the whole queue for the account, not one sender, and takes no confirmation. It decides nothing: senders reappear in The Screener on their next email, so what they already sent stays hidden until then. HEY queues the work, so `hey screener list` may still show the queue for a moment afterwards.",
+     "short": "Trash everything waiting in the Screener",
+     "notes": "Clears the whole queue for the account, not one sender, and takes no confirmation: everything waiting goes to Trash, or loses your access if it is a shared thread. It approves and denies no one, so senders reappear in The Screener on their next email. Confirm with the user first. HEY queues the work, so `hey screener list` may still show the queue for a moment afterwards.",
      "synopsis": [
       "hey screener clear [flags]"
      ],
@@ -2547,11 +2591,11 @@
      "name": "deny",
      "path": "screener deny",
      "short": "Turn a sender away",
-     "notes": "Clearance IDs come from `hey screener list`, not contact IDs. --spam also marks what they already sent as spam and trains HEY's filter on it, which is harder to undo than denying. Reverse with `hey screener approve <id>`.",
+     "notes": "Clearance IDs come from `hey screener list`, not contact IDs. --spam also marks what they already sent as spam and, for a single ID, trains HEY's filter on it, which is harder to undo than denying; several IDs go through HEY's bulk endpoint, which does not train. Reverse with `hey screener approve <id>`.",
      "flags": [
       {
        "name": "spam",
-       "desc": "Also mark what they sent as spam and train the filter",
+       "desc": "Also mark what they sent as spam (and train the filter, for a single ID)",
        "default": "false"
       }
      ],
@@ -2629,7 +2673,7 @@
    "name": "search",
    "path": "search",
    "short": "Search email threads and messages",
-   "notes": "Returns one result per thread. id is the box item ID for organization actions when the thread has an active box item, topic_id opens the thread, and messages contains the matching message summaries. Use `hey search filters` to discover box, date, label, and attachment values.",
+   "notes": "Returns one result per thread. id is the box item ID for organization actions, omitted when you have no box item for the thread; topic_id opens the thread, and messages contains the matching message summaries. Use `hey search filters` to discover box, date, label, and attachment values.",
    "flags": [
     {
      "name": "all",
@@ -2675,7 +2719,7 @@
      "name": "in",
      "value": true,
      "type": "string",
-     "desc": "Box: imbox, feed, papertrail, or trash",
+     "desc": "Box: imbox, feed, papertrail, or trash (or the kind or name of one of those three boxes)",
      "default": ""
     },
     {
@@ -3122,7 +3166,7 @@
        "name": "content-html",
        "value": true,
        "type": "string",
-       "desc": "Snippet content as raw HTML instead of Markdown",
+       "desc": "Snippet content as raw HTML instead of Markdown; the trix-content wrapper HEY serves content_html in is taken off",
        "default": ""
       },
       {
@@ -3182,7 +3226,7 @@
        "name": "content-html",
        "value": true,
        "type": "string",
-       "desc": "New snippet content as raw HTML instead of Markdown",
+       "desc": "New snippet content as raw HTML instead of Markdown; the trix-content wrapper HEY serves content_html in is taken off",
        "default": ""
       },
       {
@@ -3242,7 +3286,7 @@
      "name": "read",
      "path": "thread read",
      "short": "Read a thread",
-     "notes": "Returns a thread with all entries, oldest first. Entry bodies are Markdown; the creator is the account user, while a non-default send-as address is the optional sender on a hydrated entry. Each entry whose message was read carries recipients as to, cc and bcc contact lists. In JSON, inbound entries also carry received_via: the exact account delivery addresses HEY recorded, distinct from the visible recipients, with an optional resolved contact. --html writes an HTML document instead, one <article> per entry with a From/To/CC/BCC header and HEY's original body HTML. A thread that could only be read in part is refused unless --allow-partial is passed, in which case each entry's body_state says what was read. Use the topic ID with hey reply or hey forward.",
+     "notes": "Returns a thread with all entries, oldest first. Entry bodies are Markdown; the creator is the entry's author (the external sender for inbound mail, your own contact for mail you sent), while a non-default send-as address you sent from is the optional sender on a hydrated entry. Each entry whose message was read carries recipients as to, cc and bcc contact lists. In JSON, inbound entries also carry received_via: the exact account delivery addresses HEY recorded, distinct from the visible recipients, with an optional resolved contact. --html writes an HTML document instead, one <article> per entry with a From/To/CC/BCC header and HEY's original body HTML. Each entry's kind says what it is: message for mail, while comment (a note) and access_notice (a share notice) are internal — visible to everyone with access to the thread, never emailed — and --markdown, styled and --html output head them as a note or share notice rather than with a From line. A thread that could only be read in part is refused unless --allow-partial is passed, in which case each entry's body_state says what was read. Use the topic ID with hey reply or hey forward.",
      "flags": [
       {
        "name": "allow-partial",
@@ -3498,7 +3542,7 @@
    "name": "todo",
    "path": "todo",
    "short": "Create and manage to-dos",
-   "notes": "Subcommands: list, add, complete, uncomplete, delete. Use list --ids-only to pipe IDs to complete/delete.",
+   "notes": "Subcommands: list, add, complete, uncomplete, delete. Use list --ids-only to pipe IDs to complete/delete. add files on today in the HEY account's time zone without --date, and refuses when the account has none, so pass --date.",
    "subcommands": [
     {
      "name": "add",
@@ -3509,7 +3553,7 @@
        "name": "date",
        "value": true,
        "type": "string",
-       "desc": "Due date (YYYY-MM-DD)",
+       "desc": "Due date (YYYY-MM-DD, defaults to today)",
        "default": ""
       },
       {
@@ -3725,7 +3769,7 @@
    "name": "watch",
    "path": "watch",
    "short": "Follow email threads and calendars as they change",
-   "notes": "Long-running. Writes one JSON object per changed thread to stdout (NDJSON), not the usual envelope. Use --exit-on-first to block until one change lands and then exit.",
+   "notes": "Long-running. Piped or with --json, writes one JSON object per change to stdout (NDJSON), not the usual envelope, and does not apply --jq. Use --exit-on-first to block until one change lands and then exit; a ready line comes first. For new mail only, add --events new.",
    "flags": [
     {
      "name": "box",

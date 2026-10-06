@@ -20,7 +20,7 @@ export const HOME_HELP = [
 // The live home view's help: the static lines, pointed at the scope's command, with the
 // scope's --account carried into every suggestion, plus "see the rest" / --full /
 // review-drafts hints when they apply.
-export function homeHelp({ base = "hey-axi box view imbox", carry = [], more = false, total, truncated = false, drafts = false, search = false } = {}) {
+export function homeHelp({ base = "hey-axi box view imbox", carry = [], more = false, total, truncated = false, drafts = false, search = false, unsure = false } = {}) {
   const lines = HOME_HELP.map((line) => {
     if (line.includes("box view imbox --limit 50")) {
       if (!more) return `Run \`${withSelectors("hey-axi box list", carry)}\` for other boxes (feed, papertrail, aside, later)`;
@@ -30,6 +30,8 @@ export function homeHelp({ base = "hey-axi box view imbox", carry = [], more = f
     return line.replace(/`(hey-axi [^`]*)`/, (_, command) => (command === "hey-axi --help" ? `\`${command}\`` : `\`${withSelectors(command, carry)}\``));
   }).filter(Boolean);
   if (truncated) lines.push(`Run \`${base} --full\` to see complete content`);
+  // An empty page HEY gave no paging signal for: how to check every page.
+  if (unsure && !search) lines.unshift(`Run \`${base} --all\` to check every page`);
   if (drafts) lines.unshift(`Run \`${withSelectors("hey-axi draft list", carry)}\` to review drafts saved last session (not sent)`);
   return lines;
 }

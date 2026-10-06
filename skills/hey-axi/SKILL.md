@@ -2,7 +2,7 @@
 name: hey-axi
 description: Read, triage and draft HEY email (and HEY calendars, todos, habits, journal, time tracking) from the shell through hey-axi, a token-efficient TOON wrapper around Basecamp's HEY CLI that saves outgoing mail as drafts unless sending is explicitly allowed. Use when the user asks you to check, search, read, summarize, sort, label, screen, archive or reply to their HEY (hey.com) email, watch for new mail, or manage HEY todos, events, habits, journal entries or time tracks.
 license: MIT
-compatibility: Requires Node.js 20+ (commands run as `npx -y hey-axi`), the HEY CLI (`hey`, v1.7.0 or newer) signed in to a HEY account, and network access to app.hey.com.
+compatibility: Requires Node.js 20+ (commands run as `npx -y hey-axi`), the HEY CLI (`hey`, v1.7.0 or newer; `contact deliver` and `event delete --occurrence` need a HEY built from basecamp/hey-cli main until HEY's next release) signed in to a HEY account, and network access to app.hey.com.
 metadata:
   author: TangentialSolutions
   repository: https://github.com/TangentialSolutions/hey-axi
@@ -62,7 +62,9 @@ npx -y hey-axi screener approve <clearance-id>
 npx -y hey-axi trash <id>...          npx -y hey-axi spam <id>...      npx -y hey-axi ignore <id>...
 ```
 
-`trash`, `spam`, `ignore`, `screener deny --spam` and `screener clear` (which clears the whole queue) run without any confirmation. Confirm with the user before you run them in bulk.
+`trash`, `spam`, `ignore`, `screener deny --spam` and `screener clear` (which trashes everything waiting in the Screener) run without any confirmation. Confirm with the user before you run them in bulk.
+
+`npx -y hey-axi contact deliver <contact-id> --to imbox|feed|papertrail|screened-out` chooses where a contact's future mail arrives (a contact id from `contact list`). `npx -y hey-axi event delete <series-id> --occurrence <occurrence_id> --apply-to current|future` deletes one day (or that day onward) of a repeating event; the occurrence_id comes from `event day`/`event week`.
 
 Mutations are idempotent: when the desired state already holds (already seen, already deleted), the answer is `noop: true` with exit 0, not an error.
 
@@ -80,6 +82,9 @@ Output includes HEY's breadcrumb hints as `help` lines (with your `--account` ca
 - The message is required (`--message`, `--message-html`, `--attach`, or `--message -` to read stdin): HEY never opens an editor under hey-axi. The same goes for `journal write --content`, `contact note set --note` and `draft edit` (pass the fields to change).
 - `forward`, `draft send` and `bulk-reply send` are **refused** (exit 2) because HEY has no draft mode for them. The error names the safe alternative.
 - To actually send, the user must explicitly ask you to, and you add `--allow-send` (or they set `HEY_AXI_ALLOW_SEND=1`). Don't add it on your own initiative.
+- A real send answers `sent: true`; newer HEY versions also name the message (`id`) and its thread (`topic_id`). `held:` means Undo Send is holding it back: it is sent, but `thread read` won't show it (or a thread it starts) until HEY releases it.
+- `kind: not_delivered` (`sent: false`) means HEY refused the send (usually the account's sending limit) and kept it as draft `draft_id`. **Don't repeat the send**, which only makes another draft; tell the user, and send the draft later with `draft send <draft_id> --allow-send` when they ask.
+- A recipient without a full address (`bob`, `bob@localhost`) is refused before HEY runs (exit 2, `sent: false`): fix or remove it.
 
 ## 4. Output: fields, truncation, counts, modes
 
@@ -110,7 +115,7 @@ Lines also include `ready`, `disconnected` and `resync`. On `resync`, re-read th
 
 ## 6. Errors and exit codes
 
-Errors are TOON on stdout: `ok: false`, `error`, `kind` (`usage`, `not_found`, `auth`, `forbidden`, `rate_limited`, `network`, `api_error`, `ambiguous`, `hey_missing`, `command_error`), HEY's `code`/`hint`/`meta` when it gave them, and a `help` line with the next step. Exit codes: **0** success (including no-ops) · **1** error · **2** usage error or refusal (unknown command/flag/field, bad argument, blocked send, needs the user). Read `hint`/`help` before you retry.
+Errors are TOON on stdout: `ok: false`, `error`, `kind` (`usage`, `not_found`, `auth`, `forbidden`, `rate_limited`, `network`, `api_error`, `ambiguous`, `not_delivered`, `hey_missing`, `hey_outdated`, `command_error`), HEY's `code`/`hint`/`meta` when it gave them, and a `help` line with the next step. Exit codes: **0** success (including no-ops) · **1** error · **2** usage error or refusal (unknown command/flag/field, bad argument, blocked send, needs the user). Read `hint`/`help` before you retry. `hey_outdated` means the installed `hey` is older than hey-axi's command catalog (`npx -y hey-axi version` shows it).
 
 ## Install
 

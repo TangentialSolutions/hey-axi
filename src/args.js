@@ -149,6 +149,23 @@ function typeError(name, type, value) {
   return null;
 }
 
+// Rules HEY enforces itself but its catalog doesn't mark (no "(required)" in the flag's
+// description, no list of values), so hey-axi can fail loud before HEY runs:
+//   required: flags the command can't run without
+//   choices:  the only values a flag takes
+//   together: flags that are only meaningful with each other
+export const FLAG_RULES = {
+  "contact deliver": { required: ["--to"], choices: { "--to": ["imbox", "feed", "papertrail", "screened-out"] } },
+  "event delete": { choices: { "--apply-to": ["current", "future"] }, together: [["--occurrence", "--apply-to"]] },
+  "event edit": { choices: { "--apply-to": ["current", "future"] }, together: [["--occurrence", "--apply-to"]] },
+};
+
+// Every required flag of a command: marked "(required)" by HEY, or listed in FLAG_RULES.
+export function requiredFlags(node) {
+  const marked = (node.flags || []).filter((flag) => /\(required\)$/.test(flag.desc || "")).map((flag) => `--${flag.name}`);
+  return [...new Set([...marked, ...(FLAG_RULES[node.path]?.required || [])])];
+}
+
 // AXI: reject unknown flags, flags without their value, values of the wrong type and
 // missing required flags before HEY is ever called.
 // Returns null, or { unknown } / { missingValue } / { badValue } / { missing }.
@@ -174,9 +191,21 @@ export function validateFlags(node, flags, { values = [], missingValues = [] } =
     const problem = typeError(name, types.get(name), value);
     if (problem) return { badValue: problem };
   }
-  const missing = (node.flags || [])
-    .filter((flag) => /\(required\)$/.test(flag.desc || ""))
-    .filter((flag) => !flags.has(`--${flag.name}`) && !(flag.shorthand && flags.has(`-${flag.shorthand}`)))
-    .map((flag) => `--${flag.name}`);
-  return missing.length ? { missing } : null;
+  const rules = FLAG_RULES[node.path] || {};
+  for (const [name, value] of values) {
+    const choices = rules.choices?.[name];
+    if (choices && !choices.includes(value)) return { badValue: `${name} takes one of ${choices.join(", ")}, got "${value}"` };
+  }
+  const shorthandOf = (name) => (node.flags || []).find((flag) => `--${flag.name}` === name)?.shorthand;
+  const given = (name) => flags.has(name) || (shorthandOf(name) && flags.has(`-${shorthandOf(name)}`));
+  const missing = requiredFlags(node).filter((name) => !given(name));
+  if (missing.length) return { missing };
+  for (const group of rules.together || []) {
+    const present = group.filter(given);
+    if (present.length && present.length < group.length) {
+      const absent = group.filter((name) => !given(name));
+      return { badValue: `${present.join(" and ")} needs ${absent.join(" and ")} for \`${node.path}\` (pass ${group.join(" and ")} together)` };
+    }
+  }
+  return null;
 }

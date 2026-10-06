@@ -4,7 +4,7 @@
 
 An agent-friendly wrapper for [HEY CLI](https://github.com/basecamp/hey-cli) (`hey`), Basecamp's command line for HEY email, calendars, todos, habits, time tracking and journals.
 
-hey-axi runs `hey`, asks for its JSON response envelope, and prints it as [TOON](https://github.com/toon-format/toon). It follows the [AXI](https://axi.md) principles: a live home view, minimal default fields, truncated long text, definitive empty states, and unknown flags rejected up front. On our synthetic benchmark that's **~89% fewer tokens than `hey --json`** ([docs/benchmarks.md](docs/benchmarks.md)). It also adds a few safety rails. It covers **every command in HEY CLI v1.7.0** (154 runnable command paths, including the `login`/`logout` aliases, plus the `box <id>`-style shortcuts) by routing from a snapshot of HEY's own `hey commands --json` catalog. See [CHANGELOG.md](CHANGELOG.md) for what changed in each release.
+hey-axi runs `hey`, asks for its JSON response envelope, and prints it as [TOON](https://github.com/toon-format/toon). It follows the [AXI](https://axi.md) principles: a live home view, minimal default fields, truncated long text, definitive empty states, and unknown flags rejected up front. On our synthetic benchmark that's **~89% fewer tokens than `hey --json`** ([docs/benchmarks.md](docs/benchmarks.md)). It also adds a few safety rails. It covers **every command in HEY CLI v1.7.0 plus the commands on HEY's unreleased `main` branch as of 2026-10-03** (commit [`8bf9310`](https://github.com/basecamp/hey-cli/commit/8bf9310c0b1df7448e39ed1f81826ae795bd8b5c)): 155 runnable command paths, including the `login`/`logout` aliases, plus the `box <id>`-style shortcuts. It routes from a snapshot of HEY's own `hey commands --json` catalog. The main-only additions (`contact deliver`, `event delete --occurrence/--apply-to`) need a HEY built from main, or the next HEY release; with HEY v1.7.0 they fail with `kind: hey_outdated`. See [CHANGELOG.md](CHANGELOG.md) for what changed in each release.
 
 ## Install
 
@@ -72,6 +72,9 @@ hey-axi move --help                        # usage, flags, examples, notes (no H
   - `compose` and `reply` are **saved as drafts**. hey-axi adds `--draft`, and the output starts with `sent: false`, `saved_as: draft` and an `axi_notice` (also printed to stderr).
   - `forward`, `draft send` and `bulk-reply send` have no draft mode in HEY, so they're refused (exit 2) with the safe alternative (`reply … --to`, `draft show`, `bulk-reply preview`).
   - If you pass `--draft` or `--dry-run` yourself, hey-axi adds and marks nothing.
+  - With `--allow-send`, a send HEY confirms is marked `sent: true` (and names the delivered message's `id`/`topic_id` when HEY reports them, as HEY main does). If HEY holds it for Undo Send (`delayed: true`), a `held` line says it hasn't gone out yet and the thread won't show it until it does.
+  - If HEY refuses to send and keeps the message as a draft (HEY main's `not_delivered`, usually the sending limit), the result is an error with `kind: not_delivered`, `sent: false` and the draft id, and says not to repeat the send. HEY v1.7.0 reports such a send as sent, so it can't be detected there.
+  - Recipients HEY would silently drop (no domain or top-level domain, like `bob` or `bob@example`) are refused (exit 2, `sent: false`) before HEY runs, for `compose`, `reply`, `forward` and `draft edit`. HEY main's own "not a valid email address" refusal is reported the same way.
 - **Credentials stay out of agent context.** `auth token` needs `--allow-secret` or `HEY_AXI_ALLOW_SECRETS=1`.
 - **Content-first.** `compose`, `reply`, `draft edit`, `journal write`, `contact note set` and `bulk-reply send` must be given their content (`--message`, `--message -` for stdin, or a positional) and are refused (exit 2) otherwise, so HEY never opens an editor.
 - hey-axi's own flags (`--allow-send`, `--allow-secret`, `--interactive`, `--fields`, `--full`) are never forwarded to HEY. Switches take no value: `--draft=false` or `--allow-send=false` is refused (exit 2) rather than guessed at.
@@ -83,7 +86,7 @@ Errors are printed as structured TOON on stdout: `ok: false`, `error`, a `kind`,
 | Exit | Meaning |
 |---|---|
 | 0 | success (including no-op mutations and empty results) |
-| 1 | the command failed; `kind` says why: `not_found`, `auth`, `forbidden`, `rate_limited`, `network`, `api_error`, `ambiguous`, `hey_missing`, `command_error` |
+| 1 | the command failed; `kind` says why: `not_found`, `auth`, `forbidden`, `rate_limited`, `network`, `api_error`, `ambiguous`, `hey_missing`, `hey_outdated` (the installed HEY is older than the command needs), `not_delivered` (HEY kept a send as a draft), `command_error` |
 | 2 | usage error (`kind: usage`): unknown command/flag/field, bad flag value, missing or extra arguments, missing required flag or content, a switch given a value (`--draft=false`), blocked send, a person-only command without `--interactive`, or a usage error reported by HEY |
 
 ## Agent integrations: session hook or skill
@@ -120,13 +123,16 @@ See [docs/listing.md](docs/listing.md) for how hey-axi gets listed on skills.sh 
 
 ## Keeping up with HEY releases
 
-`src/manifest.json` is a snapshot of `hey commands --json`. To regenerate it from whichever `hey` you have installed:
+`src/manifest.json` is a snapshot of `hey commands --json` plus usage parsed from `hey <command> --help`. The current snapshot was built from HEY's unreleased `main` branch (commit `8bf9310`, 2026-10-03), so its `hey_version` reads `1.7.0+main.8bf9310`. To regenerate it:
 
 ```bash
-npm run refresh-manifest     # runs only `hey version` and `hey commands`
+npm run refresh-manifest     # from whichever `hey` you have installed (runs only `hey version`, `hey commands`, `hey <command> --help`)
+npm run manifest:main        # clone basecamp/hey-cli main, build it (needs Go and git), and rewrite the manifest from it
+npm run check-drift          # same build, but only compare: exits 1 with a readable diff when commands or flags differ
+node scripts/check-drift.js --ref v1.8.0 --write   # a tagged release instead of main
 ```
 
-hey-axi routes only from the snapshot, so an unknown command is rejected immediately (exit 2, with suggestions) without running HEY. New HEY commands become available after a refresh and a hey-axi release. A weekly GitHub Action (`manifest-drift`) fails when the snapshot falls behind the latest HEY release.
+hey-axi routes only from the snapshot, so an unknown command is rejected immediately (exit 2, with suggestions) without running HEY. New HEY commands become available after a refresh and a hey-axi release. The `upstream drift` GitHub Action builds HEY from basecamp/hey-cli `main` daily (and on changes to the manifest or scripts) and fails when its commands or flags differ from the snapshot; help-text-only changes are listed in the job summary without failing. It also warns when HEY publishes a release newer than the one the snapshot builds on.
 
 ## Development
 
