@@ -62,7 +62,9 @@ npx -y hey-axi screener approve <clearance-id>
 npx -y hey-axi trash <id>...          npx -y hey-axi spam <id>...      npx -y hey-axi ignore <id>...
 ```
 
-`trash`, `spam`, `ignore`, `screener deny --spam` and `screener clear` (which trashes everything waiting in the Screener) run without any confirmation. Confirm with the user before you run them in bulk.
+`trash`, `spam`, `ignore` and `screener deny --spam` run without any confirmation. Confirm with the user before you run them in bulk.
+
+`screener clear` moves **everything** waiting in the Screener to Trash, for every sender, so hey-axi refuses it (exit 2, nothing changes) unless `--allow-destructive` is passed. Prefer `screener deny <clearance-id>` per sender. Only add `--allow-destructive` after the user has explicitly confirmed clearing the whole Screener.
 
 `npx -y hey-axi contact deliver <contact-id> --to imbox|feed|papertrail|screened-out` chooses where a contact's future mail arrives (a contact id from `contact list`). `npx -y hey-axi event delete <series-id> --occurrence <occurrence_id> --apply-to current|future` deletes one day (or that day onward) of a repeating event; the occurrence_id comes from `event day`/`event week`.
 
@@ -115,7 +117,7 @@ Lines also include `ready`, `disconnected` and `resync`. On `resync`, re-read th
 
 ## 6. Errors and exit codes
 
-Errors are TOON on stdout: `ok: false`, `error`, `kind` (`usage`, `not_found`, `auth`, `forbidden`, `rate_limited`, `network`, `api_error`, `ambiguous`, `not_delivered`, `hey_missing`, `hey_outdated`, `command_error`), HEY's `code`/`hint`/`meta` when it gave them, and a `help` line with the next step. Exit codes: **0** success (including no-ops) · **1** error · **2** usage error or refusal (unknown command/flag/field, bad argument, blocked send, needs the user). Read `hint`/`help` before you retry. `hey_outdated` means the installed `hey` is older than hey-axi's command catalog (`npx -y hey-axi version` shows it).
+Errors are TOON on stdout: `ok: false`, `error`, `kind` (`usage`, `not_found`, `auth`, `forbidden`, `rate_limited`, `network`, `api_error`, `ambiguous`, `not_delivered`, `hey_missing`, `hey_outdated`, `command_error`), HEY's `code`/`hint`/`meta` when it gave them, and a `help` line with the next step. Exit codes: **0** success (including no-ops) · **1** error · **2** usage error or refusal (unknown command/flag/field, bad argument, blocked send, `screener clear` without `--allow-destructive`, needs the user). Read `hint`/`help` before you retry. `hey_outdated` means the installed `hey` is older than hey-axi's command catalog (`npx -y hey-axi version` shows it).
 
 ## Install
 

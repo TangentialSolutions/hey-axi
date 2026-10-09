@@ -6,10 +6,10 @@ const manifest = loadBundledManifest();
 const resolve = (line) => resolveCommand(manifest.commands, line.split(" "));
 
 test("bundled manifest is a snapshot of `hey commands --json` + per-command help from HEY main after v1.7.0", () => {
-  assert.match(manifest.source, /^hey commands --json \+ hey <command> --help \(basecamp\/hey-cli main at 8bf9310, 2026-10-03; unreleased, built from source\)$/);
-  assert.equal(manifest.hey_version, "1.7.0+main.8bf9310");
-  assert.equal(manifest.hey_commit, "8bf9310c0b1df7448e39ed1f81826ae795bd8b5c");
-  assert.equal(manifest.hey_commit_date, "2026-10-03");
+  assert.match(manifest.source, /^hey commands --json \+ hey <command> --help \(basecamp\/hey-cli main at 9dfe00f, 2026-10-06; unreleased, built from source\)$/);
+  assert.equal(manifest.hey_version, "1.7.0+main.9dfe00f");
+  assert.equal(manifest.hey_commit, "9dfe00fb6594a4da5272b8ed0692f494229f14d2");
+  assert.equal(manifest.hey_commit_date, "2026-10-06");
   assert.equal(manifest.commands.length, 49);
 });
 

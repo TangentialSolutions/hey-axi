@@ -1,14 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { loadBundledManifest, listCommands } from "../src/router.js";
-import { runMode, sendCommands, userOnlyPaths } from "../src/policy.js";
+import { destructiveCommands, runMode, sendCommands, userOnlyPaths } from "../src/policy.js";
 import { patternsFor } from "../src/arity.js";
 import { FLAG_RULES, requiredFlags } from "../src/args.js";
 import { makeFakeHey, runAxi } from "./helpers.js";
 
 const manifest = loadBundledManifest();
 const special = (path) => runMode(path, new Set()) !== "json";
-const gated = new Set([...sendCommands(), "auth token"]);
+const gated = new Set([...sendCommands(), "auth token", ...destructiveCommands()]);
 
 // Arguments that satisfy each command's USAGE line, required flags, one-of flag groups
 // and content requirements, so every command reaches HEY.

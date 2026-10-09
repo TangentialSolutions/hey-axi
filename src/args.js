@@ -8,7 +8,7 @@ export const GLOBAL_BOOLEAN_FLAGS = ["json", "quiet", "ids-only", "count", "mark
 export const GLOBAL_SHORTHANDS = ["-v", "-h"];
 
 // hey-axi's own flags. Never forwarded to HEY.
-export const AXI_BOOLEAN_FLAGS = ["allow-send", "allow-secret", "full", "interactive"];
+export const AXI_BOOLEAN_FLAGS = ["allow-send", "allow-secret", "allow-destructive", "full", "interactive"];
 export const AXI_VALUE_FLAGS = ["fields"];
 
 // Output selectors that make HEY print something other than a JSON envelope. When any is

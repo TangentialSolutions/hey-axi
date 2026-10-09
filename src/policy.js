@@ -1,7 +1,7 @@
 // What hey-axi will and won't run, beyond "is it a HEY command".
 
 // hey-axi's own flags. Stripped before anything is forwarded to HEY.
-export const AXI_FLAGS = ["--allow-send", "--allow-secret"];
+export const AXI_FLAGS = ["--allow-send", "--allow-secret", "--allow-destructive"];
 
 // Commands that deliver email.
 //   safe:  HEY flags that already mean nothing is sent
@@ -19,6 +19,18 @@ export const DRAFT_NOTICE = "Saved as a DRAFT. Nothing was sent. Pass --allow-se
 
 // Commands that print a credential into the agent's context.
 const SECRET_COMMANDS = new Set(["auth token"]);
+
+// Commands that destroy a whole set of things at once, with no confirmation from HEY and
+// no single command that undoes them. Refused unless --allow-destructive (or
+// HEY_AXI_ALLOW_DESTRUCTIVE=1).
+//   what:    what the command would do, in the refusal
+//   instead: what to do first, in the refusal
+const DESTRUCTIVE_COMMANDS = new Map([
+  ["screener clear", {
+    what: "moves everything waiting in the Screener to Trash (the whole queue for the account, every sender, not one; shared threads lose your access instead) without asking. It approves or denies no one, so those senders come back to the Screener on their next email",
+    instead: "check what is waiting with `hey-axi screener list`, and decide one sender at a time with `hey-axi screener deny <clearance-id>` (or `screener approve`); to really clear the whole queue, confirm with the user, then pass --allow-destructive (or set HEY_AXI_ALLOW_DESTRUCTIVE=1)",
+  }],
+]);
 
 // How a command runs. Anything not listed is "json": captured, parsed, rendered as TOON.
 //   stream: long-running NDJSON, relayed event by event as it arrives (TOON, or NDJSON with --json)
@@ -206,6 +218,14 @@ export function sendCommands() {
   return [...SEND_COMMANDS.keys()];
 }
 
+export function destructiveCommands() {
+  return [...DESTRUCTIVE_COMMANDS.keys()];
+}
+
+function destructiveAllowed(flags, env) {
+  return flags.has("--allow-destructive") || truthy(env.HEY_AXI_ALLOW_DESTRUCTIVE);
+}
+
 function sendAllowed(flags, env) {
   return flags.has("--allow-send") || truthy(env.HEY_AXI_ALLOW_SEND);
 }
@@ -241,6 +261,16 @@ export function checkPolicy(path, flags, env = process.env, io = { stdin: proces
       command: path,
       reason: "prints an access token",
       hint: "pass --allow-secret (or set HEY_AXI_ALLOW_SECRETS=1) if you really need it",
+    };
+  }
+
+  if (DESTRUCTIVE_COMMANDS.has(path) && !destructiveAllowed(flags, env)) {
+    const rule = DESTRUCTIVE_COMMANDS.get(path);
+    return {
+      error: "destructive command blocked",
+      command: path,
+      reason: `this command ${rule.what}. hey-axi did not run it, so nothing was changed`,
+      hint: rule.instead,
     };
   }
   return null;
