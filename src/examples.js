@@ -5,7 +5,7 @@
 import { heyToAxi } from "./text.js";
 import { patternsFor } from "./arity.js";
 import { LIST_FIELDS, parseField } from "./shape.js";
-import { userOnlyPaths } from "./policy.js";
+import { destructiveCommands, userOnlyPaths } from "./policy.js";
 import { requiredFlags } from "./args.js";
 
 // "(default …)" text for one flag, including zero, false and empty defaults.
@@ -55,5 +55,11 @@ export function examplesFor(node) {
   }
   // Person-only commands run only with --interactive, so their examples say so.
   const person = userOnlyPaths().includes(node.path);
-  return examples.slice(0, 3).map((example) => (person && !/--(interactive|token|cookie)\b/.test(example) ? `${example} --interactive` : example));
+  // Destructive commands run only with --allow-destructive (after asking the user).
+  const destructive = destructiveCommands().includes(node.path);
+  return examples.slice(0, 3).map((example) => {
+    if (person && !/--(interactive|token|cookie)\b/.test(example)) return `${example} --interactive`;
+    if (destructive && !/--allow-destructive\b/.test(example)) return `${example} --allow-destructive`;
+    return example;
+  });
 }

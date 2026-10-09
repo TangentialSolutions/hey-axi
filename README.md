@@ -1,10 +1,10 @@
 # hey-axi
 
-[![skills.sh](https://skills.sh/b/TangentialSolutions/hey-axi)](https://skills.sh/TangentialSolutions/hey-axi)
+[![skills.sh](https://skills.sh/b/TangentialSolutions/hey-axi)](https://skills.sh/TangentialSolutions/hey-axi) [![npm](https://img.shields.io/npm/v/hey-axi.svg)](https://www.npmjs.com/package/hey-axi) [![test](https://github.com/TangentialSolutions/hey-axi/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/TangentialSolutions/hey-axi/actions/workflows/test.yml)
 
 An agent-friendly wrapper for [HEY CLI](https://github.com/basecamp/hey-cli) (`hey`), Basecamp's command line for HEY email, calendars, todos, habits, time tracking and journals.
 
-hey-axi runs `hey`, asks for its JSON response envelope, and prints it as [TOON](https://github.com/toon-format/toon). It follows the [AXI](https://axi.md) principles: a live home view, minimal default fields, truncated long text, definitive empty states, and unknown flags rejected up front. On our synthetic benchmark that's **~89% fewer tokens than `hey --json`** ([docs/benchmarks.md](docs/benchmarks.md)). It also adds a few safety rails. It covers **every command in HEY CLI v1.7.0 plus the commands on HEY's unreleased `main` branch as of 2026-10-03** (commit [`8bf9310`](https://github.com/basecamp/hey-cli/commit/8bf9310c0b1df7448e39ed1f81826ae795bd8b5c)): 155 runnable command paths, including the `login`/`logout` aliases, plus the `box <id>`-style shortcuts. It routes from a snapshot of HEY's own `hey commands --json` catalog. The main-only additions (`contact deliver`, `event delete --occurrence/--apply-to`) need a HEY built from main, or the next HEY release; with HEY v1.7.0 they fail with `kind: hey_outdated`. See [CHANGELOG.md](CHANGELOG.md) for what changed in each release.
+hey-axi runs `hey`, asks for its JSON response envelope, and prints it as [TOON](https://github.com/toon-format/toon). It follows the [AXI](https://axi.md) principles: a live home view, minimal default fields, truncated long text, definitive empty states, and unknown flags rejected up front. On our synthetic benchmark that's **~89% fewer tokens than `hey --json`** ([docs/benchmarks.md](docs/benchmarks.md)). It also adds a few safety rails. It covers **every command in HEY CLI v1.7.0 plus the commands on HEY's unreleased `main` branch as of 2026-10-06** (commit [`9dfe00f`](https://github.com/basecamp/hey-cli/commit/9dfe00fb6594a4da5272b8ed0692f494229f14d2)): 155 runnable command paths, including the `login`/`logout` aliases, plus the `box <id>`-style shortcuts. It routes from a snapshot of HEY's own `hey commands --json` catalog. The main-only additions (`contact deliver`, `event delete --occurrence/--apply-to`) need a HEY built from main, or the next HEY release; with HEY v1.7.0 they fail with `kind: hey_outdated`. See [CHANGELOG.md](CHANGELOG.md) for what changed in each release.
 
 ## Install
 
@@ -76,8 +76,9 @@ hey-axi move --help                        # usage, flags, examples, notes (no H
   - If HEY refuses to send and keeps the message as a draft (HEY main's `not_delivered`, usually the sending limit), the result is an error with `kind: not_delivered`, `sent: false` and the draft id, and says not to repeat the send. HEY v1.7.0 reports such a send as sent, so it can't be detected there.
   - Recipients HEY would silently drop (no domain or top-level domain, like `bob` or `bob@example`) are refused (exit 2, `sent: false`) before HEY runs, for `compose`, `reply`, `forward` and `draft edit`. HEY main's own "not a valid email address" refusal is reported the same way.
 - **Credentials stay out of agent context.** `auth token` needs `--allow-secret` or `HEY_AXI_ALLOW_SECRETS=1`.
+- **Destructive commands need an opt-in.** `screener clear` (HEY main) moves everything waiting in the Screener to Trash, for every sender, and HEY asks for no confirmation. hey-axi refuses it (exit 2, HEY isn't run, nothing changes) unless you pass `--allow-destructive` or set `HEY_AXI_ALLOW_DESTRUCTIVE=1`. The refusal says what it would do and suggests `screener list` and per-sender `screener deny` first.
 - **Content-first.** `compose`, `reply`, `draft edit`, `journal write`, `contact note set` and `bulk-reply send` must be given their content (`--message`, `--message -` for stdin, or a positional) and are refused (exit 2) otherwise, so HEY never opens an editor.
-- hey-axi's own flags (`--allow-send`, `--allow-secret`, `--interactive`, `--fields`, `--full`) are never forwarded to HEY. Switches take no value: `--draft=false` or `--allow-send=false` is refused (exit 2) rather than guessed at.
+- hey-axi's own flags (`--allow-send`, `--allow-secret`, `--allow-destructive`, `--interactive`, `--fields`, `--full`) are never forwarded to HEY. Switches take no value: `--draft=false` or `--allow-send=false` is refused (exit 2) rather than guessed at.
 
 ### Errors and exit codes
 
@@ -87,7 +88,7 @@ Errors are printed as structured TOON on stdout: `ok: false`, `error`, a `kind`,
 |---|---|
 | 0 | success (including no-op mutations and empty results) |
 | 1 | the command failed; `kind` says why: `not_found`, `auth`, `forbidden`, `rate_limited`, `network`, `api_error`, `ambiguous`, `hey_missing`, `hey_outdated` (the installed HEY is older than the command needs), `not_delivered` (HEY kept a send as a draft), `command_error` |
-| 2 | usage error (`kind: usage`): unknown command/flag/field, bad flag value, missing or extra arguments, missing required flag or content, a switch given a value (`--draft=false`), blocked send, a person-only command without `--interactive`, or a usage error reported by HEY |
+| 2 | usage error (`kind: usage`): unknown command/flag/field, bad flag value, missing or extra arguments, missing required flag or content, a switch given a value (`--draft=false`), blocked send, a destructive command without `--allow-destructive`, a person-only command without `--interactive`, or a usage error reported by HEY |
 
 ## Agent integrations: session hook or skill
 
@@ -123,7 +124,7 @@ See [docs/listing.md](docs/listing.md) for how hey-axi gets listed on skills.sh 
 
 ## Keeping up with HEY releases
 
-`src/manifest.json` is a snapshot of `hey commands --json` plus usage parsed from `hey <command> --help`. The current snapshot was built from HEY's unreleased `main` branch (commit `8bf9310`, 2026-10-03), so its `hey_version` reads `1.7.0+main.8bf9310`. To regenerate it:
+`src/manifest.json` is a snapshot of `hey commands --json` plus usage parsed from `hey <command> --help`. The current snapshot was built from HEY's unreleased `main` branch (commit `9dfe00f`, 2026-10-06), so its `hey_version` reads `1.7.0+main.9dfe00f`. To regenerate it:
 
 ```bash
 npm run refresh-manifest     # from whichever `hey` you have installed (runs only `hey version`, `hey commands`, `hey <command> --help`)

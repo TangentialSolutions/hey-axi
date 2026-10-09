@@ -1,5 +1,5 @@
 // Commands and send behavior from HEY's main branch after v1.7.0 (unreleased as of
-// 2026-10-03), read with the same fake HEY as the rest of the catalog. The send fixtures
+// 2026-10-06, commit 9dfe00f), read with the same fake HEY as the rest of the catalog. The send fixtures
 // are real HEY output (test/fixtures/hey-main/README.md).
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -25,7 +25,7 @@ test("the manifest has the commands and flags HEY main added after v1.7.0", () =
   assert.deepEqual(deliver.node.synopsis, ["hey contact deliver <contact-id> [flags]"]);
   const del = resolveCommand(manifest.commands, ["event", "delete"]).node;
   assert.deepEqual(del.flags.map((flag) => flag.name).sort(), ["apply-to", "occurrence"]);
-  assert.equal(coverageLabel(manifest), "v1.7.0 plus the commands on HEY main as of 2026-10-03 (commit 8bf9310, unreleased)");
+  assert.equal(coverageLabel(manifest), "v1.7.0 plus the commands on HEY main as of 2026-10-06 (commit 9dfe00f, unreleased)");
   assert.equal(coverageLabel({ hey_version: "1.8.0" }), "v1.8.0");
 });
 

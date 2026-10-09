@@ -27,6 +27,7 @@ function note(path) {
   const refusal = checkPolicy(path, none, env, tty);
   if (refusal?.error === "send blocked") return "refused unless `--allow-send`";
   if (refusal?.error === "secret output blocked") return "refused unless `--allow-secret`";
+  if (refusal?.error === "destructive command blocked") return "refused unless `--allow-destructive`";
   const mode = runMode(path, none);
   if (mode === "interactive") return "needs a person: refused unless --interactive";
   if (mode === "stream") return "streams events (TOON; --json for NDJSON)";

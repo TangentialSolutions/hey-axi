@@ -4,6 +4,7 @@ import { makeFakeHey, runAxi } from "./helpers.js";
 
 // Realistic invocations, as an agent would type them, for the triage mutations and
 // read-only commands that hey-axi did not support before the data-driven router.
+// (`screener clear` is gated behind --allow-destructive: test/destructive-gate.test.js.)
 const TRIAGE = [
   "unseen 1 2", "ignore 1", "stop-ignoring 1", "spam 1 2",
   "label create Receipts 1 2", "label remove 1 2 --from 9",
@@ -13,7 +14,7 @@ const TRIAGE = [
   "workflow add 987 --to 65 --stage 321", "workflow move 987 --workflow 65 --to 322", "workflow remove 987 --from 65",
   "workflow stage create 65", "workflow stage update 65 321 --name Interviewing", "workflow stage delete 65 321",
   "set-aside group create 1 2", "set-aside group add 3 --to 4", "set-aside group remove 3", "set-aside group delete 4",
-  "screener approve 55 --box feed --seen", "screener deny 56 --spam", "screener clear",
+  "screener approve 55 --box feed --seen", "screener deny 56 --spam",
   "share 1", "unshare 1",
   "clip create 56 --content passage", "clip delete 8",
   "snippet create --name Sched --content Tuesday", "snippet update 4 --name S2", "snippet delete 4",

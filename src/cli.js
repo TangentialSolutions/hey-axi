@@ -10,7 +10,7 @@ import { readFileSync } from "node:fs";
 import { createInterface } from "node:readline";
 import { encode } from "@toon-format/toon";
 import { closestNames, coverageLabel, loadBundledManifest, resolveCommand } from "./router.js";
-import { STDIN_VALUE_FLAGS, checkPolicy, contentProblem, noopFor, runMode, sendCommands, sendStaging, userOnlyPaths } from "./policy.js";
+import { STDIN_VALUE_FLAGS, checkPolicy, contentProblem, destructiveCommands, noopFor, runMode, sendCommands, sendStaging, userOnlyPaths } from "./policy.js";
 import { translateFailure, cleanLine, warningLines } from "./errors.js";
 import { FLAG_RULES, RAW_OUTPUT_FLAGS, flagLabel, flagValue, hasAny, nodeValueFlags, scanArgs, stripAxiFlags, validateFlags, valueFlagSet } from "./args.js";
 import { markSent, recipientProblem } from "./send.js";
@@ -30,7 +30,7 @@ const HEY = process.env.HEY_BIN || "hey";
 const QUIET_ENV = { HEY_NONINTERACTIVE: "1", EDITOR: "false", VISUAL: "false" };
 const heyEnv = () => ({ ...process.env, ...QUIET_ENV });
 
-const ALWAYS_ALLOWED = "--help, --json, --quiet, --fields, --full, --account, --ids-only, --count, --markdown, --html, --styled, --jq, --stats, --verbose, --base-url, --allow-send, --allow-secret, --interactive";
+const ALWAYS_ALLOWED = "--help, --json, --quiet, --fields, --full, --account, --ids-only, --count, --markdown, --html, --styled, --jq, --stats, --verbose, --base-url, --allow-send, --allow-secret, --allow-destructive, --interactive";
 
 const GLOBAL_HELP = [
   "--account <id|all>  linked account (default: HEY's default account)",
@@ -45,6 +45,7 @@ const GLOBAL_HELP = [
 const OWN_FLAG_HELP = [
   [(path) => sendCommands().includes(path), "--allow-send  really send (default false: saved as a draft, or refused when there is no draft mode)"],
   [(path) => path === "auth token", "--allow-secret  print the token (default false: refused)"],
+  [(path) => destructiveCommands().includes(path), "--allow-destructive  really run it (default false: refused, nothing is changed)"],
   [(path) => userOnlyPaths().includes(path), "--interactive  hand HEY the terminal; for a person at a terminal (default false: refused)"],
 ];
 
@@ -86,6 +87,8 @@ function usage(manifest) {
     "  Nothing is sent without --allow-send (or HEY_AXI_ALLOW_SEND=1): compose and reply are saved",
     "  as drafts (hey-axi adds --draft and says so); forward, draft send and bulk-reply send are refused.",
     "  auth token needs --allow-secret / HEY_AXI_ALLOW_SECRETS=1.",
+    "  screener clear (trashes everything waiting in the Screener) needs --allow-destructive /",
+    "  HEY_AXI_ALLOW_DESTRUCTIVE=1; without it, it is refused and nothing is changed.",
   );
   return lines.join("\n");
 }

@@ -39,8 +39,8 @@ export function normalizeCatalog(nodes, types = {}) {
 }
 
 // Which HEY the manifest covers, in words: "v1.7.0", or for a snapshot of an unreleased
-// branch ("1.7.0+main.8bf9310") "v1.7.0 plus the commands on HEY main as of 2026-10-03
-// (8bf9310, unreleased)".
+// branch ("1.7.0+main.9dfe00f") "v1.7.0 plus the commands on HEY main as of 2026-10-06
+// (commit 9dfe00f, unreleased)".
 export function coverageLabel(manifest) {
   const version = String(manifest.hey_version || "unknown");
   const match = version.match(/^(\d+\.\d+\.\d+)\+([\w.-]+)\.([0-9a-f]{7,})$/);
