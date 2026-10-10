@@ -47,6 +47,8 @@ test("the README names the HEY commit and date the manifest was built from", () 
   const links = [...readme.matchAll(/github\.com\/basecamp\/hey-cli\/commit\/([0-9a-f]{7,40})/g)].map((match) => match[1]);
   const shas = [...readme.matchAll(/`([0-9a-f]{7,40})`/g)].map((match) => match[1]).filter((sha) => /\d/.test(sha) && /[a-f]/.test(sha));
   const dates = [...readme.matchAll(/(?:as of|commit `[0-9a-f]{7,40}`,) (\d{4}-\d{2}-\d{2})/g)].map((match) => match[1]);
+  // Every short sha in backticks is the manifest's commit, release or branch snapshot.
+  for (const sha of shas) assert.ok(manifest.hey_commit?.startsWith(sha), `README names commit ${sha}; the manifest is ${manifest.hey_commit}`);
   if (!branch) {
     // A release snapshot: the README shouldn't still claim an unreleased commit.
     assert.deepEqual(links, [], "README links an unreleased HEY commit but the manifest is a release");

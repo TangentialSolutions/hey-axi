@@ -173,7 +173,7 @@ export function translateFailure(result, context = {}) {
     if (usage) failure.kind = "usage";
     // hey-axi checked the command and flags against its catalog before HEY ran, so HEY
     // not knowing one means the installed HEY is older than that catalog (for example
-    // v1.7.0 and `contact deliver`, which is only on HEY's main branch so far).
+    // v1.7.0 and `contact deliver` or `thread update`, which arrived in v1.8.0).
     const unknown = usage && path && failure.error.match(/^unknown (flag|shorthand flag|command)[:\s]+["']?([^"'\s]+)["']?/i);
     if (unknown) {
       const what = /command/i.test(unknown[1]) ? `the command \`${path}\`` : `${unknown[2]} for \`${path}\``;

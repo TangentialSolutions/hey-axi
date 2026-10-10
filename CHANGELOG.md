@@ -2,6 +2,19 @@
 
 All notable changes to hey-axi. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [semver](https://semver.org/).
 
+## 0.3.3 (2026-10-10)
+
+Adds HEY's new `thread update` (rename a thread) and moves the catalog from HEY's unreleased `main` at `9dfe00f` to HEY CLI v1.8.0. Nothing else about how hey-axi behaves changes.
+
+**HEY version covered:** HEY CLI v1.8.0 (basecamp/hey-cli `main` at `732568e`, 2026-10-09, which is the v1.8.0 release commit). `src/manifest.json` was regenerated with `npm run manifest:main`; its `hey_version` now reads `1.8.0`. Between `9dfe00f` and `732568e` the only change to commands or flags is `thread update` (#548, `06d51ac`); the other commits are a TUI key fix (#542), CI/toolchain bumps (#546, #550, #553) and the v1.8.0 version bump (#554). Everything that was "HEY main only" in 0.3.2 (`contact deliver`, `event delete --occurrence/--apply-to`, `screener clear`, the richer send answers) is now in a HEY release: upgrade to HEY v1.8.0 to use it.
+
+### Added
+- **`thread update <thread-id> --name <name>`** (HEY also accepts `thread edit` and `thread rename`; hey-axi, like for other HEY subcommand aliases, routes the canonical `thread update` only): renames a thread for everyone in the account, as HEY's web app does. Nothing is emailed. Classified like `collection update`: an ordinary write, not a send, secret or destructive command, so it needs no opt-in; `--name` is required and the thread id is checked before HEY runs. `thread update --help` shows usage, examples and HEY's notes (merged threads aren't renamed; a collection's discussion thread takes its collection's name). On a HEY older than v1.8.0 it fails with `kind: hey_outdated`.
+- 156 runnable command paths (was 155); `thread`'s help reads "Read and rename email threads".
+
+### Changed
+- README, skill and error notes now point to HEY v1.8.0 instead of "a HEY built from main". The README consistency test also checks any short HEY commit named in the README for release snapshots.
+
 ## 0.3.2 (2026-10-09)
 
 Follows HEY CLI's unreleased `main` branch, adds an upstream-drift check, puts HEY main's `screener clear` behind an explicit opt-in, and closes three gaps from the catalog review of 0.3.1. The rules that were already in place stay as they were: nothing is sent without `--allow-send`, tests use a fake HEY, and HEY's next-command hints are still shown.

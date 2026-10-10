@@ -2,7 +2,7 @@
 name: hey-axi
 description: Read, triage and draft HEY email (and HEY calendars, todos, habits, journal, time tracking) from the shell through hey-axi, a token-efficient TOON wrapper around Basecamp's HEY CLI that saves outgoing mail as drafts unless sending is explicitly allowed. Use when the user asks you to check, search, read, summarize, sort, label, screen, archive or reply to their HEY (hey.com) email, watch for new mail, or manage HEY todos, events, habits, journal entries or time tracks.
 license: MIT
-compatibility: Requires Node.js 20+ (commands run as `npx -y hey-axi`), the HEY CLI (`hey`, v1.7.0 or newer; `contact deliver` and `event delete --occurrence` need a HEY built from basecamp/hey-cli main until HEY's next release) signed in to a HEY account, and network access to app.hey.com.
+compatibility: Requires Node.js 20+ (commands run as `npx -y hey-axi`), the HEY CLI (`hey`, v1.7.0 or newer; `contact deliver`, `event delete --occurrence`, `screener clear` and `thread update` need v1.8.0 or newer) signed in to a HEY account, and network access to app.hey.com.
 metadata:
   author: TangentialSolutions
   repository: https://github.com/TangentialSolutions/hey-axi
@@ -66,7 +66,7 @@ npx -y hey-axi trash <id>...          npx -y hey-axi spam <id>...      npx -y he
 
 `screener clear` moves **everything** waiting in the Screener to Trash, for every sender, so hey-axi refuses it (exit 2, nothing changes) unless `--allow-destructive` is passed. Prefer `screener deny <clearance-id>` per sender. Only add `--allow-destructive` after the user has explicitly confirmed clearing the whole Screener.
 
-`npx -y hey-axi contact deliver <contact-id> --to imbox|feed|papertrail|screened-out` chooses where a contact's future mail arrives (a contact id from `contact list`). `npx -y hey-axi event delete <series-id> --occurrence <occurrence_id> --apply-to current|future` deletes one day (or that day onward) of a repeating event; the occurrence_id comes from `event day`/`event week`.
+`npx -y hey-axi contact deliver <contact-id> --to imbox|feed|papertrail|screened-out` chooses where a contact's future mail arrives (a contact id from `contact list`). `npx -y hey-axi event delete <series-id> --occurrence <occurrence_id> --apply-to current|future` deletes one day (or that day onward) of a repeating event; the occurrence_id comes from `event day`/`event week`. `npx -y hey-axi thread update <topic_id> --name "New subject"` renames a thread for everyone in the account; nothing is emailed (a collection's discussion thread takes its collection's name: use `collection update`).
 
 Mutations are idempotent: when the desired state already holds (already seen, already deleted), the answer is `noop: true` with exit 0, not an error.
 
