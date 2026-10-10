@@ -1,7 +1,7 @@
 // Reading what HEY says about outgoing mail.
 //
-// HEY CLI v1.7.0 answers a send with a summary only. HEY's main branch (unreleased as of
-// 2026-10-06, commit 9dfe00f) also:
+// HEY CLI v1.7.0 answers a send with a summary only. HEY v1.8.0 (first on HEY main after
+// v1.7.0) also:
 //   - names what went out: data.id (the message), data.topic_id (its thread), subject,
 //     and delayed (true while Undo Send holds it back; the thread doesn't show it yet)
 //   - fails a send HEY refused (usually the sending limit) with code not_delivered (exit 7),

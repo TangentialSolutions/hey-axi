@@ -5,20 +5,20 @@ import { loadBundledManifest, resolveCommand, listCommands, normalizeCatalog, is
 const manifest = loadBundledManifest();
 const resolve = (line) => resolveCommand(manifest.commands, line.split(" "));
 
-test("bundled manifest is a snapshot of `hey commands --json` + per-command help from HEY main after v1.7.0", () => {
-  assert.match(manifest.source, /^hey commands --json \+ hey <command> --help \(basecamp\/hey-cli main at 9dfe00f, 2026-10-06; unreleased, built from source\)$/);
-  assert.equal(manifest.hey_version, "1.7.0+main.9dfe00f");
-  assert.equal(manifest.hey_commit, "9dfe00fb6594a4da5272b8ed0692f494229f14d2");
-  assert.equal(manifest.hey_commit_date, "2026-10-06");
+test("bundled manifest is a snapshot of `hey commands --json` + per-command help from HEY v1.8.0 (HEY main at 732568e)", () => {
+  assert.match(manifest.source, /^hey commands --json \+ hey <command> --help \(basecamp\/hey-cli v1\.8\.0\)$/);
+  assert.equal(manifest.hey_version, "1.8.0");
+  assert.equal(manifest.hey_commit, "732568eb9b09b44471e9fb889ba22308f87b4f95");
+  assert.equal(manifest.hey_commit_date, "2026-10-09");
   assert.equal(manifest.commands.length, 49);
 });
 
 test("every runnable command in the manifest resolves to itself", () => {
   const runnable = listCommands(manifest.commands);
-  // 145 canonical commands (v1.7.0's 144 + contact deliver from HEY main) + 2 aliases
+  // 146 canonical commands (v1.7.0's 144 + contact deliver and thread update from v1.8.0) + 2 aliases
   // (login, logout) + 5 shortcut groups + 3 groups HEY also runs on their own
   // (set-aside, set-aside group, skill).
-  assert.equal(runnable.length, 155);
+  assert.equal(runnable.length, 156);
   for (const node of runnable) {
     const result = resolve(node.path);
     assert.equal(result.error, undefined, node.path);

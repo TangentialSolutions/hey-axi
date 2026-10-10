@@ -1,5 +1,5 @@
-// Commands and send behavior from HEY's main branch after v1.7.0 (unreleased as of
-// 2026-10-06, commit 9dfe00f), read with the same fake HEY as the rest of the catalog. The send fixtures
+// Commands and send behavior HEY added after v1.7.0 (on main from 2026-10, released in
+// v1.8.0, commit 732568e), read with the same fake HEY as the rest of the catalog. The send fixtures
 // are real HEY output (test/fixtures/hey-main/README.md).
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -8,7 +8,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { makeFakeHey, runAxi } from "./helpers.js";
 import { loadBundledManifest, resolveCommand, coverageLabel } from "../src/router.js";
-import { runMode, checkPolicy, sendCommands } from "../src/policy.js";
+import { runMode, checkPolicy, sendCommands, destructiveCommands } from "../src/policy.js";
 import { noopFor } from "../src/policy.js";
 import { markSent, recipientProblem, splitAddresses } from "../src/send.js";
 import { translateFailure } from "../src/errors.js";
@@ -25,16 +25,55 @@ test("the manifest has the commands and flags HEY main added after v1.7.0", () =
   assert.deepEqual(deliver.node.synopsis, ["hey contact deliver <contact-id> [flags]"]);
   const del = resolveCommand(manifest.commands, ["event", "delete"]).node;
   assert.deepEqual(del.flags.map((flag) => flag.name).sort(), ["apply-to", "occurrence"]);
-  assert.equal(coverageLabel(manifest), "v1.7.0 plus the commands on HEY main as of 2026-10-06 (commit 9dfe00f, unreleased)");
+  const update = resolveCommand(manifest.commands, ["thread", "update"]);
+  assert.equal(update.path, "thread update");
+  assert.deepEqual(update.node.flags.map((flag) => [flag.name, flag.value, flag.type]), [["name", true, "string"]]);
+  assert.deepEqual(update.node.synopsis, ["hey thread update <thread-id> [flags]"]);
+  assert.equal(coverageLabel(manifest), "v1.8.0");
+  assert.equal(coverageLabel({ hey_version: "1.7.0+main.9dfe00f", hey_commit_date: "2026-10-06" }), "v1.7.0 plus the commands on HEY main as of 2026-10-06 (commit 9dfe00f, unreleased)");
   assert.equal(coverageLabel({ hey_version: "1.8.0" }), "v1.8.0");
 });
 
-test("contact deliver and event delete get the same safety classification as their neighbours", () => {
-  for (const path of ["contact deliver", "event delete"]) {
+test("contact deliver, event delete and thread update get the same safety classification as their neighbours", () => {
+  // thread update renames one thread and emails no one: an ordinary write like
+  // collection update, not a send, a secret, or a destructive command.
+  for (const path of ["contact deliver", "event delete", "thread update", "collection update"]) {
     assert.equal(runMode(path, new Set()), "json", path);
     assert.equal(checkPolicy(path, new Set(), {}, { stdin: true, stdout: true }), null, path);
     assert.ok(!sendCommands().includes(path), path);
+    assert.ok(!destructiveCommands().includes(path), path);
   }
+  // Not a no-op candidate: "already named X" isn't something HEY reports.
+  assert.equal(noopFor("thread update", { ok: false, error: "Thread not found", kind: "not_found" }, ["12345"], { name: "x" }), null);
+});
+
+test("thread update: --name is required, the thread id is required, and the rest is forwarded intact", async () => {
+  // HEY's writeMutation answer for a rename: a summary and no data (thread_update.go).
+  const fake = await makeFakeHey({ stdout: '{"ok":true,"summary":"Thread 12345 renamed to \\"Kitchen renovation quotes\\""}' });
+  const ok = await runAxi(["thread", "update", "12345", "--name", "Kitchen renovation quotes"], { fake });
+  assert.equal(ok.code, 0, ok.stdout);
+  assert.match(ok.stdout, /summary: "?Thread 12345 renamed to \\?"Kitchen renovation quotes/);
+  assert.doesNotMatch(ok.stdout, /sent:/);
+
+  const missing = await runAxi(["thread", "update", "12345"], { fake });
+  assert.equal(missing.code, 2);
+  assert.match(missing.stdout, /missing required flag --name for `thread update`/);
+  const noId = await runAxi(["thread", "update", "--name", "x"], { fake });
+  assert.equal(noId.code, 2);
+  assert.match(noId.stdout, /missing argument <thread-id> for `thread update`/);
+  const bogus = await runAxi(["thread", "update", "12345", "--name", "x", "--subject", "y"], { fake });
+  assert.equal(bogus.code, 2);
+  assert.deepEqual(await fake.calls(), ["thread update 12345 --name Kitchen renovation quotes --json"]);
+  await fake.cleanup();
+});
+
+test("thread update on a HEY older than v1.8.0 is named as outdated", async () => {
+  const fake = await makeFakeHey({ exitCode: 1, stdout: "", stderr: '{"ok":false,"error":"unknown command \\"update\\" for \\"hey thread\\"","code":"usage"}\n' });
+  const result = await runAxi(["thread", "update", "12345", "--name", "x"], { fake });
+  assert.equal(result.code, 1, result.stdout);
+  assert.match(result.stdout, /kind: hey_outdated/);
+  assert.match(result.stdout, /hey-axi's catalog is HEY CLI v1\.8\.0/);
+  await fake.cleanup();
 });
 
 test("contact deliver: --to is required and takes only HEY's four destinations; the rest is forwarded intact", async () => {
@@ -90,6 +129,12 @@ test("--help for the new commands states the required flag, the allowed values a
   assert.match(del.stdout, /--apply-to <string> .*one of: current, future/);
   assert.match(del.stdout, /--occurrence and --apply-to go together: pass both or neither/);
   assert.match(del.stdout, /hey-axi event delete 4821 --occurrence 4821_2026-09-15 --apply-to current/);
+  const update = await runAxi(["thread", "update", "--help"]);
+  assert.equal(update.code, 0);
+  assert.match(update.stdout, /usage: hey-axi thread update <thread-id> \[flags\]/);
+  assert.match(update.stdout, /--name <string>  New thread name \(required\)/);
+  assert.match(update.stdout, /examples:\n  hey-axi thread update 12345 --name "Kitchen renovation quotes"/);
+  assert.match(update.stdout, /nothing is emailed/);
 });
 
 test("deleting one day of a series is never an 'already gone' no-op; deleting the series still is", () => {
@@ -104,7 +149,7 @@ test("a HEY older than the catalog (v1.7.0 has no contact deliver) is named as s
   const result = await runAxi(["contact", "deliver", "5", "--to", "feed", "--account", "8"], { fake });
   assert.equal(result.code, 1);
   assert.match(result.stdout, /kind: hey_outdated/);
-  assert.match(result.stdout, /the installed HEY CLI doesn't have --to for `contact deliver`; hey-axi's catalog is HEY CLI v1\.7\.0 plus the commands on HEY main/);
+  assert.match(result.stdout, /the installed HEY CLI doesn't have --to for `contact deliver`; hey-axi's catalog is HEY CLI v1\.8\.0/);
   assert.match(result.stdout, /Run `hey-axi version --account 8` to see which HEY is installed/);
   await fake.cleanup();
 });

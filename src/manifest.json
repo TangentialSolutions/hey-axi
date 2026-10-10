@@ -1,8 +1,8 @@
 {
- "source": "hey commands --json + hey <command> --help (basecamp/hey-cli main at 9dfe00f, 2026-10-06; unreleased, built from source)",
- "hey_version": "1.7.0+main.9dfe00f",
- "hey_commit": "9dfe00fb6594a4da5272b8ed0692f494229f14d2",
- "hey_commit_date": "2026-10-06",
+ "source": "hey commands --json + hey <command> --help (basecamp/hey-cli v1.8.0)",
+ "hey_version": "1.8.0",
+ "hey_commit": "732568eb9b09b44471e9fb889ba22308f87b4f95",
+ "hey_commit_date": "2026-10-09",
  "commands": [
   {
    "name": "account",
@@ -3279,8 +3279,8 @@
   {
    "name": "thread",
    "path": "thread",
-   "short": "Read email threads",
-   "notes": "Subcommands: read. Thread IDs come from hey box view. Use the same ID with hey reply or hey forward.",
+   "short": "Read and rename email threads",
+   "notes": "Subcommands: read, update. Thread IDs come from hey box view. Use the same ID with hey reply or hey forward.",
    "subcommands": [
     {
      "name": "read",
@@ -3301,6 +3301,28 @@
       "hey thread read 12345",
       "hey thread read 12345 --json",
       "hey thread read 12345 --markdown"
+     ]
+    },
+    {
+     "name": "update",
+     "path": "thread update",
+     "short": "Rename a thread",
+     "notes": "Renames a thread (topic) by its topic_id, as HEY's web app does; nothing is emailed. --name is required, trimmed, and at most 1024 bytes. A thread merged into another is not renamed and the command fails; rename the thread it was merged into instead. A collection's discussion thread shows its collection's name whatever this sets: use hey collection update for it.",
+     "flags": [
+      {
+       "name": "name",
+       "value": true,
+       "type": "string",
+       "desc": "New thread name (required)",
+       "default": ""
+      }
+     ],
+     "synopsis": [
+      "hey thread update <thread-id> [flags]"
+     ],
+     "examples": [
+      "hey thread update 12345 --name \"Kitchen renovation quotes\"",
+      "hey thread rename 12345 --name \"Flights to Lisbon, May 14\""
      ]
     }
    ],
