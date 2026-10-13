@@ -47,7 +47,8 @@
     "bench:capture": "node bench/capture.mjs",
     "bench:fixtures": "node bench/generate-api-fixtures.mjs",
     "skill:gen": "node scripts/gen-skill.js",
-    "skill:check": "node scripts/gen-skill.js --check"
+    "skill:check": "node scripts/gen-skill.js --check",
+    "smoke:pack": "bash scripts/smoke-pack.sh"
   },
   "dependencies": {
     "@toon-format/toon": "^4.1.1",

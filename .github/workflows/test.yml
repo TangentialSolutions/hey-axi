@@ -25,3 +25,18 @@ jobs:
       # Tests use a fake `hey`; HEY_BIN is unset and no real HEY CLI is installed.
       - run: npm test
       - run: npm run skill:check
+
+  pack-smoke:
+    # Packs the module, installs the tarball into a clean temp project, and runs the
+    # installed hey-axi --version / --help. No HEY binary or account is involved.
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm run smoke:pack
