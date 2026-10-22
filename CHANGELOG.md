@@ -2,6 +2,26 @@
 
 All notable changes to hey-axi. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [semver](https://semver.org/).
 
+## 0.3.4 (2026-10-21)
+
+Adds HEY's `contact photo set`/`remove`, moves the catalog to HEY CLI v1.10.0, keeps HEY's 422 refusal reasons whole in errors, and moves CI off the deprecated Node 20 GitHub Actions. Sending rules are unchanged: nothing is sent without `--allow-send`.
+
+**HEY version covered:** HEY CLI v1.10.0 (basecamp/hey-cli `main` at `2f061c6`, 2026-10-21, which is the v1.10.0 release commit; every change listed here is in a HEY release). `src/manifest.json` was regenerated with `npm run manifest:main`; its `hey_version` now reads `1.10.0`. Between `732568e` (v1.8.0) and `2f061c6` the only change to commands or flags is `contact photo` / `contact photo set` / `contact photo remove` (#566, released in v1.9.0). Help text changed for 60 commands: the per-command agent notes from #579 and the `--cookie` description for `auth login`/`login`, which now names both `__Host-session_token` and `session_token` (#551/#583).
+
+### Added
+- **`contact photo set <contact-id> <file>`** and **`contact photo remove <contact-id>`** (HEY v1.9.0+): upload a PNG or JPEG as a contact's photo, or remove it. Classified like `contact update` and `contact note set`: ordinary writes, not a send, secret or destructive command, so they need no opt-in. Both arguments are checked before HEY runs. HEY's summary and next-command hint (`contact photo remove …` / `contact photo set … <file>`) are kept, as is HEY's not_found hint about which contacts can be edited. A not_found on `photo remove` is not treated as an "already removed" no-op, because HEY also answers not_found for contacts you can't edit. On a HEY older than v1.9.0 they fail with `kind: hey_outdated`.
+- HEY's `avatar` alias for `photo` is handled like HEY's other subcommand aliases: hey-axi routes only the canonical name, so `contact avatar …` is refused (exit 2) before HEY runs. The refusal now names the canonical command (`Did you mean hey-axi contact photo?`), and the same goes for HEY's other aliases (`clip rm`, `thread rename`, `snippet edit`, …).
+- `--help` on a command group that has no form of its own (`contact photo --help`, `contact note --help`, …) now lists its subcommands and HEY's notes (exit 0). Before, it answered "incomplete command" and told you to run the same `--help` again.
+- 158 runnable command paths (was 156).
+
+### Changed
+- **HEY's refusal reasons are kept whole.** When HEY refuses a request (`code: validation`, HTTP 422), `error` now carries all of HEY's reasons instead of being cut at 200 characters, lists them under `reasons` when there are several, and `help` starts with "HEY refused the request for the reason(s) above: fix what they name, then run the command again". HEY v1.10.0 (hey-sdk 0.33, #592) is the first HEY release that passes those reasons through instead of a bare "validation error". `kind: usage`, `code: validation` and exit 2 are unchanged.
+- **CI:** `actions/checkout`, `actions/setup-node` and `actions/setup-go` are now `@v7` (Node 24 runtimes) in both workflows, so the Node 20 deprecation warnings are gone.
+- README, skill and the README consistency test now point to HEY v1.10.0 (`2f061c6`).
+
+### Not changed (reported upstream behaviour)
+- HEY v1.10.0's `hey mcp` now saves drafts and never sends (#584). hey-axi's `mcp` passthrough and its `--interactive`/`--allow-send` handling are unchanged in this release.
+
 ## 0.3.3 (2026-10-10)
 
 Adds HEY's new `thread update` (rename a thread) and moves the catalog from HEY's unreleased `main` at `9dfe00f` to HEY CLI v1.8.0. Nothing else about how hey-axi behaves changes.

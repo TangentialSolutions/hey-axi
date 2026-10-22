@@ -3,7 +3,7 @@
 // on basecamp/hey-cli main (or another ref)? Exits 1 with a readable diff when it doesn't.
 //
 //   npm run check-drift                         # clone basecamp/hey-cli main, build it (needs Go), compare
-//   node scripts/check-drift.js --ref v1.8.0    # any branch or tag
+//   node scripts/check-drift.js --ref v1.10.0   # any branch or tag
 //   node scripts/check-drift.js --source ../hey-cli   # an existing checkout (built here)
 //   node scripts/check-drift.js --hey ./hey --commit <sha>   # an already built binary
 //   node scripts/check-drift.js --write         # also rewrite src/manifest.json from it

@@ -2,7 +2,7 @@
 name: hey-axi
 description: Read, triage and draft HEY email (and HEY calendars, todos, habits, journal, time tracking) from the shell through hey-axi, a token-efficient TOON wrapper around Basecamp's HEY CLI that saves outgoing mail as drafts unless sending is explicitly allowed. Use when the user asks you to check, search, read, summarize, sort, label, screen, archive or reply to their HEY (hey.com) email, watch for new mail, or manage HEY todos, events, habits, journal entries or time tracks.
 license: MIT
-compatibility: Requires Node.js 20+ (commands run as `npx -y hey-axi`), the HEY CLI (`hey`, v1.7.0 or newer; `contact deliver`, `event delete --occurrence`, `screener clear` and `thread update` need v1.8.0 or newer) signed in to a HEY account, and network access to app.hey.com.
+compatibility: Requires Node.js 20+ (commands run as `npx -y hey-axi`), the HEY CLI (`hey`, v1.7.0 or newer; `contact deliver`, `event delete --occurrence`, `screener clear` and `thread update` need v1.8.0 or newer; `contact photo set`/`remove` need v1.9.0 or newer) signed in to a HEY account, and network access to app.hey.com.
 metadata:
   author: TangentialSolutions
   repository: https://github.com/TangentialSolutions/hey-axi
@@ -66,7 +66,7 @@ npx -y hey-axi trash <id>...          npx -y hey-axi spam <id>...      npx -y he
 
 `screener clear` moves **everything** waiting in the Screener to Trash, for every sender, so hey-axi refuses it (exit 2, nothing changes) unless `--allow-destructive` is passed. Prefer `screener deny <clearance-id>` per sender. Only add `--allow-destructive` after the user has explicitly confirmed clearing the whole Screener.
 
-`npx -y hey-axi contact deliver <contact-id> --to imbox|feed|papertrail|screened-out` chooses where a contact's future mail arrives (a contact id from `contact list`). `npx -y hey-axi event delete <series-id> --occurrence <occurrence_id> --apply-to current|future` deletes one day (or that day onward) of a repeating event; the occurrence_id comes from `event day`/`event week`. `npx -y hey-axi thread update <topic_id> --name "New subject"` renames a thread for everyone in the account; nothing is emailed (a collection's discussion thread takes its collection's name: use `collection update`).
+`npx -y hey-axi contact deliver <contact-id> --to imbox|feed|papertrail|screened-out` chooses where a contact's future mail arrives (a contact id from `contact list`). `npx -y hey-axi event delete <series-id> --occurrence <occurrence_id> --apply-to current|future` deletes one day (or that day onward) of a repeating event; the occurrence_id comes from `event day`/`event week`. `npx -y hey-axi thread update <topic_id> --name "New subject"` renames a thread for everyone in the account; nothing is emailed (a collection's discussion thread takes its collection's name: use `collection update`). `npx -y hey-axi contact photo set <contact-id> <file.png|jpg>` uploads a contact's photo and `contact photo remove <contact-id>` takes it off (HEY's `avatar` alias isn't routed: use `photo`).
 
 Mutations are idempotent: when the desired state already holds (already seen, already deleted), the answer is `noop: true` with exit 0, not an error.
 
@@ -117,7 +117,7 @@ Lines also include `ready`, `disconnected` and `resync`. On `resync`, re-read th
 
 ## 6. Errors and exit codes
 
-Errors are TOON on stdout: `ok: false`, `error`, `kind` (`usage`, `not_found`, `auth`, `forbidden`, `rate_limited`, `network`, `api_error`, `ambiguous`, `not_delivered`, `hey_missing`, `hey_outdated`, `command_error`), HEY's `code`/`hint`/`meta` when it gave them, and a `help` line with the next step. Exit codes: **0** success (including no-ops) · **1** error · **2** usage error or refusal (unknown command/flag/field, bad argument, blocked send, `screener clear` without `--allow-destructive`, needs the user). Read `hint`/`help` before you retry. `hey_outdated` means the installed `hey` is older than hey-axi's command catalog (`npx -y hey-axi version` shows it).
+Errors are TOON on stdout: `ok: false`, `error`, `kind` (`usage`, `not_found`, `auth`, `forbidden`, `rate_limited`, `network`, `api_error`, `ambiguous`, `not_delivered`, `hey_missing`, `hey_outdated`, `command_error`), HEY's `code`/`hint`/`meta` when it gave them, and a `help` line with the next step. Exit codes: **0** success (including no-ops) · **1** error · **2** usage error or refusal (unknown command/flag/field, bad argument, blocked send, `screener clear` without `--allow-destructive`, needs the user). `code: validation` means HEY refused the request: `error` (and `reasons`, when there are several) says what to fix. Read `hint`/`help` before you retry. `hey_outdated` means the installed `hey` is older than hey-axi's command catalog (`npx -y hey-axi version` shows it).
 
 ## Install
 

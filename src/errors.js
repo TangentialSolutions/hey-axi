@@ -77,7 +77,7 @@ const NETWORK = [
   [/\bSQLITE_(BUSY|LOCKED)\b|database is locked/i, "the local database is busy; retry in a moment"], [/\bSQLITE_[A-Z]+\b/, "a local database error"],
 ];
 
-export function cleanLine(text) {
+export function cleanLine(text, max = 200) {
   const lines = String(text || "").replace(ANSI, "").split(/\r?\n/).map((line) => line.trimEnd()).filter((line) => line.trim() && !NOISE.test(line));
   if (!lines.length) return "";
   let line = lines[0].trim().replace(/^(error|Error|ERROR):\s*/, "");
@@ -91,7 +91,7 @@ export function cleanLine(text) {
     .replace(/(^|\s)(\/|~\/|[A-Za-z]:\\)[^\s:]+(:\d+)*/g, "$1a local file").replace(/\s{2,}/g, " ").trim();
   // A line that is still a dependency error after its prefix came off is dropped too.
   if (!line || INTERNAL.test(line) || DEPENDENCY.test(line) || LIBRARY_NAME.test(line) || /^[\w./-]+$/.test(line) && LIBRARY.test(line)) return "";
-  return heyToAxi(line.length > 200 ? `${line.slice(0, 200)}…` : line);
+  return heyToAxi(line.length > max ? `${line.slice(0, max)}…` : line);
 }
 
 // HEY's stderr after a successful run, minus terminal escapes and debug noise (stack
@@ -164,8 +164,12 @@ export function translateFailure(result, context = {}) {
     // A send HEY refused and kept as a draft: say it wasn't sent, and never "retry".
     if (envelope.code === "not_delivered") return { failure: notDelivered(envelope), exitCode: 1, warnings: warnings(found.prefix) };
     // Even HEY's own envelope is translated: one clean line, no stack frames or escapes.
-    const failure = { ok: false, error: cleanLine(String(envelope.error)) || info.message, kind: info.kind };
     const code = envelope.code === undefined || envelope.code === null ? "" : String(envelope.code);
+    // A refusal (HEY's 422 `validation`) carries HEY's own reasons, joined with "; ". They
+    // are what an agent fixes, so they are kept whole (not cut at 200 characters) and listed.
+    const refused = code === "validation";
+    const failure = { ok: false, error: cleanLine(String(envelope.error), refused ? 2000 : 200) || info.message, kind: info.kind };
+    if (refused && failure.error.includes("; ")) failure.reasons = failure.error.split("; ").map((reason) => reason.trim()).filter(Boolean);
     if (code && code !== "unknown" && HEY_CODE.test(code) && !LIBRARY.test(code)) failure.code = code;
     const meta = envelope.meta === undefined || envelope.meta === "" ? undefined : cleanMeta(envelope.meta);
     if (meta !== undefined) failure.meta = meta;
@@ -197,6 +201,7 @@ export function translateFailure(result, context = {}) {
     const hint = envelope.hint ? cleanLine(String(envelope.hint)) : "";
     if (hint && !/^Run 'hey(-axi)? --help'/.test(hint)) failure.hint = hint;
     failure.help = usage ? fixFor(context, { usageError: true }) : help();
+    if (refused) failure.help = ["HEY refused the request for the reason(s) above: fix what they name, then run the command again", ...failure.help];
     return { failure, exitCode: usage ? 2 : axiExitCode(result.status, code), warnings: warnings(found.prefix) };
   }
   const detail = cleanLine(result.stderr) || cleanLine(result.stdout);
