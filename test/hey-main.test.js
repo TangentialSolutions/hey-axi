@@ -29,7 +29,6 @@ test("the manifest has the commands and flags HEY main added after v1.7.0", () =
   assert.equal(update.path, "thread update");
   assert.deepEqual(update.node.flags.map((flag) => [flag.name, flag.value, flag.type]), [["name", true, "string"]]);
   assert.deepEqual(update.node.synopsis, ["hey thread update <thread-id> [flags]"]);
-  assert.equal(coverageLabel(manifest), "v1.8.0");
   assert.equal(coverageLabel({ hey_version: "1.7.0+main.9dfe00f", hey_commit_date: "2026-10-06" }), "v1.7.0 plus the commands on HEY main as of 2026-10-06 (commit 9dfe00f, unreleased)");
   assert.equal(coverageLabel({ hey_version: "1.8.0" }), "v1.8.0");
 });
@@ -72,7 +71,7 @@ test("thread update on a HEY older than v1.8.0 is named as outdated", async () =
   const result = await runAxi(["thread", "update", "12345", "--name", "x"], { fake });
   assert.equal(result.code, 1, result.stdout);
   assert.match(result.stdout, /kind: hey_outdated/);
-  assert.match(result.stdout, /hey-axi's catalog is HEY CLI v1\.8\.0/);
+  assert.match(result.stdout, /hey-axi's catalog is HEY CLI v1\.10\.0/);
   await fake.cleanup();
 });
 
@@ -149,7 +148,7 @@ test("a HEY older than the catalog (v1.7.0 has no contact deliver) is named as s
   const result = await runAxi(["contact", "deliver", "5", "--to", "feed", "--account", "8"], { fake });
   assert.equal(result.code, 1);
   assert.match(result.stdout, /kind: hey_outdated/);
-  assert.match(result.stdout, /the installed HEY CLI doesn't have --to for `contact deliver`; hey-axi's catalog is HEY CLI v1\.8\.0/);
+  assert.match(result.stdout, /the installed HEY CLI doesn't have --to for `contact deliver`; hey-axi's catalog is HEY CLI v1\.10\.0/);
   assert.match(result.stdout, /Run `hey-axi version --account 8` to see which HEY is installed/);
   await fake.cleanup();
 });

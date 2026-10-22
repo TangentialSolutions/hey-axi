@@ -88,6 +88,17 @@ export function resolveCommand(commands, words) {
   return { node, path: node.path, consumed };
 }
 
+// HEY's cobra subcommand aliases (not in `hey commands --json`). hey-axi routes only the
+// canonical names, so an alias is refused like any unknown word, and this map lets the
+// refusal name the canonical command. Keyed by "<parent path> <alias>".
+export const HEY_ALIASES = {
+  "contact avatar": "photo",
+  "clip add": "create", "clip remove": "delete", "clip rm": "delete",
+  "snippet add": "create", "snippet edit": "update", "snippet remove": "delete",
+  "collection edit": "update", "thread edit": "update", "thread rename": "update", "habit update": "edit",
+  "workflow edit": "update", "workflow rename": "update", "workflow stage edit": "update", "workflow stage rename": "update",
+};
+
 // Collect every leaf (and runnable group) path, for help and coverage reporting.
 export function listCommands(commands) {
   const paths = [];

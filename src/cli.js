@@ -9,7 +9,7 @@ import { spawn } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { createInterface } from "node:readline";
 import { encode } from "@toon-format/toon";
-import { closestNames, coverageLabel, loadBundledManifest, resolveCommand } from "./router.js";
+import { HEY_ALIASES, closestNames, coverageLabel, loadBundledManifest, resolveCommand } from "./router.js";
 import { STDIN_VALUE_FLAGS, checkPolicy, contentProblem, destructiveCommands, noopFor, runMode, sendCommands, sendStaging, userOnlyPaths } from "./policy.js";
 import { translateFailure, cleanLine, warningLines } from "./errors.js";
 import { FLAG_RULES, RAW_OUTPUT_FLAGS, flagLabel, flagValue, hasAny, nodeValueFlags, scanArgs, stripAxiFlags, validateFlags, valueFlagSet } from "./args.js";
@@ -361,6 +361,22 @@ if (first.words.length === 0) {
 }
 
 const resolved = resolveCommand(manifest.commands, first.words);
+// `hey-axi contact photo --help`: a group with no form of its own still answers --help,
+// with its subcommands and HEY's notes, instead of an "incomplete command" error.
+if (resolved.error === "incomplete command" && (first.flags.has("--help") || first.flags.has("-h"))) {
+  let group = null;
+  let level = manifest.commands;
+  for (const word of resolved.path.split(" ")) {
+    group = level.find((candidate) => candidate.name === word);
+    level = group?.subcommands || [];
+  }
+  const lines = [`hey-axi ${group.path} — ${group.short}`, `usage: hey-axi ${group.path} <subcommand> [args] [flags]`, "", "subcommands:"];
+  for (const child of group.subcommands) lines.push(`  ${child.path} — ${child.short}`);
+  if (group.notes) lines.push("", `notes: ${heyToAxi(group.notes)}`);
+  lines.push("", `Run \`hey-axi ${group.path} <subcommand> --help\` for one subcommand's arguments, flags and examples`);
+  process.stdout.write(`${lines.join("\n")}\n`);
+  process.exit(0);
+}
 if (resolved.error) {
   const failure = { ok: false, error: resolved.error };
   if (resolved.path) failure.command = resolved.path;
@@ -368,7 +384,8 @@ if (resolved.error) {
   if (resolved.subcommands) failure.subcommands = resolved.subcommands;
   let level = manifest.commands;
   if (resolved.path) for (const word of resolved.path.split(" ")) level = level.find((node) => node.name === word)?.subcommands || [];
-  const close = closestNames(resolved.word, level);
+  const alias = resolved.path && HEY_ALIASES[`${resolved.path} ${resolved.word}`];
+  const close = alias ? [alias] : closestNames(resolved.word, level);
   failure.help = [
     ...close.map((name) => `Did you mean \`hey-axi ${resolved.path ? `${resolved.path} ` : ""}${name}\`?`),
     resolved.path ? `Run \`hey-axi ${resolved.path} --help\`` : "Run `hey-axi --help` for all commands",
