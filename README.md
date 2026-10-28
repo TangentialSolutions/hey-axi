@@ -2,7 +2,9 @@
 
 [![skills.sh](https://skills.sh/b/TangentialSolutions/hey-axi)](https://skills.sh/TangentialSolutions/hey-axi) [![npm](https://img.shields.io/npm/v/hey-axi.svg)](https://www.npmjs.com/package/hey-axi) [![test](https://github.com/TangentialSolutions/hey-axi/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/TangentialSolutions/hey-axi/actions/workflows/test.yml)
 
-An agent-friendly wrapper for [HEY CLI](https://github.com/basecamp/hey-cli) (`hey`), Basecamp's command line for HEY email, calendars, todos, habits, time tracking and journals.
+An agent-friendly wrapper that works with [HEY CLI](https://github.com/basecamp/hey-cli) (`hey`), Basecamp's command line for HEY email, calendars, todos, habits, time tracking and journals.
+
+Independent project; not affiliated with or endorsed by Basecamp/37signals. HEY is a trademark of 37signals LLC. Source: [github.com/TangentialSolutions/hey-axi](https://github.com/TangentialSolutions/hey-axi) · [MIT license](LICENSE) · [third-party notices](NOTICE).
 
 hey-axi runs `hey`, asks for its JSON response envelope, and prints it as [TOON](https://github.com/toon-format/toon). It follows the [AXI](https://axi.md) principles: a live home view, minimal default fields, truncated long text, definitive empty states, and unknown flags rejected up front. On our synthetic benchmark that's **~89% fewer tokens than `hey --json`** ([docs/benchmarks.md](docs/benchmarks.md)). It also adds a few safety rails. It covers **every command in HEY CLI v1.10.0** (released 2026-10-21; commit `2f061c6`, which is also basecamp/hey-cli `main` as of that day): 158 runnable command paths, including the `login`/`logout` aliases, plus the `box <id>`-style shortcuts. It routes from a snapshot of HEY's own `hey commands --json` catalog. Commands added since v1.7.0 (`contact deliver`, `event delete --occurrence/--apply-to`, `screener clear`, `thread update`) need HEY v1.8.0 or newer, and `contact photo set`/`contact photo remove` need HEY v1.9.0 or newer; with an older HEY they fail with `kind: hey_outdated`. See [CHANGELOG.md](CHANGELOG.md) for what changed in each release.
 
@@ -149,4 +151,8 @@ See [AGENTS.md](AGENTS.md) for the code map and conventions, and [SCHEDULED_HEY_
 
 ## License
 
-[MIT](LICENSE) © 2026 TangentialSolutions. hey-axi is an independent project. It isn't affiliated with or endorsed by Basecamp or HEY.
+[MIT](LICENSE) © 2026 TangentialSolutions. Source: https://github.com/TangentialSolutions/hey-axi
+
+Independent project; not affiliated with or endorsed by Basecamp/37signals. HEY is a trademark of 37signals LLC.
+
+HEY CLI help text in `src/manifest.json` (and the skill text generated from it) is copied from [HEY CLI](https://github.com/basecamp/hey-cli), MIT © 2026 37signals, LLC; its notice is in [NOTICE](NOTICE).

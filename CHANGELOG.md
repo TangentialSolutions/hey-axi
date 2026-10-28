@@ -2,6 +2,16 @@
 
 All notable changes to hey-axi. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [semver](https://semver.org/).
 
+## Unreleased
+
+### Added
+- `NOTICE` with the full HEY CLI MIT notice (Copyright (c) 2026 37signals, LLC), covering the HEY help text copied into `src/manifest.json` and the skill text generated from it. It ships in the npm package (`files`).
+- Independence/trademark line ("Independent project; not affiliated with or endorsed by Basecamp/37signals. HEY is a trademark of 37signals LLC.") in the README, `SKILL.md` and the generated `references/commands.md` (emitted by `scripts/gen-skill.js`, so it survives `npm run skill:gen`).
+- README and skill link the repo, the MIT LICENSE and NOTICE.
+
+### Changed
+- README, skill and package descriptions say hey-axi "works with HEY CLI".
+
 ## 0.3.4 (2026-10-21)
 
 Adds HEY's `contact photo set`/`remove`, moves the catalog to HEY CLI v1.10.0, keeps HEY's 422 refusal reasons whole in errors, and moves CI off the deprecated Node 20 GitHub Actions. Sending rules are unchanged: nothing is sent without `--allow-send`.
