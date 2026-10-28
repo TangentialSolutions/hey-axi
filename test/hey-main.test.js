@@ -71,7 +71,7 @@ test("thread update on a HEY older than v1.8.0 is named as outdated", async () =
   const result = await runAxi(["thread", "update", "12345", "--name", "x"], { fake });
   assert.equal(result.code, 1, result.stdout);
   assert.match(result.stdout, /kind: hey_outdated/);
-  assert.match(result.stdout, /hey-axi's catalog is HEY CLI v1\.10\.0/);
+  assert.match(result.stdout, /hey-axi's catalog is HEY CLI v1\.10\.1 plus the commands on HEY main/);
   await fake.cleanup();
 });
 
@@ -148,7 +148,7 @@ test("a HEY older than the catalog (v1.7.0 has no contact deliver) is named as s
   const result = await runAxi(["contact", "deliver", "5", "--to", "feed", "--account", "8"], { fake });
   assert.equal(result.code, 1);
   assert.match(result.stdout, /kind: hey_outdated/);
-  assert.match(result.stdout, /the installed HEY CLI doesn't have --to for `contact deliver`; hey-axi's catalog is HEY CLI v1\.10\.0/);
+  assert.match(result.stdout, /the installed HEY CLI doesn't have --to for `contact deliver`; hey-axi's catalog is HEY CLI v1\.10\.1 plus the commands on HEY main/);
   assert.match(result.stdout, /Run `hey-axi version --account 8` to see which HEY is installed/);
   await fake.cleanup();
 });
