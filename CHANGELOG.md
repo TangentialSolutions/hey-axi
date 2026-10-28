@@ -2,6 +2,19 @@
 
 All notable changes to hey-axi. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [semver](https://semver.org/).
 
+## Unreleased
+
+Adds HEY's `thread comment` and moves the catalog from HEY CLI v1.10.0 to basecamp/hey-cli `main` at `7a30c73`, so the daily upstream drift check passes again. Sending rules are unchanged: nothing is sent without `--allow-send`.
+
+**HEY version covered:** HEY CLI v1.10.1 plus HEY's unreleased `main` at `7a30c73` (2026-10-27). `src/manifest.json` was regenerated with `npm run manifest:main`; its `hey_version` now reads `1.10.1+main.7a30c73`. Between `2f061c6` (v1.10.0) and `7a30c73` the only change to commands or flags is `thread comment` (flags `--message`/`-m`, `--message-html`, `--dry-run`; #383, `bcf2799`). Help text changed for one more command: `thread` (short "Read, rename and annotate email threads", and its notes now mention `thread comment`). The other upstream commits (v1.10.1 release #600, Keychain message #599, hey-sdk v0.34.0 #602, TUI thread selection #359, nested Action Text rendering #335) don't change commands or flags.
+
+### Added
+- **`thread comment <thread-id> -m "..."`** (HEY `main` after v1.10.1, #383): adds a note to a thread. Classified as an ordinary write, like `contact note set`, not a send: HEY's source (`internal/cmd/thread_comment.go`) posts it to `POST /topics/{id}/comments.json` through hey-sdk's `Topics().CreateComment` and says "HEY never emails it to anyone". It is not private, though: everyone with access to the thread sees it, HEY for Domains teammates included; `--dry-run` asks HEY who would see it without adding it. The thread id is checked before HEY runs; HEY's own refusal of a blank note is a usage error (exit 2). HEY's summary and its `thread read` next-command hint are kept. With a HEY that lacks it (v1.10.1 and older) it fails with `kind: hey_outdated`.
+- 159 runnable command paths (was 158).
+
+### Changed
+- README, skill and the README/router consistency tests now point to HEY `main` at `7a30c73`.
+
 ## 0.3.4 (2026-10-21)
 
 Adds HEY's `contact photo set`/`remove`, moves the catalog to HEY CLI v1.10.0, keeps HEY's 422 refusal reasons whole in errors, and moves CI off the deprecated Node 20 GitHub Actions. Sending rules are unchanged: nothing is sent without `--allow-send`.

@@ -3,7 +3,10 @@
 // hey-axi's own flags. Stripped before anything is forwarded to HEY.
 export const AXI_FLAGS = ["--allow-send", "--allow-secret", "--allow-destructive"];
 
-// Commands that deliver email.
+// Commands that deliver email. `thread comment` (HEY main #383) is deliberately NOT here:
+// it adds a note to a thread through POST /topics/{id}/comments.json and HEY never emails
+// it (internal/cmd/thread_comment.go). It is an ordinary write, like `contact note set`,
+// though everyone with access to the thread (HEY for Domains teammates too) can see it.
 //   safe:  HEY flags that already mean nothing is sent
 //   stage: the flag hey-axi adds, when there's no send opt-in, to save a draft instead
 //   why:   for commands with no draft mode, why hey-axi refuses and what to do instead
