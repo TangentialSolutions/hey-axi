@@ -4,6 +4,8 @@ All notable changes to hey-axi. The format follows [Keep a Changelog](https://ke
 
 ## Unreleased
 
+## 0.3.5 (2026-11-10)
+
 Adds HEY's `thread comment` and moves the catalog from HEY CLI v1.10.0 to HEY CLI v1.13.1, so the daily upstream drift check passes again. Sending rules are unchanged: nothing is sent without `--allow-send`.
 
 **HEY version covered:** HEY CLI v1.13.1 (basecamp/hey-cli `main` at `d8cb8eb`, 2026-11-09, which is the v1.13.1 release commit). `src/manifest.json` was regenerated from that tag (`node scripts/check-drift.js --ref v1.13.1 --write`); its `hey_version` now reads `1.13.1`. v1.12.0 (`6c45b8b`, 2026-11-08) was the previous release, but by the time this pin was made, `main` had already moved to v1.13.1, and pinning v1.12.0 would have left the scheduled drift check red. Between `2f061c6` (v1.10.0) and `d8cb8eb` the command or flag changes are: `thread comment` (flags `--message`/`-m`, `--message-html`, `--dry-run`; #383, in v1.11.0), `--mcp` on `auth login`/`login` and `auth logout`/`logout` (v1.11.0, #618/#619/#622/#623), and `reply --from` (v1.13.0, #631). Help text also changed, including `thread read` (entries may carry `topic_id` and `screened_in`) and draft/compose/reply notes (`app_url` on a saved draft). The other upstream commits (release bumps, hey mcp's own sign-in #598, draft/review/send path #615, hey-sdk 0.35.0 #627, mcp help #633, test-only #630, and earlier v1.10.1 work) don't add or remove commands or flags. Upstream #625 (logout revokes the CLI sign-in) and #629 (`event --end-time-zone`) are still open and are not in this snapshot.
