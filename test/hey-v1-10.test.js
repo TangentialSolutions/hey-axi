@@ -13,9 +13,9 @@ const manifest = loadBundledManifest();
 const SET_OK = JSON.stringify({ ok: true, data: { id: 12345, name: "Jane Doe", avatar_url: "https://hey.com/avatars/12345.jpg" }, summary: "Contact photo saved", breadcrumbs: [{ action: "remove", command: "hey contact photo remove 12345", description: "Remove the photo" }] });
 const REMOVE_OK = JSON.stringify({ ok: true, data: { id: 12345 }, summary: "Contact photo removed", breadcrumbs: [{ action: "set", command: "hey contact photo set 12345 <file>", description: "Upload a photo" }] });
 
-test("the manifest pins HEY v1.10.0 and has contact photo, photo set and photo remove", () => {
-  assert.equal(manifest.hey_version, "1.10.0");
-  assert.equal(coverageLabel(manifest), "v1.10.0");
+test("the manifest still has contact photo, photo set and photo remove", () => {
+  // Since the Unreleased changes the manifest pins HEY main past v1.10.1; photo is still there.
+  assert.match(manifest.hey_version, /^1\.10\.1\+main\./);
   const set = resolveCommand(manifest.commands, ["contact", "photo", "set"]);
   assert.equal(set.path, "contact photo set");
   assert.deepEqual(set.node.synopsis, ["hey contact photo set <contact-id> <file> [flags]"]);
@@ -131,6 +131,6 @@ test("contact photo on a HEY older than v1.9.0 is named as outdated", async () =
   const result = await runAxi(["contact", "photo", "remove", "12345"], { fake });
   assert.equal(result.code, 1, result.stdout);
   assert.match(result.stdout, /kind: hey_outdated/);
-  assert.match(result.stdout, /hey-axi's catalog is HEY CLI v1\.10\.0/);
+  assert.match(result.stdout, /hey-axi's catalog is HEY CLI v1\.10\.1 plus the commands on HEY main/);
   await fake.cleanup();
 });

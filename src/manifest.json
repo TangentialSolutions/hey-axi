@@ -1,8 +1,8 @@
 {
- "source": "hey commands --json + hey <command> --help (basecamp/hey-cli v1.10.0)",
- "hey_version": "1.10.0",
- "hey_commit": "2f061c618c173b73d613cd22a540fdf2bce4db42",
- "hey_commit_date": "2026-10-21",
+ "source": "hey commands --json + hey <command> --help (basecamp/hey-cli main at 7a30c73, 2026-10-27; unreleased, built from source)",
+ "hey_version": "1.10.1+main.7a30c73",
+ "hey_commit": "7a30c73f68514eb1e3ccf661a3af7256f46f9f6b",
+ "hey_commit_date": "2026-10-27",
  "commands": [
   {
    "name": "account",
@@ -3326,9 +3326,44 @@
   {
    "name": "thread",
    "path": "thread",
-   "short": "Read and rename email threads",
-   "notes": "Subcommands: read, update. Thread IDs come from hey box view. Use the same ID with hey reply or hey forward.",
+   "short": "Read, rename and annotate email threads",
+   "notes": "Subcommands: read, update, comment. Thread IDs come from hey box view. Use the same ID with hey reply or hey forward. hey thread comment adds a note everyone with access to the thread sees; it is never emailed.",
    "subcommands": [
+    {
+     "name": "comment",
+     "path": "thread comment",
+     "short": "Add a note to a thread",
+     "notes": "Adds a note (an entry of kind \"comment\") to the thread by its topic_id, from hey box view, hey label view or hey search; it is not a mailed reply — use hey reply for that. The note is never emailed, but it is not private: everyone with access to the thread sees it, including HEY for Domains teammates. The answer names the note's id and visible_to, the other users who see it (empty for a note to self); collection_only is true on a collection's own thread. --dry-run needs no message (one given is not sent), adds nothing, and answers visible_to and collection_only for the thread — run it first when the audience matters. The message is Markdown via -m, or raw HTML via --message-html; a blank message is refused.",
+     "flags": [
+      {
+       "name": "dry-run",
+       "desc": "Show who would see the note without adding it",
+       "default": "false"
+      },
+      {
+       "name": "message",
+       "shorthand": "m",
+       "value": true,
+       "type": "string",
+       "desc": "Note as Markdown (required unless --dry-run)",
+       "default": ""
+      },
+      {
+       "name": "message-html",
+       "value": true,
+       "type": "string",
+       "desc": "Note as raw HTML instead of Markdown",
+       "default": ""
+      }
+     ],
+     "synopsis": [
+      "hey thread comment <thread-id> [flags]"
+     ],
+     "examples": [
+      "hey thread comment 12345 -m \"Following up with accounting on this.\"",
+      "hey thread comment 12345 --dry-run"
+     ]
+    },
     {
      "name": "read",
      "path": "thread read",
