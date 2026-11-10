@@ -1,8 +1,8 @@
 {
- "source": "hey commands --json + hey <command> --help (basecamp/hey-cli main at 7a30c73, 2026-10-27; unreleased, built from source)",
- "hey_version": "1.10.1+main.7a30c73",
- "hey_commit": "7a30c73f68514eb1e3ccf661a3af7256f46f9f6b",
- "hey_commit_date": "2026-10-27",
+ "source": "hey commands --json + hey <command> --help (basecamp/hey-cli v1.13.1)",
+ "hey_version": "1.13.1",
+ "hey_commit": "d8cb8eba41853eb913be29184f4a0061d13b1db5",
+ "hey_commit_date": "2026-11-09",
  "commands": [
   {
    "name": "account",
@@ -22,7 +22,7 @@
      "name": "senders",
      "path": "account senders",
      "short": "List configured sender addresses",
-     "notes": "Lists sender IDs, account IDs, email addresses, and account-default flags. --account limits the list; use an email or sender ID with compose --from or draft edit --from. Does not change the default.",
+     "notes": "Lists sender IDs, account IDs, email addresses, and account-default flags. --account limits the list; use an email or sender ID with compose --from, reply --from or draft edit --from. Does not change the default.",
      "synopsis": [
       "hey account senders [flags]"
      ],
@@ -128,6 +128,11 @@
        "default": ""
       },
       {
+       "name": "mcp",
+       "desc": "Sign in hey mcp with its own credential (read, write and send)",
+       "default": "false"
+      },
+      {
        "name": "no-browser",
        "desc": "Don't open browser, print URL instead",
        "default": "false"
@@ -153,11 +158,19 @@
      "name": "logout",
      "path": "auth logout",
      "short": "Clear stored credentials",
+     "flags": [
+      {
+       "name": "mcp",
+       "desc": "Sign hey mcp out: revoke its sign-in and remove its credential",
+       "default": "false"
+      }
+     ],
      "synopsis": [
       "hey auth logout [flags]"
      ],
      "examples": [
-      "hey auth logout"
+      "hey auth logout",
+      "hey auth logout --mcp"
      ]
     },
     {
@@ -172,7 +185,7 @@
      "name": "status",
      "path": "auth status",
      "short": "Show authentication status",
-     "notes": "Use it when the user asks for authentication status or when an explicit check helps diagnose a failed command, not as a preflight. It reports stored credentials without contacting HEY and changes nothing, so authenticated true does not prove HEY still accepts them. JSON answers authenticated, base_url, mail_account, account_source and install_id; method env_var when HEY_TOKEN is set; otherwise storage (keyring or file), auth_type, and expires_at, expired and refresh_available for a token. An expired token with refresh_available is refreshed by the next data command.",
+     "notes": "Use it when the user asks for authentication status or when an explicit check helps diagnose a failed command, not as a preflight. It reports stored credentials without contacting HEY and changes nothing, so authenticated true does not prove HEY still accepts them. JSON answers authenticated, base_url, mail_account, account_source and install_id; method env_var when HEY_TOKEN is set; otherwise storage (keyring or file), auth_type, and expires_at, expired and refresh_available for a token. An expired token with refresh_available is refreshed by the next data command. mcp reports hey mcp's own sign-in the same way, with its scope and can_send; HEY_TOKEN never stands in for it.",
      "synopsis": [
       "hey auth status [flags]"
      ]
@@ -824,7 +837,7 @@
    "name": "compose",
    "path": "compose",
    "short": "Write and send a new email",
-   "notes": "--from selects a configured sender email or ID from account senders; --account must agree. --from is only for new messages. --from does not save a default sender. Starts a new thread with --to (optionally --cc/--bcc), which requires --subject, or replies to an existing one with --thread-id, which does not; --thread-id answers the thread's latest emailed message, never a note (kind \"comment\") or share notice (kind \"access_notice\"), and a thread with no emailed message is refused as not_found. Repeatable --attach files are uploaded before sending and can be sent without body text. With neither -m nor --message-html the body is read from stdin when stdin is not a terminal, and $EDITOR opens when it is (unless --attach files stand in for a body). The body is Markdown; use --message-html to send raw HTML instead. --draft saves instead of sending — recipients become optional — and answers the draft ID for hey draft show/edit/send/delete. A new message ends with the sender's HEY name tag, as one composed in HEY does; --no-name-tag leaves it out. A send answers the new message's id and the topic_id of its thread (for hey thread read), with subject and delayed (true while Undo Send holds it back) — only the fields HEY's answer carries, never guessed. While delayed is true, HEY leaves the message out of its thread, so hey thread read shows the thread without it (a thread it started reads as not found) until Undo Send releases it. A send HEY refuses — usually the account's sending limit — is kept as a draft and fails with not_delivered (exit 7), naming the draft in meta.draft_id; send it later with hey draft send <draft_id>, not by sending again, which only makes another draft.",
+   "notes": "--from selects a configured sender email or ID from account senders; an explicit --account must agree. With --thread-id, the sender must belong to the thread's account. --from does not save a default sender. Starts a new thread with --to (optionally --cc/--bcc), which requires --subject, or replies to an existing one with --thread-id, which does not; --thread-id answers the thread's latest emailed message, never a note (kind \"comment\") or share notice (kind \"access_notice\"), and a thread with no emailed message is refused as not_found. Repeatable --attach files are uploaded before sending and can be sent without body text. With neither -m nor --message-html the body is read from stdin when stdin is not a terminal, and $EDITOR opens when it is (unless --attach files stand in for a body). The body is Markdown; use --message-html to send raw HTML instead. --draft saves instead of sending — recipients become optional — and answers the draft ID for hey draft show/edit/send/delete, with app_url, the draft's page in HEY. A new message ends with the sender's HEY name tag, as one composed in HEY does; --no-name-tag leaves it out. A send answers the new message's id and the topic_id of its thread (for hey thread read), with subject and delayed (true while Undo Send holds it back) — only the fields HEY's answer carries, never guessed. While delayed is true, HEY leaves the message out of its thread, so hey thread read shows the thread without it (a thread it started reads as not found) until Undo Send releases it. A send HEY refuses — usually the account's sending limit — is kept as a draft and fails with not_delivered (exit 7), naming the draft in meta.draft_id; send it later with hey draft send <draft_id>, not by sending again, which only makes another draft.",
    "flags": [
     {
      "name": "attach",
@@ -1315,7 +1328,7 @@
    "name": "draft",
    "path": "draft",
    "short": "Manage unsent drafts",
-   "notes": "Subcommands: list, show, edit, send, delete. Draft IDs come from `hey draft list` or from `hey compose --draft`/`hey reply --draft`. list's --page continues from the next_page cursor of an earlier listing.",
+   "notes": "Subcommands: list, show, edit, send, delete. Draft IDs come from `hey draft list` or from `hey compose --draft`/`hey reply --draft`. Mail written for a person usually goes: save it with --draft, show them its From, To, Cc, Bcc, Subject and Body in the conversation, revise it with edit as they ask, and send it once they say to. list's --page continues from the next_page cursor of an earlier listing.",
    "subcommands": [
     {
      "name": "delete",
@@ -1334,7 +1347,7 @@
      "name": "edit",
      "path": "draft edit",
      "short": "Change a draft",
-     "notes": "--from chooses a configured sender email or ID within this draft account. It preserves the body verbatim, including existing signatures; use a body flag to replace those. Each flag replaces its field and an omitted flag keeps what the draft has — --to/--cc/--bcc replace that whole recipient kind (an explicit empty value clears it). With no field flags the body opens in $EDITOR as Markdown. A scheduled delivery is preserved. A draft scheduled between whole UTC hours, which HEY's API cannot express, is refused as a usage error (exit 1) rather than moved — adjust it in a HEY app first. --from saves no default sender.",
+     "notes": "--from chooses a configured sender email or ID within this draft account. It preserves the body verbatim, including existing signatures; use a body flag to replace those. Each flag replaces its field and an omitted flag keeps what the draft has — --to/--cc/--bcc replace that whole recipient kind (an explicit empty value clears it). With no field flags the body opens in $EDITOR as Markdown. A scheduled delivery is preserved. A draft scheduled between whole UTC hours, which HEY's API cannot express, is refused as a usage error (exit 1) rather than moved — adjust it in a HEY app first. --from saves no default sender. It answers the draft's id and app_url, its page in HEY.",
      "flags": [
       {
        "name": "bcc",
@@ -1447,7 +1460,7 @@
      "name": "show",
      "path": "draft show",
      "short": "Read a draft back",
-     "notes": "Draft IDs come from `hey draft list` or from saving with `hey compose --draft`. The body is Markdown. The answer includes from, the sender the draft goes out as, and, for a draft scheduled in a HEY app, scheduled_delivery_at in UTC like every HEY timestamp (the styled view shows it in local time).",
+     "notes": "Draft IDs come from `hey draft list` or from saving with `hey compose --draft`. The body is Markdown. The answer includes from, the sender the draft goes out as, app_url, the draft's page in HEY, and, for a draft scheduled in a HEY app, scheduled_delivery_at in UTC like every HEY timestamp (the styled view shows it in local time).",
      "synopsis": [
       "hey draft show <draft-id> [flags]"
      ],
@@ -2435,6 +2448,11 @@
      "default": ""
     },
     {
+     "name": "mcp",
+     "desc": "Sign in hey mcp with its own credential (read, write and send)",
+     "default": "false"
+    },
+    {
      "name": "no-browser",
      "desc": "Don't open browser, print URL instead",
      "default": "false"
@@ -2460,11 +2478,19 @@
    "name": "logout",
    "path": "logout",
    "short": "Clear stored credentials",
+   "flags": [
+    {
+     "name": "mcp",
+     "desc": "Sign hey mcp out: revoke its sign-in and remove its credential",
+     "default": "false"
+    }
+   ],
    "synopsis": [
     "hey logout [flags]"
    ],
    "examples": [
-    "hey logout"
+    "hey logout",
+    "hey logout --mcp"
    ]
   },
   {
@@ -2517,7 +2543,7 @@
    "name": "reply",
    "path": "reply",
    "short": "Reply to a thread",
-   "notes": "Replies to the latest emailed message in a thread — never a note (kind \"comment\") or share notice (kind \"access_notice\"), which are internal to the thread and never emailed; a thread with no emailed message is refused as not_found. The reply is addressed the way HEY addresses a reply: everyone that entry was addressed to, plus its sender on the To line, minus the acting user's own addresses. Repeatable --to/--cc/--bcc flags merge explicit recipients into that prefill; --replace-recipients uses only the explicit lists. --dry-run is read-only, needs no message, and returns the resolved sender, recipients, subject, account, thread and entry. A dry run does not read the original message body; run --dry-run --json first when changing the envelope. When HEY's reply prefill is unavailable a dry run will not guess the original lists and is refused as a usage error; pass --replace-recipients with explicit --to, --cc or --bcc addresses. A reply HEY cannot address is refused as a usage error unless an explicit --to, --cc or --bcc recipient makes it addressable. Accepts message via -m, stdin, or $EDITOR, plus repeatable --attach files; an attachment can be sent without body text. Without -m or --message-html the message is read from stdin when stdin is not a terminal, and $EDITOR opens when it is. The message is Markdown; use --message-html to send raw HTML instead. --draft saves the reply as a draft, carries the resolved recipients, and answers the draft ID for hey draft show/edit/send/delete. A send answers the reply's id and the topic_id of the thread it landed on — a new thread when HEY breaks the reply out of this one — as HEY's answer names them. While delayed is true, HEY leaves the message out of its thread, so hey thread read shows the thread without it (a thread it started reads as not found) until Undo Send releases it. A send HEY refuses — usually the account's sending limit — is kept as a draft and fails with not_delivered (exit 7), naming the draft in meta.draft_id; send it later with hey draft send <draft_id>, not by sending again, which only makes another draft.",
+   "notes": "--from selects a configured sender email or ID from account senders within the thread's account; an explicit --account must agree. Works with --draft and --dry-run; without --from, HEY chooses the sender as before. Does not change the default sender or reply recipients. Replies to the latest emailed message in a thread — never a note (kind \"comment\") or share notice (kind \"access_notice\"), which are internal to the thread and never emailed; a thread with no emailed message is refused as not_found. The reply is addressed the way HEY addresses a reply: everyone that entry was addressed to, plus its sender on the To line, minus the acting user's own addresses. Repeatable --to/--cc/--bcc flags merge explicit recipients into that prefill; --replace-recipients uses only the explicit lists. --dry-run is read-only, needs no message, and returns the resolved sender, recipients, subject, account, thread and entry. A dry run does not read the original message body; run --dry-run --json first when changing the envelope. When HEY's reply prefill is unavailable a dry run will not guess the original lists and is refused as a usage error; pass --replace-recipients with explicit --to, --cc or --bcc addresses. A reply HEY cannot address is refused as a usage error unless an explicit --to, --cc or --bcc recipient makes it addressable. Accepts message via -m, stdin, or $EDITOR, plus repeatable --attach files; an attachment can be sent without body text. Without -m or --message-html the message is read from stdin when stdin is not a terminal, and $EDITOR opens when it is. The message is Markdown; use --message-html to send raw HTML instead. --draft saves the reply as a draft, carries the resolved recipients, and answers the draft ID for hey draft show/edit/send/delete, with app_url, the draft's page in HEY. A send answers the reply's id and the topic_id of the thread it landed on — a new thread when HEY breaks the reply out of this one — as HEY's answer names them. While delayed is true, HEY leaves the message out of its thread, so hey thread read shows the thread without it (a thread it started reads as not found) until Undo Send releases it. A send HEY refuses — usually the account's sending limit — is kept as a draft and fails with not_delivered (exit 7), naming the draft in meta.draft_id; send it later with hey draft send <draft_id>, not by sending again, which only makes another draft.",
    "flags": [
     {
      "name": "attach",
@@ -2549,6 +2575,13 @@
      "name": "dry-run",
      "desc": "Print the resolved reply envelope without sending",
      "default": "false"
+    },
+    {
+     "name": "from",
+     "value": true,
+     "type": "string",
+     "desc": "Configured sender email or ID within the thread's account (see hey account senders)",
+     "default": ""
     },
     {
      "name": "message",
@@ -2583,8 +2616,8 @@
    ],
    "examples": [
     "hey reply 12345 -m \"Friday works for me — I'll send an agenda.\"",
-    "hey reply 12345 --to support@example.com -m \"The replacement is on the way.\"",
-    "hey reply 12345 --to support@example.com --replace-recipients --dry-run --json"
+    "hey reply 12345 --from billing@example.org -m \"The revised invoice is ready for review.\"",
+    "hey reply 12345 --from billing@example.org --dry-run --json"
    ]
   },
   {
@@ -3368,7 +3401,7 @@
      "name": "read",
      "path": "thread read",
      "short": "Read a thread",
-     "notes": "Returns a thread with all entries, oldest first. Entry bodies are Markdown, converted from HEY's Trix HTML so headings, lists, quotes, tables and code survive and links keep their URLs (read a body as structure, not flattened text); the creator is the entry's author (the external sender for inbound mail, your own contact for mail you sent), while a non-default send-as address you sent from is the optional sender on a hydrated entry; take the From address from sender.email_address when sender is present and from creator.email_address otherwise. Each entry whose message was read carries recipients as to, cc and bcc contact lists. A known-empty line is []; an entry whose message was not read omits recipients. In JSON, inbound entries also carry received_via: the exact account delivery addresses HEY recorded, distinct from the visible recipients, with an optional resolved contact; received_via is omitted for sent and generated messages and for an entry whose message was not read. --html writes an HTML document instead, one <article> per entry with a From/To/CC/BCC header and HEY's original body HTML. It is refused (usage error) when stdout is a terminal, so redirect it to a file or a pipe. A bundle row's own id is not a thread: hey thread read on it answers not_found with a hint naming the bundle and hey bundle view. Each entry's kind says what it is: message for mail, while comment (a note) and access_notice (a share notice) are internal — visible to everyone with access to the thread, never emailed — and --markdown, styled and --html output head them as a note or share notice rather than with a From line. A thread that could only be read in part is refused unless --allow-partial is passed, in which case each entry's body_state says what was read. Use the topic ID with hey reply or hey forward.",
+     "notes": "Returns a thread with all entries, oldest first. Entry bodies are Markdown, converted from HEY's Trix HTML so headings, lists, quotes, tables and code survive and links keep their URLs (read a body as structure, not flattened text); the creator is the entry's author (the external sender for inbound mail, your own contact for mail you sent), while a non-default send-as address you sent from is the optional sender on a hydrated entry; take the From address from sender.email_address when sender is present and from creator.email_address otherwise. Each entry whose message was read carries recipients as to, cc and bcc contact lists. A known-empty line is []; an entry whose message was not read omits recipients. In JSON, inbound entries also carry received_via: the exact account delivery addresses HEY recorded, distinct from the visible recipients, with an optional resolved contact; received_via is omitted for sent and generated messages and for an entry whose message was not read. An entry whose message was read also carries its thread's topic_id and screened_in (false while the thread waits in the Screener, or after its sender was screened out), when HEY serves them. --html writes an HTML document instead, one <article> per entry with a From/To/CC/BCC header and HEY's original body HTML. It is refused (usage error) when stdout is a terminal, so redirect it to a file or a pipe. A bundle row's own id is not a thread: hey thread read on it answers not_found with a hint naming the bundle and hey bundle view. Each entry's kind says what it is: message for mail, while comment (a note) and access_notice (a share notice) are internal — visible to everyone with access to the thread, never emailed — and --markdown, styled and --html output head them as a note or share notice rather than with a From line. A thread that could only be read in part is refused unless --allow-partial is passed, in which case each entry's body_state says what was read. Use the topic ID with hey reply or hey forward.",
      "flags": [
       {
        "name": "allow-partial",

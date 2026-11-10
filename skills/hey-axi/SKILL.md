@@ -2,7 +2,7 @@
 name: hey-axi
 description: Read, triage and draft HEY email (and HEY calendars, todos, habits, journal, time tracking) from the shell through hey-axi, a token-efficient TOON wrapper around Basecamp's HEY CLI that saves outgoing mail as drafts unless sending is explicitly allowed. Use when the user asks you to check, search, read, summarize, sort, label, screen, archive or reply to their HEY (hey.com) email, watch for new mail, or manage HEY todos, events, habits, journal entries or time tracks.
 license: MIT
-compatibility: Requires Node.js 20+ (commands run as `npx -y hey-axi`), the HEY CLI (`hey`, v1.7.0 or newer; `contact deliver`, `event delete --occurrence`, `screener clear` and `thread update` need v1.8.0 or newer; `contact photo set`/`remove` need v1.9.0 or newer; `thread comment` needs a HEY built from main after v1.10.1) signed in to a HEY account, and network access to app.hey.com.
+compatibility: Requires Node.js 20+ (commands run as `npx -y hey-axi`), the HEY CLI (`hey`, v1.7.0 or newer; `contact deliver`, `event delete --occurrence`, `screener clear` and `thread update` need v1.8.0 or newer; `contact photo set`/`remove` need v1.9.0 or newer; `thread comment` needs v1.11.0 or newer) signed in to a HEY account, and network access to app.hey.com.
 metadata:
   author: TangentialSolutions
   repository: https://github.com/TangentialSolutions/hey-axi

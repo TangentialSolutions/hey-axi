@@ -4,7 +4,7 @@
 
 An agent-friendly wrapper for [HEY CLI](https://github.com/basecamp/hey-cli) (`hey`), Basecamp's command line for HEY email, calendars, todos, habits, time tracking and journals.
 
-hey-axi runs `hey`, asks for its JSON response envelope, and prints it as [TOON](https://github.com/toon-format/toon). It follows the [AXI](https://axi.md) principles: a live home view, minimal default fields, truncated long text, definitive empty states, and unknown flags rejected up front. On our synthetic benchmark that's **~89% fewer tokens than `hey --json`** ([docs/benchmarks.md](docs/benchmarks.md)). It also adds a few safety rails. It covers **every command in HEY CLI v1.10.1 plus the commands on HEY's unreleased `main` branch as of 2026-10-27** (commit [`7a30c73`](https://github.com/basecamp/hey-cli/commit/7a30c73f68514eb1e3ccf661a3af7256f46f9f6b)): 159 runnable command paths, including the `login`/`logout` aliases, plus the `box <id>`-style shortcuts. It routes from a snapshot of HEY's own `hey commands --json` catalog. Commands added since v1.7.0 (`contact deliver`, `event delete --occurrence/--apply-to`, `screener clear`, `thread update`) need HEY v1.8.0 or newer, `contact photo set`/`contact photo remove` need HEY v1.9.0 or newer, and the main-only `thread comment` needs a HEY built from main (or the next HEY release); with an older HEY they fail with `kind: hey_outdated`. See [CHANGELOG.md](CHANGELOG.md) for what changed in each release.
+hey-axi runs `hey`, asks for its JSON response envelope, and prints it as [TOON](https://github.com/toon-format/toon). It follows the [AXI](https://axi.md) principles: a live home view, minimal default fields, truncated long text, definitive empty states, and unknown flags rejected up front. On our synthetic benchmark that's **~89% fewer tokens than `hey --json`** ([docs/benchmarks.md](docs/benchmarks.md)). It also adds a few safety rails. It covers **every command in HEY CLI v1.13.1**: 159 runnable command paths, including the `login`/`logout` aliases, plus the `box <id>`-style shortcuts. It routes from a snapshot of HEY's own `hey commands --json` catalog. Commands added since v1.7.0 (`contact deliver`, `event delete --occurrence/--apply-to`, `screener clear`, `thread update`) need HEY v1.8.0 or newer, `contact photo set`/`contact photo remove` need HEY v1.9.0 or newer, and `thread comment` needs HEY v1.11.0 or newer; with an older HEY they fail with `kind: hey_outdated`. See [CHANGELOG.md](CHANGELOG.md) for what changed in each release.
 
 ## Install
 
@@ -127,7 +127,7 @@ See [docs/listing.md](docs/listing.md) for how hey-axi gets listed on skills.sh 
 
 ## Keeping up with HEY releases
 
-`src/manifest.json` is a snapshot of `hey commands --json` plus usage parsed from `hey <command> --help`. The current snapshot was built from basecamp/hey-cli `main` at commit `7a30c73` (2026-10-27, after the v1.10.1 release), so its `hey_version` reads `1.10.1+main.7a30c73`. To regenerate it:
+`src/manifest.json` is a snapshot of `hey commands --json` plus usage parsed from `hey <command> --help`. The current snapshot was built from HEY CLI v1.13.1, so its `hey_version` reads `1.13.1`. To regenerate it:
 
 ```bash
 npm run refresh-manifest     # from whichever `hey` you have installed (runs only `hey version`, `hey commands`, `hey <command> --help`)
