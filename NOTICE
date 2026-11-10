@@ -1,0 +1,36 @@
+hey-axi
+Copyright (c) 2026 TangentialSolutions
+Licensed under the MIT License (see LICENSE).
+https://github.com/TangentialSolutions/hey-axi
+
+Independent project; not affiliated with or endorsed by Basecamp/37signals. HEY is a trademark of 37signals LLC.
+
+Third-party notice: HEY CLI
+----------------------------
+hey-axi includes help text copied from HEY CLI (https://github.com/basecamp/hey-cli):
+command descriptions, usage, flag help and notes in src/manifest.json, and the parts of
+the agent skill (skills/hey-axi/SKILL.md and skills/hey-axi/references/commands.md)
+generated from them by scripts/gen-skill.js. That material is covered by the following
+notice, copied from https://github.com/basecamp/hey-cli/blob/main/LICENSE.md:
+
+MIT License
+
+Copyright (c) 2026 37signals, LLC
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
