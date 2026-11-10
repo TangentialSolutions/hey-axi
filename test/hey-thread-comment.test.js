@@ -1,4 +1,4 @@
-// HEY main #383 (bcf2799, in the manifest at 7a30c73): `thread comment <thread-id> -m "..."`
+// HEY #383 (bcf2799, in HEY v1.11.0 and later; the manifest pins v1.13.1): `thread comment <thread-id> -m "..."`
 // adds a note to a thread. HEY never emails it (internal/cmd/thread_comment.go posts to
 // /topics/{id}/comments.json), so hey-axi treats it as an ordinary write. Fake HEY only.
 import test from "node:test";
@@ -69,12 +69,12 @@ test("HEY's refusal of a blank note is a usage error (exit 2)", async () => {
   await fake.cleanup();
 });
 
-test("thread comment on a HEY without it (v1.10.1 and older) is named as outdated", async () => {
+test("thread comment on a HEY without it (older than v1.11.0) is named as outdated", async () => {
   const fake = await makeFakeHey({ exitCode: 1, stdout: "", stderr: '{"ok":false,"error":"unknown command \\"comment\\" for \\"hey thread\\"","code":"usage"}\n' });
   const result = await runAxi(["thread", "comment", "12345", "-m", "x"], { fake });
   assert.equal(result.code, 1, result.stdout);
   assert.match(result.stdout, /kind: hey_outdated/);
   assert.match(result.stdout, /doesn't have the command `thread comment`/);
-  assert.match(result.stdout, /v1\.10\.1 plus the commands on HEY main as of 2026-10-27 \(commit 7a30c73, unreleased\)/);
+  assert.match(result.stdout, /v1\.13\.1/);
   await fake.cleanup();
 });
