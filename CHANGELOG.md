@@ -14,10 +14,14 @@ Adds HEY's `thread comment` and moves the catalog from HEY CLI v1.10.0 to HEY CL
 - **`reply --from <sender>`** (HEY v1.13.0+): chooses a configured sender email or ID within the thread's account (`hey-axi account senders`). It is a value flag, is forwarded in argv order, and works with `--draft` and `--dry-run`. It does not bypass the send gate or change the default sender.
 - **Draft `app_url` is kept** (HEY v1.11.0+, #614): `draft show`, `draft edit`, and a saved `compose`/`reply` draft keep `app_url`, the draft's page in HEY. URL keys next to lists are still dropped elsewhere (for example a box's `app_url`).
 - **`thread read` surfaces `topic_id` and `screened_in`** (HEY v1.12.0+, #627): each entry whose message was read may carry the thread's id and whether it is screened in. `screened_in: false` (the thread is waiting in the Screener, or its sender was screened out) adds a help line pointing at `screener list` / `screener approve` / `screener deny`, and still keeps HEY's next-command hints. An older HEY that omits the keys is shown as before, with no invented fields and no hint.
+- `NOTICE` with the full HEY CLI MIT notice (Copyright (c) 2026 37signals, LLC), covering the HEY help text copied into `src/manifest.json` and the skill text generated from it. It ships in the npm package (`files`).
+- Independence/trademark line ("Independent project; not affiliated with or endorsed by Basecamp/37signals. HEY is a trademark of 37signals LLC.") in the README, `SKILL.md` and the generated `references/commands.md` (emitted by `scripts/gen-skill.js`, so it survives `npm run skill:gen`).
+- README and skill link the repo, the MIT LICENSE and NOTICE.
 - 159 runnable command paths (was 158).
 
 ### Changed
 - README, skill and the README/router consistency tests now point to HEY CLI v1.13.1. `thread comment` is documented as needing HEY v1.11.0 or newer.
+- README, skill and package descriptions say hey-axi "works with HEY CLI".
 
 ## 0.3.4 (2026-10-21)
 
