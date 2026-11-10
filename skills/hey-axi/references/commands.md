@@ -130,7 +130,7 @@ Flags every command accepts: `--account <id|all>`, `--json`, `--quiet`, `--field
 | `spam` | Mark email threads as spam |  |  |
 | `stop-ignoring` | Stop ignoring email threads |  |  |
 | `thread comment` | Add a note to a thread | `--dry-run` `--message <v>` `--message-html <v>` |  |
-| `thread read` | Read a thread | `--allow-partial` | fields: id, at, from, email, to, cc, body |
+| `thread read` | Read a thread | `--allow-partial` | fields: id, topic_id, screened_in, at, from, email, to, cc, body |
 | `thread update` | Rename a thread | `--name <v>` |  |
 | `timetrack categories` | List time track categories |  | fields: id, title |
 | `timetrack category create` | Create a time track category |  |  |

@@ -64,7 +64,7 @@ export const CONTENT_LISTS = {
 };
 
 export const DETAIL_FIELDS = {
-  "thread read": ["id", "at=created_at", "from=creator.name|sender.name", "email=creator.email_address|sender.email_address", "to=recipients.to[].email_address", "cc=recipients.cc[].email_address", "body=body|summary"],
+  "thread read": ["id", "topic_id", "screened_in", "at=created_at", "from=creator.name|sender.name", "email=creator.email_address|sender.email_address", "to=recipients.to[].email_address", "cc=recipients.cc[].email_address", "body=body|summary"],
 };
 
 export const LIST_TEXT_LIMIT = 120;
@@ -337,6 +337,19 @@ export function moreHelp(size, { commandLine: line, pageFlags = [] }) {
   return null;
 }
 
+// HEY v1.12.0+ (#627) may put the thread's topic_id and screened_in on each
+// entry whose message was read. screened_in is false while the thread waits in
+// the Screener, or after its sender was screened out.
+export function threadScreenedHelp(data, carry = []) {
+  const found = findList(data);
+  const entries = found?.list || (Array.isArray(data) ? data : null);
+  if (!Array.isArray(entries) || !entries.some((entry) => entry && entry.screened_in === false)) return null;
+  const list = withSelectors("hey-axi screener list", carry);
+  const approve = withSelectors("hey-axi screener approve <id>", carry);
+  const deny = withSelectors("hey-axi screener deny <id>", carry);
+  return `This thread has screened_in: false: it is waiting in the Screener, or its sender was screened out. Run \`${list}\` to see the queue, then \`${approve}\` or \`${deny}\``;
+}
+
 // Shape whatever HEY printed. options: { path, fields, commandLine, carry, pageFlags, quiet }.
 //   carry:     selector args from the invocation (["--account", "2"]) for suggested commands
 //   pageFlags: which of all/page/limit the command takes, for the "see the rest" hint
@@ -382,6 +395,10 @@ export function shapeEnvelope(envelope, { path, fields = null, commandLine, carr
   if (more) help.push(more);
   if (truncated) help.push(`Run \`${commandLine} --full\` to see complete content`);
   if (CONTENT_LISTS[path] && !fields && !empty && found) help.push(CONTENT_LISTS[path](commandLine, carry));
+  if (path === "thread read" && !empty) {
+    const screened = threadScreenedHelp(body, carry);
+    if (screened) help.push(screened);
+  }
   if (help.length) out.help = help;
   if (enveloped && !quiet && envelope.meta && typeof envelope.meta === "object") {
     const meta = { ...envelope.meta };
