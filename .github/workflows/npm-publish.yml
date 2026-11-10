@@ -1,0 +1,36 @@
+# Optional later path: npm trusted publishing with provenance (OIDC).
+# workflow_dispatch only — it does not run on tags, releases, or pushes, so
+# merging this file does not change the current manual
+# `npx -y npm@11 publish --auth-type=web` flow.
+name: npm publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Git ref to publish (branch, tag, or SHA). package.json on this ref is the version that gets published.
+        required: false
+        default: main
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://registry.npmjs.org
+      - run: npm ci
+      - run: npm test
+      - name: Publish to npm with provenance
+        run: npm publish --provenance --access public
