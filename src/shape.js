@@ -64,7 +64,7 @@ export const CONTENT_LISTS = {
 };
 
 export const DETAIL_FIELDS = {
-  "thread read": ["id", "at=created_at", "from=creator.name|sender.name", "email=creator.email_address|sender.email_address", "to=recipients.to[].email_address", "cc=recipients.cc[].email_address", "body=body|summary"],
+  "thread read": ["id", "topic_id", "screened_in", "at=created_at", "from=creator.name|sender.name", "email=creator.email_address|sender.email_address", "to=recipients.to[].email_address", "cc=recipients.cc[].email_address", "body=body|summary"],
 };
 
 export const LIST_TEXT_LIMIT = 120;
@@ -145,6 +145,20 @@ const isObjectList = (value) => Array.isArray(value) && value.every((item) => it
 // URLs and paging fields (summarized by `count` and the "see the rest" help) are left out.
 const DROP_CONTAINER_KEY = (key) => /(^|_)url$|^signed_stream_name$|^(total_count|next_page|next_cursor|has_more)$/.test(key);
 
+// HEY v1.11.0+ (#614) answers a draft save/show with app_url, the draft's page in HEY.
+// That key matches DROP_CONTAINER_KEY, so keep it on draft commands: otherwise a draft
+// show whose only list is one recipient array (`to`) would drop the link.
+const KEEP_CONTAINER_KEYS = {
+  "draft show": ["app_url"],
+  "draft edit": ["app_url"],
+  compose: ["app_url"],
+  reply: ["app_url"],
+};
+
+function dropContainerKey(path, key) {
+  return DROP_CONTAINER_KEY(key) && !(KEEP_CONTAINER_KEYS[path] || []).includes(key);
+}
+
 // Find the collection in HEY's `data`: the array itself (of objects or of plain
 // values), the one array of objects inside a container object (e.g. a box with its
 // postings), or, when a container holds several, all of them (`lists`).
@@ -199,7 +213,7 @@ export function shapeData(data, { path, fields = null }) {
     const shaped = {};
     for (const [name, value] of Object.entries(found.container)) {
       if (name === found.key) shaped[name] = truncateDeep(value, LIST_TEXT_LIMIT, mark, true);
-      else if (fields === "all" || !DROP_CONTAINER_KEY(name)) shaped[name] = truncateDeep(value, DETAIL_TEXT_LIMIT, mark);
+      else if (fields === "all" || !dropContainerKey(path, name)) shaped[name] = truncateDeep(value, DETAIL_TEXT_LIMIT, mark);
     }
     return { data: shaped, truncated, empty: found.list.length === 0 };
   }
@@ -217,7 +231,7 @@ export function shapeData(data, { path, fields = null }) {
         const specs = fields === "all" ? null : Array.isArray(fields) && fields.length ? fields : heuristicFields(entry.list);
         const rows = specs ? project(entry.list, specs).rows : entry.list;
         shaped[name] = truncateDeep(rows, specs ? LIST_TEXT_LIMIT : DETAIL_TEXT_LIMIT, mark, Boolean(specs));
-      } else if (fields === "all" || !DROP_CONTAINER_KEY(name)) {
+      } else if (fields === "all" || !dropContainerKey(path, name)) {
         // Content next to the lists is kept (long text cut with its size), never dropped.
         shaped[name] = truncateDeep(value, DETAIL_TEXT_LIMIT, mark);
       }
@@ -251,7 +265,7 @@ export function shapeData(data, { path, fields = null }) {
     shaped = {};
     for (const [name, value] of Object.entries(container)) {
       if (name === key) shaped[name] = rows;
-      else if (fields === "all" || !DROP_CONTAINER_KEY(name)) {
+      else if (fields === "all" || !dropContainerKey(path, name)) {
         // Content next to the list is kept (long text cut with its size), never dropped.
         shaped[name] = truncateDeep(value, DETAIL_TEXT_LIMIT, mark);
       }
@@ -337,6 +351,19 @@ export function moreHelp(size, { commandLine: line, pageFlags = [] }) {
   return null;
 }
 
+// HEY v1.12.0+ (#627) may put the thread's topic_id and screened_in on each
+// entry whose message was read. screened_in is false while the thread waits in
+// the Screener, or after its sender was screened out.
+export function threadScreenedHelp(data, carry = []) {
+  const found = findList(data);
+  const entries = found?.list || (Array.isArray(data) ? data : null);
+  if (!Array.isArray(entries) || !entries.some((entry) => entry && entry.screened_in === false)) return null;
+  const list = withSelectors("hey-axi screener list", carry);
+  const approve = withSelectors("hey-axi screener approve <id>", carry);
+  const deny = withSelectors("hey-axi screener deny <id>", carry);
+  return `This thread has screened_in: false: it is waiting in the Screener, or its sender was screened out. Run \`${list}\` to see the queue, then \`${approve}\` or \`${deny}\``;
+}
+
 // Shape whatever HEY printed. options: { path, fields, commandLine, carry, pageFlags, quiet }.
 //   carry:     selector args from the invocation (["--account", "2"]) for suggested commands
 //   pageFlags: which of all/page/limit the command takes, for the "see the rest" hint
@@ -382,6 +409,10 @@ export function shapeEnvelope(envelope, { path, fields = null, commandLine, carr
   if (more) help.push(more);
   if (truncated) help.push(`Run \`${commandLine} --full\` to see complete content`);
   if (CONTENT_LISTS[path] && !fields && !empty && found) help.push(CONTENT_LISTS[path](commandLine, carry));
+  if (path === "thread read" && !empty) {
+    const screened = threadScreenedHelp(body, carry);
+    if (screened) help.push(screened);
+  }
   if (help.length) out.help = help;
   if (enveloped && !quiet && envelope.meta && typeof envelope.meta === "object") {
     const meta = { ...envelope.meta };
