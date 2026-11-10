@@ -145,6 +145,20 @@ const isObjectList = (value) => Array.isArray(value) && value.every((item) => it
 // URLs and paging fields (summarized by `count` and the "see the rest" help) are left out.
 const DROP_CONTAINER_KEY = (key) => /(^|_)url$|^signed_stream_name$|^(total_count|next_page|next_cursor|has_more)$/.test(key);
 
+// HEY v1.11.0+ (#614) answers a draft save/show with app_url, the draft's page in HEY.
+// That key matches DROP_CONTAINER_KEY, so keep it on draft commands: otherwise a draft
+// show whose only list is one recipient array (`to`) would drop the link.
+const KEEP_CONTAINER_KEYS = {
+  "draft show": ["app_url"],
+  "draft edit": ["app_url"],
+  compose: ["app_url"],
+  reply: ["app_url"],
+};
+
+function dropContainerKey(path, key) {
+  return DROP_CONTAINER_KEY(key) && !(KEEP_CONTAINER_KEYS[path] || []).includes(key);
+}
+
 // Find the collection in HEY's `data`: the array itself (of objects or of plain
 // values), the one array of objects inside a container object (e.g. a box with its
 // postings), or, when a container holds several, all of them (`lists`).
@@ -199,7 +213,7 @@ export function shapeData(data, { path, fields = null }) {
     const shaped = {};
     for (const [name, value] of Object.entries(found.container)) {
       if (name === found.key) shaped[name] = truncateDeep(value, LIST_TEXT_LIMIT, mark, true);
-      else if (fields === "all" || !DROP_CONTAINER_KEY(name)) shaped[name] = truncateDeep(value, DETAIL_TEXT_LIMIT, mark);
+      else if (fields === "all" || !dropContainerKey(path, name)) shaped[name] = truncateDeep(value, DETAIL_TEXT_LIMIT, mark);
     }
     return { data: shaped, truncated, empty: found.list.length === 0 };
   }
@@ -217,7 +231,7 @@ export function shapeData(data, { path, fields = null }) {
         const specs = fields === "all" ? null : Array.isArray(fields) && fields.length ? fields : heuristicFields(entry.list);
         const rows = specs ? project(entry.list, specs).rows : entry.list;
         shaped[name] = truncateDeep(rows, specs ? LIST_TEXT_LIMIT : DETAIL_TEXT_LIMIT, mark, Boolean(specs));
-      } else if (fields === "all" || !DROP_CONTAINER_KEY(name)) {
+      } else if (fields === "all" || !dropContainerKey(path, name)) {
         // Content next to the lists is kept (long text cut with its size), never dropped.
         shaped[name] = truncateDeep(value, DETAIL_TEXT_LIMIT, mark);
       }
@@ -251,7 +265,7 @@ export function shapeData(data, { path, fields = null }) {
     shaped = {};
     for (const [name, value] of Object.entries(container)) {
       if (name === key) shaped[name] = rows;
-      else if (fields === "all" || !DROP_CONTAINER_KEY(name)) {
+      else if (fields === "all" || !dropContainerKey(path, name)) {
         // Content next to the list is kept (long text cut with its size), never dropped.
         shaped[name] = truncateDeep(value, DETAIL_TEXT_LIMIT, mark);
       }
